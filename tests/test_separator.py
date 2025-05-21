@@ -19,9 +19,16 @@ def test_segment_stub_returns_normalized_word():
     assert mkk.segment("anotherWORD") == "anotherword"
     assert mkk.segment("KataDenganSpasi") == "katadenganspasi" # Assuming normalizer handles spaces or removes them
 
+from src.modern_kata_kupas.dictionary_manager import DictionaryManager
+
 def test_strip_basic_suffixes():
     """Test stripping of basic suffixes (particles and possessives)."""
+    # Initialize DictionaryManager with the test dictionary file
+    test_dict_path = "c:\\Users\\neima\\OneDrive\\Documents\\modern_kata_kupas\\tests\\data\\test_kata_dasar.txt"
+    dictionary_manager = DictionaryManager(dictionary_path=test_dict_path)
+    # Initialize ModernKataKupas with the test dictionary manager
     mkk = ModernKataKupas()
+    mkk.dictionary = dictionary_manager
     # Test cases from implementation plan Step 1.4
     assert mkk._strip_suffixes("bukuku") == "buku~ku"
     assert mkk._strip_suffixes("ambilkanlah") == "ambilkan~lah"

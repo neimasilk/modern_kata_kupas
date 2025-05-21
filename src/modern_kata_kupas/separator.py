@@ -9,6 +9,8 @@ from .rules import MorphologicalRules
 from .stemmer_interface import IndonesianStemmer
 from .utils.alignment import align
 
+MIN_STEM_LENGTH_FOR_POSSESSIVE = 3 # Panjang minimal kata dasar untuk pemisahan sufiks posesif
+
 class ModernKataKupas:
     """
     Kelas utama untuk proses pemisahan kata berimbuhan.
@@ -69,25 +71,23 @@ class ModernKataKupas:
         particles = ['kah', 'lah', 'pun']
         for particle in particles:
             if current_word.endswith(particle):
-                 # Check if the remaining word is at least 3 characters long (a common rule)
-                # For basic suffixes, we strip if the word is long enough. Dictionary check will be done later.
-                if len(current_word) > len(particle):
-                     current_word = current_word[:-len(particle)]
-                     stripped_suffixes.append(particle)
-                     # Assuming only one particle can be attached at the end for now
-                     break
+                potential_root = current_word[:-len(particle)]
+                # Strip the particle if found, regardless of whether the potential root is a valid root word
+                current_word = potential_root
+                stripped_suffixes.append(particle)
+                break # Assuming only one particle can be attached at the end
 
         # 2. Strip possessives (-ku, -mu, -nya)
         possessives = ['ku', 'mu', 'nya']
         for possessive in possessives:
             if current_word.endswith(possessive):
-                 # Check if the remaining word is at least 3 characters long
-                 # For basic suffixes, we strip if the word is long enough. Dictionary check will be done later.
-                 if len(current_word) > len(possessive):
-                     current_word = current_word[:-len(possessive)]
-                     stripped_suffixes.append(possessive)
-                     # Assuming only one possessive can be attached at the end for now
-                     break
+                potential_root = current_word[:-len(possessive)]
+                # Add check for minimum stem length before stripping
+                if len(potential_root) >= MIN_STEM_LENGTH_FOR_POSSESSIVE:
+                    # Strip the possessive if found, regardless of whether the potential root is a valid root word
+                    current_word = potential_root
+                    stripped_suffixes.append(possessive)
+                    break # Assuming only one possessive can be attached at the end
 
         # Reconstruct the word with stripped suffixes marked (e.g., word~suffix1~suffix2)
         if stripped_suffixes:
