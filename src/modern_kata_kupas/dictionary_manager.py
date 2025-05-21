@@ -1,8 +1,23 @@
 class DictionaryManager:
-    def __init__(self, file_path: str) -> None:
-        self.file_path = file_path
-        self._kata_dasar = set()
-        self._load_dictionary()
+    def __init__(self, dictionary_path: str = None, initial_words: Optional[List[str]] = None):
+        """
+        Inisialisasi DictionaryManager.
+        Args:
+            dictionary_path (str, optional): Path ke file kamus. Defaults to None.
+            initial_words (Optional[List[str]], optional): Daftar kata awal. Defaults to None.
+        """
+        self.dictionary_path = dictionary_path
+        self.words: Set[str] = set()  # Inisialisasi self.words di awal
+        self.newly_added_words: Set[str] = set()
+        self.removed_words: Set[str] = set()
+        self.default_dictionary_path = os.path.join(
+            os.path.dirname(__file__), "data", "kata_dasar.txt"
+        )
+
+        if dictionary_path:
+            self.words.update(self._load_dictionary(dictionary_path))
+        elif initial_words is not None:
+            self.words.update(initial_words)
 
     def _load_dictionary(self):
         try:

@@ -40,6 +40,8 @@ def is_vowel(char: str) -> bool:
     Returns:
         bool: True jika vokal, False jika tidak.
     """
+    if not isinstance(char, str) or len(char) != 1:
+        return False
     return normalize_word(char) in 'aiueo'
 
 def is_consonant(char: str) -> bool:

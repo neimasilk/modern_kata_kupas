@@ -33,9 +33,15 @@ def dummy_rules_file(tmp_path):
 @pytest.fixture
 def empty_rules_file(tmp_path):
     """Membuat file aturan JSON dummy yang kosong untuk tes."""
+    content = '''
+    {
+        "prefixes": [],
+        "suffixes": []
+    }
+    '''
     file_path = tmp_path / "empty_rules.json"
     with open(file_path, 'w') as f:
-        json.dump({}, f)
+        json.dump(json.loads(content), f)
     return str(file_path)
 
 @pytest.fixture
@@ -67,10 +73,8 @@ def test_rules_init_with_empty_file(empty_rules_file):
 
 def test_rules_init_with_nonexistent_path():
     """Tes inisialisasi MorphologicalRules dengan path file yang tidak ada."""
-    # Placeholder saat ini hanya mencetak error, tidak melempar exception
-    # Ini mungkin perlu diubah agar melempar RuleError
-    rules = MorphologicalRules(rules_path="path/tidak/ada.json")
-    assert rules.rules == {} # Karena loading gagal
+    with pytest.raises(ValueError, match="Gagal memuat aturan dari path/tidak/ada.json:"):
+        MorphologicalRules(rules_path="path/tidak/ada.json")
 
 # def test_rules_init_with_invalid_json(invalid_rules_file):
 #     """Tes inisialisasi MorphologicalRules dengan file JSON tidak valid."""
