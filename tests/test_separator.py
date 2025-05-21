@@ -14,11 +14,21 @@ def test_modernkatakupas_instantiation():
 def test_segment_stub_returns_normalized_word():
     """Test that the segment stub method returns the normalized input word."""
     mkk = ModernKataKupas()
-    # The current stub just returns the input word, which acts as a placeholder for normalization
-    test_word = "TestWord"
-    result = mkk.segment(test_word)
-    assert result == test_word
+    # The segment method should now return the normalized word
+    assert mkk.segment("TestWord.") == "testword"
+    assert mkk.segment("anotherWORD") == "anotherword"
+    assert mkk.segment("KataDenganSpasi") == "katadenganspasi" # Assuming normalizer handles spaces or removes them
 
-    test_word_2 = "anotherword"
-    result_2 = mkk.segment(test_word_2)
-    assert result_2 == test_word_2
+def test_strip_basic_suffixes():
+    """Test stripping of basic suffixes (particles and possessives)."""
+    mkk = ModernKataKupas()
+    # Test cases from implementation plan Step 1.4
+    assert mkk._strip_suffixes("bukuku") == "buku~ku"
+    assert mkk._strip_suffixes("ambilkanlah") == "ambilkan~lah"
+    assert mkk._strip_suffixes("siapakah") == "siapa~kah"
+    assert mkk._strip_suffixes("miliknya") == "milik~nya"
+    assert mkk._strip_suffixes("rumahkupun") == "rumah~ku~pun"
+    # Test case with no suffix
+    assert mkk._strip_suffixes("buku") == "buku"
+    # Test case with unknown suffix (should not strip)
+    assert mkk._strip_suffixes("bukuxyz") == "bukuxyz"
