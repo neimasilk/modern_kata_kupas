@@ -43,6 +43,19 @@ def test_invalid_affix_error():
     with pytest.raises(exceptions.InvalidAffixError):
         raise exceptions.InvalidAffixError("Invalid affix provided")
 
+def test_dictionary_file_not_found_error():
+    """Tes DictionaryFileNotFoundError."""
+    with pytest.raises(exceptions.DictionaryFileNotFoundError) as exc_info:
+        raise exceptions.DictionaryFileNotFoundError("Tes file tidak ditemukan")
+    assert "Tes file tidak ditemukan" in str(exc_info.value)
+    assert isinstance(exc_info.value, FileNotFoundError) # Cek inheritance
+
+def test_dictionary_loading_error():
+    """Tes DictionaryLoadingError."""
+    with pytest.raises(exceptions.DictionaryLoadingError) as exc_info:
+        raise exceptions.DictionaryLoadingError("Tes error loading")
+    assert "Tes error loading" in str(exc_info.value)
+
 def test_reconstruction_error():
     """Tes ReconstructionError."""
     with pytest.raises(exceptions.ReconstructionError):

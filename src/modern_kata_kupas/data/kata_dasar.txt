@@ -22,3 +22,5 @@ rencana
 proyek
 kamus
 dasar
+makan
+minum

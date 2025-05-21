@@ -7,6 +7,18 @@ class ModernKataKupasError(Exception):
     """Kelas dasar untuk semua exception di ModernKataKupas."""
     pass
 
+class DictionaryError(Exception):
+    """Base class for dictionary related errors."""
+    pass
+
+class DictionaryFileNotFoundError(DictionaryError, FileNotFoundError):
+    """Custom exception raised when a dictionary file cannot be found."""
+    pass
+
+class DictionaryLoadingError(DictionaryError):
+    """Custom exception raised for errors during dictionary loading or parsing."""
+    pass
+
 class DictionaryError(ModernKataKupasError):
     """Exception terkait dengan operasi kamus (misalnya, file tidak ditemukan)."""
     pass

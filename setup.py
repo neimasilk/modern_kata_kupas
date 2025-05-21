@@ -1,9 +1,14 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="modern_kata_kupas",
-    version="0.1.0",
-    packages=find_packages(where="src"),
-    package_dir={"": "src"},
-    python_requires=">=3.6",
+    name='modern_kata_kupas',
+    version='0.1.0',
+    packages=find_packages(where='src'),
+    package_dir={'': 'src'},
+    package_data={
+        'modern_kata_kupas.data': ['*.txt'],
+    },
+    install_requires=[
+        # dependensi Anda, jika ada
+    ],
 )
