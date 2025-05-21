@@ -79,7 +79,10 @@ class DictionaryManager:
         Returns:
             bool: True jika kata ada dalam kamus (case-insensitive), False jika tidak.
         """
-        return self._normalize_word(kata) in self.kata_dasar_set
+        normalized_kata = self._normalize_word(kata)
+        is_present = normalized_kata in self.kata_dasar_set
+        print(f"DictionaryManager: Checking '{kata}' (normalized: '{normalized_kata}'), found: {is_present}") # Add logging
+        return is_present
         
     def _load_default_packaged_dictionary(self):
         """Memuat kamus default yang dikemas dengan library."""

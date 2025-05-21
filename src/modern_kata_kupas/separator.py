@@ -15,6 +15,7 @@ class ModernKataKupas:
     """
     Kelas utama untuk proses pemisahan kata berimbuhan.
     """
+    MIN_STEM_LENGTH_FOR_POSSESSIVE = 2 # Define minimum stem length for possessive stripping
     def __init__(self):
         """
         Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
@@ -56,11 +57,21 @@ class ModernKataKupas:
         # 4. Strip suffixes
         # Note: The order of stripping prefixes and suffixes can be complex
         # For now, we apply suffixes after prefixes. This might need refinement.
-        word_after_suffixes, stripped_suffixes = self._strip_suffixes(word_after_prefixes) # Pass the word part
+
+        # Check if word_after_prefixes is a root word
+        print(f"Segment: After prefixes, word='{word_after_prefixes}', is_kata_dasar={self.dictionary.is_kata_dasar(word_after_prefixes)}") # Add logging
+        if self.dictionary.is_kata_dasar(word_after_prefixes):
+            # If yes, likely no suffixes need to be stripped
+            final_word = word_after_prefixes
+            stripped_suffixes = [] # No suffixes stripped from this root word
+        else:
+            # Strip suffixes only if word_after_prefixes is not a known root word
+            word_after_suffixes, stripped_suffixes = self._strip_suffixes(word_after_prefixes)
+            final_word = word_after_suffixes
 
         # 5. Apply morphophonemic rules (stub)
         # final_word = self._apply_morphophonemic_segmentation_rules(word_after_suffixes)
-        final_word = word_after_suffixes # Placeholder
+        # final_word = word_after_suffixes # Placeholder - This line is now handled by the if/else block
 
         # Combine prefixes, root, and suffixes
         # Assuming the desired format is prefix1~prefix2~...~word~suffix1~suffix2~...
@@ -92,16 +103,21 @@ class ModernKataKupas:
         """
         current_word = word
         stripped_suffixes = []
+        print(f"_strip_suffixes: Processing word='{word}'") # Add logging
 
         # 1. Strip particles (-kah, -lah, -pun)
         particles = ['kah', 'lah', 'pun']
         for particle in particles:
             if current_word.endswith(particle):
                 potential_root = current_word[:-len(particle)]
-                # Strip the particle if found, regardless of whether the potential root is a valid root word
-                current_word = potential_root
-                stripped_suffixes.insert(0, particle) # Changed to insert(0, ...) for correct output order
-                # Do not break here, continue to check for possessives and derivational suffixes
+                # Add check for dictionary lookup before stripping the particle
+                is_root_in_dict = self.dictionary.is_kata_dasar(potential_root) # Capture the result
+                print(f"Checking particle suffix '{particle}': potential_root='{potential_root}', is_kata_dasar='{is_root_in_dict}'") # Add logging
+                if is_root_in_dict:
+                    current_word = potential_root
+                    stripped_suffixes.insert(0, particle) # Changed to insert(0, ...) for correct output order
+                    # Do not break here, continue to check for possessives and derivational suffixes
+                # If potential_root is not a root word, do not strip this particle
 
         # 2. Strip possessives (-ku, -mu, -nya)
         possessives = ['ku', 'mu', 'nya']
@@ -109,10 +125,13 @@ class ModernKataKupas:
             if current_word.endswith(possessive):
                 potential_root = current_word[:-len(possessive)]
                 # Add check for minimum stem length and dictionary lookup before stripping
-                if len(potential_root) >= MIN_STEM_LENGTH_FOR_POSSESSIVE and self.dictionary.is_kata_dasar(potential_root):
-                    current_word = potential_root
-                    stripped_suffixes.insert(0, possessive) # Changed to insert(0, ...) for correct output order
-                    # Do not break here, continue to check for derivational suffixes
+                if len(potential_root) >= MIN_STEM_LENGTH_FOR_POSSESSIVE:
+                    is_root_in_dict = self.dictionary.is_kata_dasar(potential_root) # Capture the result
+                    print(f"Checking possessive suffix '{possessive}': potential_root='{potential_root}', is_kata_dasar='{is_root_in_dict}'") # Add logging
+                    if is_root_in_dict:
+                        current_word = potential_root
+                        stripped_suffixes.insert(0, possessive) # Changed to insert(0, ...) for correct output order
+                        # Do not break here, continue to check for derivational suffixes
 
         # 3. Strip derivational suffixes (-kan, -i, -an)
         derivational_suffixes = ['kan', 'i', 'an'] # Perhatikan 'i' bisa ambigu dengan akhir kata dasar
@@ -126,8 +145,7 @@ class ModernKataKupas:
                 # Add check for minimum stem length and dictionary lookup before stripping
                 if len(potential_root) >= MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING and self.dictionary.is_kata_dasar(potential_root):
                      current_word = potential_root
-                     stripped_suffixes.insert(0, deriv_suffix) # Keep as insert(0, ...) for correct output order
-                     # print(f"Stripped derivational: {deriv_suffix}, current_word: {current_word}, stripped: {stripped_suffixes}")
+                     stripped_suffixes.insert(0, deriv_suffix)
                      # Do not break here, continue to check for other derivational suffixes (though unlikely in this set) or the end of the loop
 
         # Return the remaining word and the list of stripped suffixes
@@ -151,10 +169,13 @@ class ModernKataKupas:
         for prefix in prefixes:
             if current_word.startswith(prefix):
                 potential_root = current_word[len(prefix):]
-                # For now, just strip if it matches. More complex rules later.
-                current_word = potential_root
-                stripped_prefixes.append(prefix)
-                break # Assuming only one basic prefix at the beginning
+                # Check if the potential root is a valid root word before stripping the prefix
+                if self.dictionary.is_kata_dasar(potential_root):
+                    current_word = potential_root
+                    stripped_prefixes.append(prefix)
+                    break # Assuming only one basic prefix at the beginning
+                # If potential_root is not a root word, do not strip this prefix
+                # Continue to the next prefix if needed (though the break prevents this for now)
 
         # Return the remaining word and the list of stripped prefixes
         return current_word, stripped_prefixes
