@@ -3,7 +3,7 @@
 Package initialization for utils module.
 """
 
-from ..utils import normalize_word, is_vowel, is_consonant
+from .string_utils import normalize_word, is_vowel, is_consonant
 
 __all__ = [
     "normalize_word",
