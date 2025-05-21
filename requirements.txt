@@ -1,3 +1,2 @@
 PySastrawi
-PyYAML
 pytest
