@@ -12,4 +12,5 @@ This file will track the progress of the ModernKataKupas project.
 - [x] Step 1.2: Stemmer Interface Module
 - [x] Step 1.3: Main Separator Class Structure (`ModernKataKupas`)
 - [x] Step 1.4: Basic Suffix Stripping (Particles and Possessives)
+- [x] Step 1.5: Basic Derivational Suffix Stripping (`-kan`, `-i`, `-an`)
 - [ ] ... (other steps)

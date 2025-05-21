@@ -36,16 +36,42 @@ class ModernKataKupas:
     def segment(self, word: str) -> str:
         """
         Memisahkan kata berimbuhan menjadi kata dasar dan afiksnya.
-        (Stub implementation)
 
         Args:
             word (str): Kata yang akan dipisahkan.
 
         Returns:
-            str: The normalized word (stub).
+            str: Kata setelah proses segmentasi (saat ini hanya pelepasan afiks dasar).
         """
-        # Use the normalizer to return the normalized word
-        return self.normalizer.normalize_word(word)
+        # 1. Normalisasi kata
+        normalized_word = self.normalizer.normalize_word(word)
+
+        # 2. Handle reduplikasi (stub)
+        # word_after_reduplication = self._handle_reduplication(normalized_word)
+        word_after_reduplication = normalized_word # Placeholder
+
+        # 3. Strip prefixes
+        word_after_prefixes, stripped_prefixes = self._strip_prefixes(word_after_reduplication)
+
+        # 4. Strip suffixes
+        # Note: The order of stripping prefixes and suffixes can be complex
+        # For now, we apply suffixes after prefixes. This might need refinement.
+        word_after_suffixes, stripped_suffixes = self._strip_suffixes(word_after_prefixes) # Pass the word part
+
+        # 5. Apply morphophonemic rules (stub)
+        # final_word = self._apply_morphophonemic_segmentation_rules(word_after_suffixes)
+        final_word = word_after_suffixes # Placeholder
+
+        # Combine prefixes, root, and suffixes
+        # Assuming the desired format is prefix1~prefix2~...~word~suffix1~suffix2~...
+        parts = []
+        if stripped_prefixes:
+            parts.extend(stripped_prefixes)
+        parts.append(final_word)
+        if stripped_suffixes:
+            parts.extend(stripped_suffixes)
+
+        return '~'.join(parts)
 
     def _handle_reduplication(self, word: str) -> str:
         """
@@ -75,19 +101,18 @@ class ModernKataKupas:
                 # Strip the particle if found, regardless of whether the potential root is a valid root word
                 current_word = potential_root
                 stripped_suffixes.insert(0, particle) # Changed to insert(0, ...) for correct output order
-                break # Assuming only one particle can be attached at the end
+                # Do not break here, continue to check for possessives and derivational suffixes
 
         # 2. Strip possessives (-ku, -mu, -nya)
         possessives = ['ku', 'mu', 'nya']
         for possessive in possessives:
             if current_word.endswith(possessive):
                 potential_root = current_word[:-len(possessive)]
-                # Add check for minimum stem length before stripping
-                if len(potential_root) >= MIN_STEM_LENGTH_FOR_POSSESSIVE:
-                    # Strip the possessive if found, regardless of whether the potential root is a valid root word
+                # Add check for minimum stem length and dictionary lookup before stripping
+                if len(potential_root) >= MIN_STEM_LENGTH_FOR_POSSESSIVE and self.dictionary.is_kata_dasar(potential_root):
                     current_word = potential_root
                     stripped_suffixes.insert(0, possessive) # Changed to insert(0, ...) for correct output order
-                    break # Assuming only one possessive can be attached at the end
+                    # Do not break here, continue to check for derivational suffixes
 
         # 3. Strip derivational suffixes (-kan, -i, -an)
         derivational_suffixes = ['kan', 'i', 'an'] # Perhatikan 'i' bisa ambigu dengan akhir kata dasar
@@ -98,26 +123,41 @@ class ModernKataKupas:
         for deriv_suffix in derivational_suffixes:
             if current_word.endswith(deriv_suffix):
                 potential_root = current_word[:-len(deriv_suffix)]
-                # Tambahkan logika pengecekan jika diperlukan, misal panjang minimal,
-                # atau apakah potential_root ada di kamus (mungkin untuk tahap selanjutnya)
-                # Untuk saat ini, kita bisa fokus pada penghilangan jika cocok
-                if len(potential_root) >= MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING:
+                # Add check for minimum stem length and dictionary lookup before stripping
+                if len(potential_root) >= MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING and self.dictionary.is_kata_dasar(potential_root):
                      current_word = potential_root
                      stripped_suffixes.insert(0, deriv_suffix) # Keep as insert(0, ...) for correct output order
                      # print(f"Stripped derivational: {deriv_suffix}, current_word: {current_word}, stripped: {stripped_suffixes}")
-                     break # Asumsi hanya satu sufiks derivasional utama yang dihilangkan dalam satu iterasi ini
+                     # Do not break here, continue to check for other derivational suffixes (though unlikely in this set) or the end of the loop
 
-        # Reconstruct the word with stripped suffixes marked (e.g., word~suffix1~suffix2)
-        if stripped_suffixes:
-            return current_word + '~' + '~'.join(stripped_suffixes) # Removed reversed() to maintain insertion order
-        else:
-            return current_word
+        # Return the remaining word and the list of stripped suffixes
+        return current_word, stripped_suffixes
 
     def _strip_prefixes(self, word: str) -> str:
         """
-        Helper method to strip prefixes (stub).
+        Helper method to strip basic prefixes (-di, -ke, -se).
+
+        Args:
+            word (str): The word to strip prefixes from.
+
+        Returns:
+            str: The word after stripping prefixes.
         """
-        pass # Stub implementation
+        current_word = word
+        stripped_prefixes = []
+
+        # Strip basic prefixes (-di, -ke, -se)
+        prefixes = ['di', 'ke', 'se']
+        for prefix in prefixes:
+            if current_word.startswith(prefix):
+                potential_root = current_word[len(prefix):]
+                # For now, just strip if it matches. More complex rules later.
+                current_word = potential_root
+                stripped_prefixes.append(prefix)
+                break # Assuming only one basic prefix at the beginning
+
+        # Return the remaining word and the list of stripped prefixes
+        return current_word, stripped_prefixes
 
     def _apply_morphophonemic_segmentation_rules(self, word: str) -> str:
         """
