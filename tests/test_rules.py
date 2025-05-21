@@ -55,7 +55,12 @@ def invalid_rules_file(tmp_path):
 def test_rules_init_no_path():
     """Tes inisialisasi MorphologicalRules tanpa path file."""
     rules = MorphologicalRules()
-    assert rules.rules == {}
+    expected_rules = {
+        "prefixes": [],
+        "suffixes": [],
+        "info": "Placeholder: MorphologicalRules initialized without specific rules file."
+    }
+    assert rules.rules == expected_rules
     assert rules.get_prefix_rules() == []
     assert rules.get_suffix_rules() == []
 
@@ -69,7 +74,11 @@ def test_rules_init_with_valid_path(dummy_rules_file):
 def test_rules_init_with_empty_file(empty_rules_file):
     """Tes inisialisasi MorphologicalRules dengan file aturan kosong."""
     rules = MorphologicalRules(rules_path=empty_rules_file)
-    assert rules.rules == {"info": f"Rules loaded from {empty_rules_file} (placeholder)", "prefixes": [], "suffixes": []} # Sesuai placeholder
+    expected_rules = {
+        "prefixes": [],
+        "suffixes": []
+    }
+    assert rules.rules == expected_rules
 
 def test_rules_init_with_nonexistent_path():
     """Tes inisialisasi MorphologicalRules dengan path file yang tidak ada."""

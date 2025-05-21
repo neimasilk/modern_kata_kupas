@@ -41,6 +41,35 @@ class TestMorphologicalRules(unittest.TestCase):
     Kelas untuk menguji MorphologicalRules.
     """
     
+    def test_rules_init_no_path(self):
+        """Test inisialisasi tanpa path aturan."""
+        rules = MorphologicalRules()
+        expected_rules = {
+            "prefixes": [],
+            "suffixes": [],
+            "info": "Placeholder: MorphologicalRules initialized without specific rules file."
+        }
+        self.assertEqual(rules.rules, expected_rules)
+    
+    def test_rules_init_with_empty_file(self):
+        """Test inisialisasi dengan file aturan kosong."""
+        import tempfile
+        import os
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            f.write('{"prefixes": [], "suffixes": []}')
+            temp_path = f.name
+        
+        try:
+            rules = MorphologicalRules(temp_path)
+            expected_rules = {
+                "prefixes": [],
+                "suffixes": []
+            }
+            self.assertEqual(rules.rules, expected_rules)
+        finally:
+            os.unlink(temp_path)
+    
     def test_load_rules(self):
         """Test memuat aturan dari file JSON."""
         import tempfile
