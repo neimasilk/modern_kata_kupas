@@ -9,7 +9,7 @@ from modern_kata_kupas.exceptions import (
 
 def test_dictionary_manager_initialization():
     """Tests basic initialization of DictionaryManager."""
-    manager = DictionaryManager()
+    manager = DictionaryManager(dictionary_path=EMPTY_DICT_PATH)
     assert manager.get_kata_dasar_count() == 0
     assert isinstance(manager.kata_dasar_set, set)
 
@@ -25,7 +25,7 @@ def test_normalize_word():
 
 def test_load_words_from_iterable():
     """Tests the _load_words_from_iterable method."""
-    manager = DictionaryManager()
+    manager = DictionaryManager(dictionary_path=EMPTY_DICT_PATH)
     sample_words = [
         "apel", "  Jeruk  ", "PISANG", "", "   ", "mangga", "apel" # "apel" duplikat
     ]
@@ -40,13 +40,14 @@ def test_load_words_from_iterable():
     assert not manager.is_kata_dasar("anggur")
 
     # Tes dengan iterable kosong
-    manager_empty = DictionaryManager()
+    manager_empty = DictionaryManager(dictionary_path=EMPTY_DICT_PATH)
     manager_empty._load_words_from_iterable([])
     assert manager_empty.get_kata_dasar_count() == 0
 
 # Path ke file kamus sampel untuk tes
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 SAMPLE_DICT_PATH = os.path.join(TEST_DATA_DIR, "test_kata_dasar_sample.txt")
+EMPTY_DICT_PATH = os.path.join(TEST_DATA_DIR, "empty_dict.txt")
 
 # Fixture untuk membuat file kamus sampel jika belum ada
 @pytest.fixture(scope="module", autouse=True)

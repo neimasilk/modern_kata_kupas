@@ -40,6 +40,15 @@ class DictionaryManager:
         if not isinstance(word, str):
             return "" # Atau raise TypeError, tapi untuk normalisasi internal, "" lebih aman
         return word.strip().lower()
+        
+    def add_word(self, word: str):
+        """
+        Adds a new word to the dictionary set after normalizing it.
+        Skips empty words after normalization.
+        """
+        normalized_word = self._normalize_word(word)
+        if normalized_word: # Hanya tambahkan jika kata tidak kosong setelah normalisasi
+            self.kata_dasar_set.add(normalized_word)
 
     def get_kata_dasar_count(self) -> int:
         """

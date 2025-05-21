@@ -32,7 +32,7 @@ class Separator:
                            ("baca", ["mem-"]) untuk "membaca"
         """
         # Implementasi awal untuk memeriksa kata dasar
-        if self.dictionary and self.dictionary.contains(word):
+        if self.dictionary and self.dictionary.is_kata_dasar(word):
             return word, []
             
         # Logika untuk memeriksa prefiks
@@ -40,7 +40,7 @@ class Separator:
         for prefix in prefixes:
             if word.startswith(prefix[0:-1]):  # Hapus tanda '-' dari prefiks
                 possible_root = word[len(prefix)-1:]
-                if self.dictionary and self.dictionary.contains(possible_root):
+                if self.dictionary and self.dictionary.is_kata_dasar(possible_root):
                     return possible_root, [prefix]
         
         # Logika untuk memeriksa sufiks
@@ -48,7 +48,7 @@ class Separator:
         for suffix in suffixes:
             if word.endswith(suffix[1:]):  # Hapus tanda '-' dari sufiks
                 possible_root = word[:-len(suffix)+1]
-                if self.dictionary and self.dictionary.contains(possible_root):
+                if self.dictionary and self.dictionary.is_kata_dasar(possible_root):
                     return possible_root, [suffix]
         
         # Logika untuk memeriksa konfiks (prefiks + sufiks)
