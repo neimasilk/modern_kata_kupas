@@ -24,6 +24,12 @@ class TestRemoveSuffixRule(unittest.TestCase):
         rule = RemoveSuffixRule(["kan", "i"])
         self.assertEqual(rule.apply("mengatakan"), "mengata")
         self.assertEqual(rule.apply("mengulangi"), "mengulang")
+        
+        # Test case untuk fitur 0.4
+        self.assertEqual(rule.apply("meyakinkan"), "meyakin")
+        self.assertEqual(rule.apply("melukai"), "meluka")
+        self.assertEqual(rule.apply("membatukan"), "membatu")
+        self.assertEqual(rule.apply("memasuki"), "memasuk")
     
     def test_no_suffix_match(self):
         """Test ketika tidak ada suffix yang cocok."""
