@@ -43,20 +43,23 @@ def test_separate_simple_word(separator_instance):
     assert root == word
     assert affixes == []
 
-# Tambahkan lebih banyak tes di sini seiring pengembangan Separator
-# Contoh:
-# def test_separate_with_prefix(separator_instance):
-#     word = "memakan"
-#     # Harapan setelah implementasi:
-#     # root, affixes = separator_instance.separate(word)
-#     # assert root == "makan"
-#     # assert affixes == ["me-"]
-#     pass
+# Test untuk prefiks
+def test_separate_with_prefix(separator_instance):
+    word = "memakan"
+    root, affixes = separator_instance.separate(word)
+    assert root == "makan"
+    assert affixes == ["me-"]
 
-# def test_separate_with_suffix(separator_instance):
-#     # ...
-#     pass
+# Test untuk sufiks
+def test_separate_with_suffix(separator_instance):
+    word = "makanan"
+    root, affixes = separator_instance.separate(word)
+    assert root == "makan"
+    assert affixes == ["-an"]
 
-# def test_separate_with_confix(separator_instance):
-#     # ...
-#     pass
+# Test untuk konfiks
+def test_separate_with_confix(separator_instance):
+    word = "memperbaiki"
+    root, affixes = separator_instance.separate(word)
+    assert root == "baik"
+    assert sorted(affixes) == sorted(["me-", "-i"])
