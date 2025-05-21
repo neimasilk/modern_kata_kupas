@@ -1,0 +1,14 @@
+README.md
+setup.py
+src/modern_kata_kupas/__init__.py
+src/modern_kata_kupas/dictionary_manager.py
+src/modern_kata_kupas/exceptions.py
+src/modern_kata_kupas/reconstructor.py
+src/modern_kata_kupas/rules.py
+src/modern_kata_kupas/separator.py
+src/modern_kata_kupas/test_rules.py
+src/modern_kata_kupas/utils.py
+src/modern_kata_kupas.egg-info/PKG-INFO
+src/modern_kata_kupas.egg-info/SOURCES.txt
+src/modern_kata_kupas.egg-info/dependency_links.txt
+src/modern_kata_kupas.egg-info/top_level.txt

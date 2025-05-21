@@ -119,13 +119,13 @@ class MorphologicalRules:
 
     def get_prefix_rules(self):
         """
-        Mengembalikan aturan yang berkaitan dengan prefiks.
+        Mengembalikan daftar aturan prefiks.
         """
         return self.rules.get("prefixes", [])
 
     def get_suffix_rules(self):
         """
-        Mengembalikan aturan yang berkaitan dengan sufiks.
+        Mengembalikan daftar aturan sufiks.
         """
         return self.rules.get("suffixes", [])
 
