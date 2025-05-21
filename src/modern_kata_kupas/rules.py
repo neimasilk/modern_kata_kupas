@@ -9,6 +9,50 @@ Contoh aturan:
 - Aturan untuk sufiks, infiks, konfiks.
 """
 
+from abc import ABC, abstractmethod
+
+class Rule(ABC):
+    """
+    Base class untuk semua aturan morfologis
+    """
+    
+    @abstractmethod
+    def apply(self, word: str) -> str:
+        """
+        Menerapkan aturan pada kata input
+        
+        Args:
+            word (str): Kata input
+            
+        Returns:
+            str: Hasil setelah aturan diterapkan
+        """
+        pass
+
+
+class RemoveSuffixRule(Rule):
+    """
+    Contoh implementasi aturan untuk menghapus suffix
+    """
+    
+    def __init__(self, suffixes: list[str]):
+        self.suffixes = suffixes
+    
+    def apply(self, word: str) -> str:
+        """
+        Mencoba menghapus suffix dari kata
+        
+        Args:
+            word (str): Kata input
+            
+        Returns:
+            str: Kata tanpa suffix jika ditemukan, kata asli jika tidak
+        """
+        for suffix in self.suffixes:
+            if word.endswith(suffix):
+                return word[:word.rfind(suffix)]
+        return word
+
 # Placeholder untuk kelas atau fungsi terkait aturan
 # Ini bisa berupa kelas RuleLoader, RuleApplier, atau struktur data untuk aturan
 

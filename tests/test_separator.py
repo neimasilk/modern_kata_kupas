@@ -5,14 +5,14 @@ Unit tests untuk Separator.
 
 import pytest
 from modern_kata_kupas.separator import Separator
-from modern_kata_kupas.dictionary_manager import RootWordDictionary # Mungkin diperlukan nanti
+from modern_kata_kupas.dictionary_manager import DictionaryManager # Mungkin diperlukan nanti
 from modern_kata_kupas.rules import MorphologicalRules # Mungkin diperlukan nanti
 
 # Setup dasar untuk tes (bisa diperluas)
 @pytest.fixture
 def dummy_dictionary():
     # Buat dictionary dummy untuk tes
-    dic = RootWordDictionary() # Asumsi ada file kata dasar dummy atau cara inisialisasi lain
+    dic = DictionaryManager() # Asumsi ada file kata dasar dummy atau cara inisialisasi lain
     dic.add_word("makan")
     dic.add_word("coba")
     dic.add_word("baca")
