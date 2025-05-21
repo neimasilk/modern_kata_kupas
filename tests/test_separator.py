@@ -1,66 +1,24 @@
 # tests/test_separator.py
-"""
-Unit tests untuk Separator.
-"""
 
 import pytest
-from modern_kata_kupas.separator import Separator
-from modern_kata_kupas.dictionary_manager import DictionaryManager # Mungkin diperlukan nanti
-from modern_kata_kupas.rules import MorphologicalRules # Mungkin diperlukan nanti
+from src.modern_kata_kupas.separator import ModernKataKupas
 
-# Setup dasar untuk tes (bisa diperluas)
-@pytest.fixture
-def dummy_dictionary():
-    # Buat dictionary dummy untuk tes
-    dic = DictionaryManager() # Asumsi ada file kata dasar dummy atau cara inisialisasi lain
-    dic.add_word("makan")
-    dic.add_word("coba")
-    dic.add_word("baca")
-    return dic
+def test_modernkatakupas_instantiation():
+    """Test that ModernKataKupas class can be instantiated."""
+    try:
+        mkk = ModernKataKupas()
+        assert isinstance(mkk, ModernKataKupas)
+    except Exception as e:
+        pytest.fail(f"Instantiation failed with exception: {e}")
 
-@pytest.fixture
-def dummy_rules():
-    # Buat rules dummy untuk tes
-    rules = MorphologicalRules() # Asumsi ada file aturan dummy atau cara inisialisasi lain
-    # Tambahkan beberapa aturan dummy jika perlu
-    return rules
+def test_segment_stub_returns_normalized_word():
+    """Test that the segment stub method returns the normalized input word."""
+    mkk = ModernKataKupas()
+    # The current stub just returns the input word, which acts as a placeholder for normalization
+    test_word = "TestWord"
+    result = mkk.segment(test_word)
+    assert result == test_word
 
-@pytest.fixture
-def separator_instance(dummy_dictionary, dummy_rules):
-    return Separator(dictionary=dummy_dictionary, rules=dummy_rules)
-
-def test_separator_init(separator_instance):
-    """Tes inisialisasi Separator."""
-    assert separator_instance is not None
-    assert separator_instance.dictionary is not None
-    assert separator_instance.rules is not None
-
-def test_separate_simple_word(separator_instance):
-    """Tes pemisahan kata sederhana yang tidak berimbuhan (placeholder)."""
-    word = "makan"
-    # Saat ini, implementasi placeholder mengembalikan kata asli
-    root, affixes = separator_instance.separate(word)
-    assert root == word
-    assert affixes == []
-
-# Test untuk prefiks
-def test_separate_with_prefix(separator_instance):
-    word = "memakan"
-    root, affixes = separator_instance.separate(word)
-    assert root == "makan"
-    assert affixes == ["me-"]
-
-# Test untuk sufiks
-def test_separate_with_suffix(separator_instance):
-    word = "makanan"
-    root, affixes = separator_instance.separate(word)
-    assert root == "makan"
-    assert affixes == ["-an"]
-
-# Test untuk konfiks
-@pytest.mark.xfail(reason="Fungsionalitas pemisahan konfiks belum diimplementasikan (Phase 2, Step 2.3)")
-def test_separate_with_confix(separator_instance):
-    word = "memperbaiki"
-    root, affixes = separator_instance.separate(word)
-    assert root == "baik"
-    assert sorted(affixes) == sorted(["me-", "-i"])
+    test_word_2 = "anotherword"
+    result_2 = mkk.segment(test_word_2)
+    assert result_2 == test_word_2

@@ -3,67 +3,81 @@
 Modul untuk memisahkan kata berimbuhan menjadi kata dasar dan afiksnya.
 """
 
-class Separator:
-    """
-    Kelas utama untuk proses pemisahan kata.
-    """
-    def __init__(self, dictionary=None, rules=None):
-        """
-        Inisialisasi Separator.
+# Assuming these classes/functions will be imported later
+# from .text_normalizer import TextNormalizer
+# from .dictionary_manager import RootWordDictionary
+# from .rule_repository import AffixRuleRepository
+# from .stemmer_interface import IndonesianStemmer
+# from .alignment_function import alignment_function # Placeholder
 
-        Args:
-            dictionary: Objek kamus kata dasar.
-            rules: Objek aturan morfologi.
+class ModernKataKupas:
+    """
+    Kelas utama untuk proses pemisahan kata berimbuhan.
+    """
+    def __init__(self):
         """
-        self.dictionary = dictionary
-        self.rules = rules
-        # Placeholder untuk logika inisialisasi lebih lanjut
+        Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
+        """
+        # Initialize dependencies (stubs for now)
+        # self.normalizer = TextNormalizer()
+        # self.dictionary = RootWordDictionary()
+        # self.rules = AffixRuleRepository()
+        # self.stemmer = IndonesianStemmer()
+        # self.aligner = alignment_function # Placeholder for the function/callable
+        
+        # Placeholder for initialized dependencies
+        self.normalizer = None # Replace with actual initialization
+        self.dictionary = None # Replace with actual initialization
+        self.rules = None # Replace with actual initialization
+        self.stemmer = None # Replace with actual initialization
+        self.aligner = None # Replace with actual initialization
 
-    def separate(self, word: str) -> tuple:
+    def segment(self, word: str) -> str:
         """
-        Memisahkan kata berimbuhan.
+        Memisahkan kata berimbuhan menjadi kata dasar dan afiksnya.
+        (Stub implementation)
 
         Args:
             word (str): Kata yang akan dipisahkan.
 
         Returns:
-            tuple: Berisi (kata_dasar, list_afiks_ditemukan) atau (kata_asli, []) jika tidak ada perubahan.
-                   Contoh: ("makan", ["me-", "-an"]) untuk "makanan"
-                           ("baca", ["mem-"]) untuk "membaca"
+            str: The normalized word (stub).
         """
-        # Implementasi awal untuk memeriksa kata dasar
-        if self.dictionary and self.dictionary.is_kata_dasar(word):
-            return word, []
-            
-        # Logika untuk memeriksa prefiks
-        prefixes = ["me-", "di-", "ter-", "ke-", "pe-", "se-"]
-        for prefix in prefixes:
-            if word.startswith(prefix[0:-1]):  # Hapus tanda '-' dari prefiks
-                possible_root = word[len(prefix)-1:]
-                if self.dictionary and self.dictionary.is_kata_dasar(possible_root):
-                    return possible_root, [prefix]
-        
-        # Logika untuk memeriksa sufiks
-        suffixes = ["-kan", "-i", "-an", "-nya"]
-        for suffix in suffixes:
-            if word.endswith(suffix[1:]):  # Hapus tanda '-' dari sufiks
-                possible_root = word[:-len(suffix)+1]
-                if self.dictionary and self.dictionary.is_kata_dasar(possible_root):
-                    return possible_root, [suffix]
-        
-        # Logika untuk memeriksa konfiks (prefiks + sufiks)
-        for prefix in prefixes:
-            for suffix in suffixes:
-                if word.startswith(prefix[0:-1]) and word.endswith(suffix[1:]):
-                    possible_root = word[len(prefix)-1:-len(suffix)+1]
-                    if self.dictionary and self.dictionary.contains(possible_root):
-                        return possible_root, [prefix, suffix]
-                    
-        # Jika tidak ditemukan afiks, kembalikan kata asli
-        return word, []
+        # Stub: Just return the input word for now
+        # In a real implementation, this would involve normalization, dictionary lookup, rule application, etc.
+        return word # Placeholder, should return normalized word later
 
-# Contoh penggunaan (bisa dihapus atau dikomentari nanti)
+    def _handle_reduplication(self, word: str) -> str:
+        """
+        Helper method to handle reduplication (stub).
+        """
+        pass # Stub implementation
+
+    def _strip_suffixes(self, word: str) -> str:
+        """
+        Helper method to strip suffixes (stub).
+        """
+        pass # Stub implementation
+
+    def _strip_prefixes(self, word: str) -> str:
+        """
+        Helper method to strip prefixes (stub).
+        """
+        pass # Stub implementation
+
+    def _apply_morphophonemic_segmentation_rules(self, word: str) -> str:
+        """
+        Helper method to apply morphophonemic segmentation rules (stub).
+        """
+        pass # Stub implementation
+
+# Example usage (can be removed or commented out later)
 if __name__ == '__main__':
-    sep = Separator()
-    result = sep.separate("mencoba")
-    print(f"Hasil separasi 'mencoba': {result}")
+    # Example usage will require initializing dependencies
+    # For now, just demonstrate instantiation
+    try:
+        mkk = ModernKataKupas()
+        print("ModernKataKupas class instantiated successfully.")
+        # print(f"Segmenting 'makanan': {mkk.segment('makanan')}") # This will work with the current stub
+    except Exception as e:
+        print(f"Error instantiating ModernKataKupas: {e}")
