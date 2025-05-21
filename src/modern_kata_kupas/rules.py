@@ -71,11 +71,12 @@ class MorphologicalRules:
                                         Jika None, aturan default mungkin akan dimuat 
                                         atau sistem akan menunggu aturan dimuat secara eksplisit.
         """
-        self.rules = {}
+        self.rules = {"prefixes": [], "suffixes": []}
         if rules_path:
             self.load_rules(rules_path)
         else:
             # Mungkin memuat aturan default bawaan atau membiarkannya kosong
+            self.rules["info"] = "Placeholder: MorphologicalRules initialized without specific rules file."
             print("Placeholder: MorphologicalRules initialized without specific rules file.")
 
     def load_rules(self, file_path: str):
@@ -116,8 +117,12 @@ class MorphologicalRules:
                     if not isinstance(loaded_rules[section], list):
                         raise ValueError(f"Bagian {section} harus berupa list")
                 
-                self.rules = loaded_rules
-                print(f"Berhasil memuat aturan dari {file_path}")
+                if not loaded_rules:  # Jika file JSON kosong {}
+                    self.rules["info"] = f"Rules loaded from {file_path} but file is empty (placeholder)"
+                    print(f"Berhasil memuat aturan dari {file_path} (file kosong)")
+                else:
+                    self.rules.update(loaded_rules)
+                    print(f"Berhasil memuat aturan dari {file_path}")
                 
         except json.JSONDecodeError as e:
             raise ValueError(f"File aturan bukan JSON yang valid: {e}")
