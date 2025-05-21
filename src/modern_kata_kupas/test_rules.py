@@ -4,7 +4,7 @@ Modul untuk pengujian unit aturan morfologi.
 """
 
 import unittest
-from .rules import Rule, RemoveSuffixRule
+from .rules import Rule, RemoveSuffixRule, MorphologicalRules
 
 class TestRule(unittest.TestCase):
     """
@@ -21,7 +21,7 @@ class TestRemoveSuffixRule(unittest.TestCase):
     """
     def test_remove_suffix(self):
         """Test penghapusan suffix yang valid."""
-        rule = RemoveSuffixRule(["-kan", "-i"])
+        rule = RemoveSuffixRule(["kan", "i"])
         self.assertEqual(rule.apply("mengatakan"), "mengata")
         self.assertEqual(rule.apply("mengulangi"), "mengulang")
     
@@ -29,6 +29,40 @@ class TestRemoveSuffixRule(unittest.TestCase):
         """Test ketika tidak ada suffix yang cocok."""
         rule = RemoveSuffixRule(["-kan", "-i"])
         self.assertEqual(rule.apply("membaca"), "membaca")
+
+class TestMorphologicalRules(unittest.TestCase):
+    """
+    Kelas untuk menguji MorphologicalRules.
+    """
+    
+    def test_load_rules(self):
+        """Test memuat aturan dari file JSON."""
+        import tempfile
+        import os
+        
+        # Buat file aturan dummy
+        rules_data = {
+            "prefixes": [{"form": "me-", "allomorphs": ["mem-", "men-"]}],
+            "suffixes": [{"form": "-kan"}],
+            "phonological": [{"pattern": "N-p", "replacement": "m-p"}]
+        }
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            import json
+            json.dump(rules_data, f)
+            temp_path = f.name
+        
+        try:
+            rules = MorphologicalRules(temp_path)
+            self.assertEqual(len(rules.get_prefix_rules()), 1)
+            self.assertEqual(len(rules.get_suffix_rules()), 1)
+        finally:
+            os.unlink(temp_path)
+    
+    def test_invalid_rules_file(self):
+        """Test handling file aturan yang tidak valid."""
+        with self.assertRaises(ValueError):
+            MorphologicalRules("file_tidak_ada.json")
 
 if __name__ == '__main__':
     unittest.main()

@@ -80,9 +80,8 @@ class MorphologicalRules:
 
     def load_rules(self, file_path: str):
         """
-        Memuat aturan dari file (misalnya JSON atau YAML).
-        Struktur aturan perlu didefinisikan dengan jelas.
-        Contoh:
+        Memuat aturan dari file JSON.
+        Struktur aturan harus mengikuti format:
         {
             "prefixes": [
                 {"form": "meng-", "removes": "k", "adds_if_next_vowel": "ng"},
@@ -92,30 +91,38 @@ class MorphologicalRules:
                 {"form": "-kan"},
                 {"form": "-i"}
             ],
-            "fonologis": [
+            "phonological": [
                 {"pattern": "N-p", "replacement": "m-p"}, # meN- + pukul -> memukul
                 {"pattern": "N-s", "replacement": "ny-s"} # meN- + sapu -> menyapu
             ]
         }
         """
-        # Placeholder untuk logika pemuatan aturan
-        # Ini akan melibatkan pembacaan file dan parsing kontennya
+        import json
+        from typing import Dict, List
+        
+        REQUIRED_SECTIONS = ['prefixes', 'suffixes']
+        
         try:
-            # Contoh jika menggunakan JSON
-            # import json
-            # with open(file_path, 'r') as f:
-            #     self.rules = json.load(f)
-            print(f"Placeholder: Loading rules from {file_path}")
-            # Untuk sekarang, set aturan dummy
-            self.rules = {
-                "info": f"Rules loaded from {file_path} (placeholder)",
-                "prefixes": [],
-                "suffixes": []
-            }
+            with open(file_path, 'r', encoding='utf-8') as f:
+                loaded_rules = json.load(f)
+                
+                # Validasi struktur dasar
+                if not isinstance(loaded_rules, dict):
+                    raise ValueError("File aturan harus berupa dictionary")
+                    
+                for section in REQUIRED_SECTIONS:
+                    if section not in loaded_rules:
+                        raise ValueError(f"Bagian {section} harus ada dalam file aturan")
+                    if not isinstance(loaded_rules[section], list):
+                        raise ValueError(f"Bagian {section} harus berupa list")
+                
+                self.rules = loaded_rules
+                print(f"Berhasil memuat aturan dari {file_path}")
+                
+        except json.JSONDecodeError as e:
+            raise ValueError(f"File aturan bukan JSON yang valid: {e}")
         except Exception as e:
-            print(f"Error loading rules from {file_path}: {e}")
-            # Mungkin melempar custom exception di sini
-            self.rules = {}
+            raise ValueError(f"Gagal memuat aturan dari {file_path}: {e}")
 
     def get_prefix_rules(self):
         """
