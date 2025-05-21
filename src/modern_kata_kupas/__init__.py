@@ -10,7 +10,7 @@ pemeliharaan, dan potensi perluasan.
 __version__ = "0.0.1"  # Versi awal
 
 # Impor kelas dan fungsi utama agar mudah diakses
-from .dictionary_manager import RootWordDictionary
+from .dictionary_manager import DictionaryManager
 from .separator import Separator
 from .reconstructor import Reconstructor
 from .rules import MorphologicalRules
