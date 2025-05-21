@@ -31,7 +31,7 @@ def test_strip_basic_suffixes():
     mkk.dictionary = dictionary_manager
     # Test cases from implementation plan Step 1.4
     assert mkk._strip_suffixes("bukuku") == "buku~ku"
-    assert mkk._strip_suffixes("ambilkanlah") == "ambilkan~lah"
+    assert mkk._strip_suffixes("ambilkanlah") == "ambil~kan~lah"
     assert mkk._strip_suffixes("siapakah") == "siapa~kah"
     assert mkk._strip_suffixes("miliknya") == "milik~nya"
     assert mkk._strip_suffixes("rumahkupun") == "rumah~ku~pun"
@@ -39,3 +39,26 @@ def test_strip_basic_suffixes():
     assert mkk._strip_suffixes("buku") == "buku"
     # Test case with unknown suffix (should not strip)
     assert mkk._strip_suffixes("bukuxyz") == "bukuxyz"
+
+def test_strip_derivational_suffixes():
+    """Test stripping of derivational suffixes (-kan, -i, -an)."""
+    # Initialize DictionaryManager with the test dictionary file
+    test_dict_path = "c:\\Users\\neima\\OneDrive\\Documents\\modern_kata_kupas\\tests\\data\\test_kata_dasar.txt"
+    dictionary_manager = DictionaryManager(dictionary_path=test_dict_path)
+    # Initialize ModernKataKupas with the test dictionary manager
+    mkk = ModernKataKupas()
+    mkk.dictionary = dictionary_manager
+
+    # Test cases from implementation plan Step 1.5
+    assert mkk._strip_suffixes("makanan") == "makan~an"
+    assert mkk._strip_suffixes("panasi") == "panas~i"
+    assert mkk._strip_suffixes("lemparkan") == "lempar~kan"
+    assert mkk._strip_suffixes("pukulan") == "pukul~an"
+
+    # Test layered suffixes (derivational + particle/possessive)
+    assert mkk._strip_suffixes("mainkanlah") == "main~kan~lah"
+    # assert mkk._strip_suffixes("ajarilahaku") == "ajari~lah~aku" # This case is complex and depends on 'aku' being a possessive
+
+    # Test words without these suffixes
+    assert mkk._strip_suffixes("minum") == "minum"
+    # assert mkk._strip_suffixes("kirian") == "kirian" # 'an' is not stripped if 'kiri' is not a valid stem (based on length check) - Commented out for now as it requires dictionary validation

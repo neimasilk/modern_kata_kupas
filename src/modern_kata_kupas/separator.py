@@ -74,7 +74,7 @@ class ModernKataKupas:
                 potential_root = current_word[:-len(particle)]
                 # Strip the particle if found, regardless of whether the potential root is a valid root word
                 current_word = potential_root
-                stripped_suffixes.append(particle)
+                stripped_suffixes.insert(0, particle) # Changed to insert(0, ...) for correct output order
                 break # Assuming only one particle can be attached at the end
 
         # 2. Strip possessives (-ku, -mu, -nya)
@@ -86,12 +86,30 @@ class ModernKataKupas:
                 if len(potential_root) >= MIN_STEM_LENGTH_FOR_POSSESSIVE:
                     # Strip the possessive if found, regardless of whether the potential root is a valid root word
                     current_word = potential_root
-                    stripped_suffixes.append(possessive)
+                    stripped_suffixes.insert(0, possessive) # Changed to insert(0, ...) for correct output order
                     break # Assuming only one possessive can be attached at the end
+
+        # 3. Strip derivational suffixes (-kan, -i, -an)
+        derivational_suffixes = ['kan', 'i', 'an'] # Perhatikan 'i' bisa ambigu dengan akhir kata dasar
+        # temp_word_before_derivational = current_word # Simpan keadaan sebelum strip derivational - not needed for this logic
+
+        MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING = 2 # Define constant here or at class level
+
+        for deriv_suffix in derivational_suffixes:
+            if current_word.endswith(deriv_suffix):
+                potential_root = current_word[:-len(deriv_suffix)]
+                # Tambahkan logika pengecekan jika diperlukan, misal panjang minimal,
+                # atau apakah potential_root ada di kamus (mungkin untuk tahap selanjutnya)
+                # Untuk saat ini, kita bisa fokus pada penghilangan jika cocok
+                if len(potential_root) >= MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING:
+                     current_word = potential_root
+                     stripped_suffixes.insert(0, deriv_suffix) # Keep as insert(0, ...) for correct output order
+                     # print(f"Stripped derivational: {deriv_suffix}, current_word: {current_word}, stripped: {stripped_suffixes}")
+                     break # Asumsi hanya satu sufiks derivasional utama yang dihilangkan dalam satu iterasi ini
 
         # Reconstruct the word with stripped suffixes marked (e.g., word~suffix1~suffix2)
         if stripped_suffixes:
-            return current_word + '~' + '~'.join(reversed(stripped_suffixes))
+            return current_word + '~' + '~'.join(stripped_suffixes) # Removed reversed() to maintain insertion order
         else:
             return current_word
 
