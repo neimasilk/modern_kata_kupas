@@ -385,15 +385,21 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                                     return word[2:], ['ke']
                             if current_word.startswith('ke') and len(current_word) > 2:
                                 # Kasus khusus untuk kata 'tua' dan 'sekolah'
-                                if current_word[2:] == 'tua' or current_word[2:] == 'sekolah':
+                                if current_word[2:] == 'tua' and self.dictionary.is_kata_dasar('tua'):
+                                    print("[[DEBUG_IF_ENTERED]] Stripping 'ke' from '" + current_word + "' NOW.")
+                                    return current_word[2:], ['ke']
+                                elif current_word[2:] == 'sekolah' and self.dictionary.is_kata_dasar('sekolah'):
+                                    print("[[DEBUG_IF_ENTERED]] Stripping 'ke' from '" + current_word + "' NOW.")
                                     return current_word[2:], ['ke']
                             elif canonical_prefix == 'ke' and remainder in ['tua', 'sekolah']:
                                 # Pengecualian khusus untuk kata 'tua' dan 'sekolah'
                                 if remainder == 'tua' and self.dictionary.is_kata_dasar('tua'):
+                                    print("[[DEBUG_IF_ENTERED]] Stripping 'ke' from '" + current_word + "' NOW.")
                                     stripped_prefixes_output.append(canonical_prefix)
                                     current_word = remainder
                                     return current_word, stripped_prefixes_output
                                 elif remainder == 'sekolah' and self.dictionary.is_kata_dasar('sekolah'):
+                                    print("[[DEBUG_IF_ENTERED]] Stripping 'ke' from '" + current_word + "' NOW.")
                                     stripped_prefixes_output.append(canonical_prefix)
                                     current_word = remainder
                                     return current_word, stripped_prefixes_output
@@ -416,7 +422,21 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                 if simple_prefix_form and current_word.startswith(simple_prefix_form):
                     potential_root_after_simple_strip = current_word[len(simple_prefix_form):]
 
-                    if not potential_root_after_simple_strip: # Hindari sisa string kosong
+                    # --- BEGIN DETAILED DEBUG FOR SIMPLE PREFIX CONDITION ---
+                    if original_word_for_prefix_stripping in ["ketua", "kesekolah"]: # Fokus pada kasus bermasalah
+                        is_potential_root_in_dict = self.dictionary.is_kata_dasar(potential_root_after_simple_strip)
+                        stem_of_potential_root = self.stemmer.get_root_word(potential_root_after_simple_strip)
+                        is_potential_root_a_true_base = (stem_of_potential_root == potential_root_after_simple_strip)
+
+                        print(f"[PREFIX_COND_DEBUG] Word: '{original_word_for_prefix_stripping}', Prefix: '{simple_prefix_form}'")
+                        print(f"[PREFIX_COND_DEBUG]   Potential Root: '{potential_root_after_simple_strip}'")
+                        print(f"[PREFIX_COND_DEBUG]   Is Potential Root in Dict? : {is_potential_root_in_dict}")
+                        print(f"[PREFIX_COND_DEBUG]   Stem of Potential Root     : '{stem_of_potential_root}'")
+                        print(f"[PREFIX_COND_DEBUG]   Is Potential Root a True Base? : {is_potential_root_a_true_base}")
+                        print(f"[PREFIX_COND_DEBUG]   Condition Check: ({is_potential_root_in_dict} AND {is_potential_root_a_true_base})")
+                    # --- END DETAILED DEBUG FOR SIMPLE PREFIX CONDITION ---
+
+                    if not potential_root_after_simple_strip:
                         continue
 
                     # root_from_stemmer adalah stem dari kata input asli ke _strip_prefixes
