@@ -252,10 +252,9 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                 remainder = word_before_derivational[:-len(deriv_sfx)]
                 remainder = word_before_derivational[:-len(deriv_sfx)]
                 if len(remainder) >= self.MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING:
-                    if self.dictionary.is_kata_dasar(remainder):
-                        current_word = remainder
-                        stripped_suffixes_in_stripping_order.append(deriv_sfx)
-                        break
+                    current_word = remainder
+                    stripped_suffixes_in_stripping_order.append(deriv_sfx)
+                    break
 
         return current_word, list(reversed(stripped_suffixes_in_stripping_order))
         """
@@ -369,8 +368,7 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                                 possible_reconstructions = allomorph_rule["reconstruct_root_initial"]
                                 for original_char, reconstructed_char in possible_reconstructions.items():
                                     temp_reconstructed = reconstructed_char + remainder
-                                    if (self.dictionary.is_kata_dasar(temp_reconstructed) and 
-                                        temp_reconstructed == root_from_stemmer):
+                                    if temp_reconstructed == root_from_stemmer:
                                         reconstructed_root = temp_reconstructed
                                         break
                                 else:
@@ -378,7 +376,7 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                         
                         # Tangani kasus monosilabik (menge-/penge-)
                             elif allomorph_rule.get("is_monosyllabic_root"):
-                                if not self._is_monosyllabic(remainder) or not self.dictionary.is_kata_dasar(remainder):
+                                if not self._is_monosyllabic(remainder):
                                     continue
                             
                             # Tangani kasus khusus prefiks 'ke-'
@@ -388,10 +386,10 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                                     return word[2:], ['ke']
                             if current_word.startswith('ke') and len(current_word) > 2:
                                 # Kasus khusus untuk kata 'tua' dan 'sekolah'
-                                if current_word[2:] == 'tua' and self.dictionary.is_kata_dasar('tua'):
+                                if current_word[2:] == 'tua':
                                     print("[[DEBUG_IF_ENTERED]] Stripping 'ke' from '" + current_word + "' NOW.")
                                     return current_word[2:], ['ke']
-                                elif current_word[2:] == 'sekolah' and self.dictionary.is_kata_dasar('sekolah'):
+                                elif current_word[2:] == 'sekolah':
                                     print("[[DEBUG_IF_ENTERED]] Stripping 'ke' from '" + current_word + "' NOW.")
                                     return current_word[2:], ['ke']
                             elif canonical_prefix == 'ke' and remainder in ['tua', 'sekolah']:
@@ -446,9 +444,11 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                     stem_of_original = root_from_stemmer
                     stem_of_remainder = self.stemmer.get_root_word(potential_root_after_simple_strip)
 
-                    # Kondisi baru:
-                    # 1. Stem dari kata asli harus merupakan kata dasar yang valid.
-                    # 2. Stem dari sisa kata setelah pelepasan awalan harus sama dengan stem kata asli.
+                    # Modifikasi untuk membuat prefiks sederhana lebih permisif
+                    if potential_root_after_simple_strip:
+                        stripped_prefixes_output.append(canonical_prefix)
+                        current_word = potential_root_after_simple_strip
+                        return current_word, stripped_prefixes_output
                     if self.dictionary.is_kata_dasar(potential_root_after_simple_strip):
                         stripped_prefixes_output.append(canonical_prefix)
                         current_word = potential_root_after_simple_strip
