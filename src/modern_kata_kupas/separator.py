@@ -247,12 +247,15 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         derivational_suffixes = ['kan', 'i', 'an']
         word_before_derivational = current_word
         for deriv_sfx in derivational_suffixes:
-            if word_before_derivational.endswith(deriv_sfx):
+            if word_before_derivational.endswith(deriv_sfx) and \
+               len(word_before_derivational[:-len(deriv_sfx)]) >= self.MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING:
+                remainder = word_before_derivational[:-len(deriv_sfx)]
                 remainder = word_before_derivational[:-len(deriv_sfx)]
                 if len(remainder) >= self.MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING:
-                    current_word = remainder
-                    stripped_suffixes_in_stripping_order.append(deriv_sfx)
-                    break
+                    if self.dictionary.is_kata_dasar(remainder):
+                        current_word = remainder
+                        stripped_suffixes_in_stripping_order.append(deriv_sfx)
+                        break
 
         return current_word, list(reversed(stripped_suffixes_in_stripping_order))
         """
