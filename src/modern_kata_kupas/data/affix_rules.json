@@ -1,0 +1,20 @@
+{
+  "prefixes": [
+    {
+      "form": "di",
+      "canonical": "di",
+      "type": "prefix_derivational"
+    },
+    {
+      "form": "ke",
+      "canonical": "ke",
+      "type": "prefix_derivational"
+    },
+    {
+      "form": "se",
+      "canonical": "se",
+      "type": "prefix_derivational"
+    }
+  ],
+  "suffixes": []
+}

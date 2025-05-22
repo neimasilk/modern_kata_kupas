@@ -284,32 +284,24 @@ class ModernKataKupas:
         # For test output expecting order like ['kan', 'lah'], we need to reverse it.
         return current_word, list(reversed(stripped_suffixes_in_stripping_order))
 
-    def _strip_prefixes(self, word: str) -> str:
-        """
-        Helper method to strip basic prefixes (-di, -ke, -se).
+    def _strip_prefixes(self, word: str) -> tuple[str, list[str]]:
+        current_word = str(word)
+        stripped_prefixes_output = []
 
-        Args:
-            word (str): The word to strip prefixes from.
+        prefix_rules = self.rules.get_prefix_rules()
 
-        Returns:
-            str: The word after stripping prefixes.
-        """
-        current_word = word
-        stripped_prefixes = []
+        for rule in prefix_rules:
+            prefix_form = rule.get("form")
+            canonical_form = rule.get("canonical", prefix_form)
 
-        # Basic prefixes to check (-di, -ke, -se)
-        basic_prefixes = ['di', 'ke', 'se']
-        
-        for prefix in basic_prefixes:
-            if current_word.startswith(prefix):
-                potential_root = current_word[len(prefix):]
-                # Strip the prefix if found
+            if prefix_form and current_word.startswith(prefix_form):
+                potential_root = current_word[len(prefix_form):]
+                
                 current_word = potential_root
-                stripped_prefixes.append(prefix)
-                break # Only one basic prefix at the beginning
+                stripped_prefixes_output.append(canonical_form)
+                break
 
-        # Return the remaining word and the list of stripped prefixes
-        return current_word, stripped_prefixes
+        return current_word, stripped_prefixes_output
 
     def _apply_morphophonemic_segmentation_rules(self, word: str) -> str:
         """
