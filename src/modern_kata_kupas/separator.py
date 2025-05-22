@@ -196,9 +196,86 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         """
         pass # Stub implementation
 
+    def _strip_prefixes(self, word: str) -> tuple[str, list[str]]:
+        current_word = str(word)
+        prefixes = []
+        # Prefiks dasar
+        basic_prefixes = ["di", "ke", "se"]
+        for pref in basic_prefixes:
+            if current_word.startswith(pref):
+                stem_candidate = current_word[len(pref):]
+                if len(stem_candidate) >= 2 and (not self.dictionary.is_kata_dasar(current_word) or pref == "se"):
+                    prefixes.append(pref)
+                    current_word = stem_candidate
+                    break
+        # Prefiks kompleks meN- dan peN-
+        men_pen_patterns = [
+            ("meng", "kghq"),
+            ("meny", "s"),
+            ("men", "cdjtz"),
+            ("mem", "bfv"),
+            ("me", "lmnrywaeiou"),
+            ("peng", "kghq"),
+            ("peny", "s"),
+            ("pen", "cdjtz"),
+            ("pem", "bfv"),
+            ("pe", "lmnrywaeiou")
+        ]
+        for pref, after in men_pen_patterns:
+            if current_word.startswith(pref):
+                sisa = current_word[len(pref):]
+                if sisa:
+                    # Cek peluluhan konsonan
+                    if pref in ["meng", "peng"] and sisa and sisa[0] == "k":
+                        stem_candidate = sisa[1:]
+                    elif pref in ["meny", "peny"] and sisa and sisa[0] == "s":
+                        stem_candidate = sisa[1:]
+                    elif pref in ["men", "pen"] and sisa and sisa[0] in "cdjtz":
+                        stem_candidate = sisa
+                    elif pref in ["mem", "pem"] and sisa and sisa[0] in "bfv":
+                        stem_candidate = sisa
+                    elif pref in ["me", "pe"] and sisa and sisa[0] in "lmnrywaeiou":
+                        stem_candidate = sisa
+                    else:
+                        stem_candidate = sisa
+                    # Validasi kata dasar
+                    if self.dictionary.is_kata_dasar(stem_candidate):
+                        if pref.startswith("me"):
+                            prefixes.append("meN")
+                        else:
+                            prefixes.append("peN")
+                        current_word = stem_candidate
+                        break
+        return current_word, prefixes
+
     def _strip_suffixes(self, word: str) -> tuple[str, list[str]]:
-        current_word = str(word) # Pastikan bekerja dengan string
-        stripped_suffixes_in_stripping_order = []
+        current_word = str(word)
+        suffixes = []
+        # Daftar sufiks berurutan dari yang terpanjang
+        suffix_patterns = ["kan", "an", "i", "lah", "kah", "pun", "ku", "mu", "nya"]
+        while True:
+            found = False
+            for suf in suffix_patterns:
+                if current_word.endswith(suf):
+                    stem_candidate = current_word[:-len(suf)]
+                    # Validasi panjang stem minimal
+                    if len(stem_candidate) < 2:
+                        continue
+                    # Untuk sufiks derivatif, cek panjang minimal
+                    if suf in ["kan", "an", "i"] and len(stem_candidate) < 3:
+                        continue
+                    # Untuk sufiks posesif/partikel, cek panjang minimal
+                    if suf in ["ku", "mu", "nya", "lah", "kah", "pun"] and len(stem_candidate) < 2:
+                        continue
+                    # Validasi kata dasar: hanya strip jika hasilnya ada di dictionary ATAU jika belum ada suffix yang di-strip (agar layered stripping tetap berjalan)
+                    if self.dictionary.is_kata_dasar(stem_candidate) or (not suffixes and self.dictionary.is_kata_dasar(current_word)):
+                        suffixes.append(suf)
+                        current_word = stem_candidate
+                        found = True
+                        break
+            if not found:
+                break
+        return current_word, suffixes[::-1]
 
         # Partikel: -kah, -lah, -pun
         particles = ['kah', 'lah', 'pun']

@@ -132,3 +132,25 @@ def test_strip_combined_affixes():
     assert mkk.segment("buku") == "buku"
     assert mkk.segment("baca") == "baca"
     assert mkk.segment("minum") == "minum"
+
+
+def test_strip_men_peN_prefixes_step21():
+    """Test kasus Step 2.1: prefiks kompleks meN- dan peN- (alokasi alomorf dan peluluhan)."""
+    import os
+    from src.modern_kata_kupas.dictionary_manager import DictionaryManager
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    test_dict_path = os.path.join(current_dir, "data", "test_kata_dasar.txt")
+    dictionary_manager = DictionaryManager(dictionary_path=test_dict_path)
+    mkk = ModernKataKupas()
+    mkk.dictionary = dictionary_manager
+    # Kasus meN-
+    assert mkk.segment("membaca") == "meN~baca"
+    assert mkk.segment("memukul") == "meN~pukul"
+    assert mkk.segment("menulis") == "meN~tulis"
+    assert mkk.segment("menyapu") == "meN~sapu"
+    assert mkk.segment("mengambil") == "meN~ambil"
+    assert mkk.segment("mengupas") == "meN~kupas"
+    assert mkk.segment("mengebom") == "meN~bom"
+    # Kasus peN-
+    assert mkk.segment("pemukul") == "peN~pukul"
+    assert mkk.segment("pengirim") == "peN~kirim"
