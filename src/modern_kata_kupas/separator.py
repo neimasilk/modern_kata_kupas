@@ -15,8 +15,8 @@ class ModernKataKupas:
     """
     Kelas utama untuk proses pemisahan kata berimbuhan.
     """
-    MIN_STEM_LENGTH_FOR_POSSESSIVE = 2 # Define minimum stem length for possessive stripping
-    MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING = 3 # Define minimum stem length for derivational suffix stripping
+    MIN_STEM_LENGTH_FOR_POSSESSIVE = 3 # Define minimum stem length for possessive stripping
+    MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING = 4 # Define minimum stem length for derivational suffix stripping
     def __init__(self):
         """
         Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
@@ -37,41 +37,66 @@ class ModernKataKupas:
 
     def segment(self, word: str) -> str:
         normalized_word = self.normalizer.normalize_word(word)
+        if word == "dimakanlah" or word == "kesekolah": # Kondisi debug sementara
+            print(f"DEBUG: segment() called with '{word}'")
 
-        # Langkah 1: Coba lepaskan prefiks terlebih dahulu
+        # Strategi 1: Prefiks dulu, baru sufiks
         stem_after_prefixes, stripped_prefix_list = self._strip_prefixes(normalized_word)
+        if word == "dimakanlah" or word == "kesekolah":
+            print(f"DEBUG_STRAT1: stem_after_prefixes='{stem_after_prefixes}', stripped_prefix_list={stripped_prefix_list}")
 
-        # Langkah 2: Coba lepaskan sufiks dari hasil pelepasan prefiks
         final_stem, stripped_suffix_list = self._strip_suffixes(stem_after_prefixes)
+        if word == "dimakanlah" or word == "kesekolah":
+            print(f"DEBUG_STRAT1: final_stem='{final_stem}', stripped_suffix_list={stripped_suffix_list}")
+            print(f"DEBUG_STRAT1: Checking dictionary for '{final_stem}'...")
+            print(f"DEBUG_KS: Is '{final_stem}' in mkk.dictionary.kata_dasar_set? { final_stem in self.dictionary.kata_dasar_set }")
 
-        # Langkah 3: Validasi
-        # Hanya gabungkan jika final_stem adalah kata dasar yang valid
-        if self.dictionary.is_kata_dasar(final_stem):
+        is_strat1_valid_root = self.dictionary.is_kata_dasar(final_stem)
+        if word == "dimakanlah" or word == "kesekolah":
+            print(f"DEBUG_STRAT1: is_kata_dasar('{final_stem}') is {is_strat1_valid_root}")
+
+        if is_strat1_valid_root:
             parts = []
-            if stripped_prefix_list:
+            if stripped_prefix_list: 
                 parts.extend(stripped_prefix_list)
             parts.append(final_stem)
-            if stripped_suffix_list:
+            if stripped_suffix_list: 
                 parts.extend(stripped_suffix_list)
-
+            
             if not stripped_prefix_list and not stripped_suffix_list:
-                return final_stem
+                return final_stem 
             return '~'.join(parts)
         else:
-            # Coba alternatif: lepaskan sufiks dulu baru prefiks
+            if word == "dimakanlah" or word == "kesekolah":
+                print(f"DEBUG: Strat1 failed for '{final_stem}'. Trying Strat2.")
+            # Strategi 2: Sufiks dulu, baru prefiks (Fallback)
             stem_after_suffixes, stripped_suffix_list = self._strip_suffixes(normalized_word)
+            if word == "dimakanlah":
+                print(f"DEBUG_STRAT2: stem_after_suffixes='{stem_after_suffixes}', stripped_suffix_list={stripped_suffix_list}")
+
             final_stem, stripped_prefix_list = self._strip_prefixes(stem_after_suffixes)
+            if word == "dimakanlah":
+                print(f"DEBUG_STRAT2: final_stem='{final_stem}', stripped_prefix_list={stripped_prefix_list}")
+                print(f"DEBUG_STRAT2: Checking dictionary for '{final_stem}'...")
             
-            if self.dictionary.is_kata_dasar(final_stem):
+            is_strat2_valid_root = self.dictionary.is_kata_dasar(final_stem)
+            if word == "dimakanlah":
+                 print(f"DEBUG_STRAT2: is_kata_dasar('{final_stem}') is {is_strat2_valid_root}")
+
+            if is_strat2_valid_root:
                 parts = []
                 if stripped_prefix_list:
                     parts.extend(stripped_prefix_list)
                 parts.append(final_stem)
                 if stripped_suffix_list:
                     parts.extend(stripped_suffix_list)
+                
+                if not stripped_prefix_list and not stripped_suffix_list:
+                     return final_stem
                 return '~'.join(parts)
             
-            # Jika kedua pendekatan gagal, kembalikan kata yang dinormalisasi
+            if word == "dimakanlah" or word == "kesekolah":
+                print(f"DEBUG: Both strats failed. Fallback for '{normalized_word}'.")
             if self.dictionary.is_kata_dasar(normalized_word):
                 return normalized_word
             return normalized_word

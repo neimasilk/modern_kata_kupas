@@ -1,5 +1,6 @@
 # tests/test_separator.py
 
+import os
 import pytest
 from src.modern_kata_kupas.separator import ModernKataKupas
 
@@ -24,7 +25,8 @@ from src.modern_kata_kupas.dictionary_manager import DictionaryManager
 def test_strip_basic_suffixes():
     """Test stripping of basic suffixes (particles and possessives)."""
     # Initialize DictionaryManager with the test dictionary file
-    test_dict_path = "c:\\Users\\neima\\OneDrive\\Documents\\modern_kata_kupas\\tests\\data\\test_kata_dasar.txt"
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    test_dict_path = os.path.join(current_dir, "data", "test_kata_dasar.txt")
     dictionary_manager = DictionaryManager(dictionary_path=test_dict_path)
     # Initialize ModernKataKupas with the test dictionary manager
     mkk = ModernKataKupas()
@@ -43,7 +45,8 @@ def test_strip_basic_suffixes():
 def test_strip_derivational_suffixes():
     """Test stripping of derivational suffixes (-kan, -i, -an)."""
     # Initialize DictionaryManager with the test dictionary file
-    test_dict_path = "c:\\Users\\neima\\OneDrive\\Documents\\modern_kata_kupas\\tests\\data\\test_kata_dasar.txt"
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    test_dict_path = os.path.join(current_dir, "data", "test_kata_dasar.txt")
     dictionary_manager = DictionaryManager(dictionary_path=test_dict_path)
     # Initialize ModernKataKupas with the test dictionary manager
     mkk = ModernKataKupas()
@@ -66,7 +69,8 @@ def test_strip_derivational_suffixes():
 def test_strip_basic_prefixes():
     """Test stripping of basic prefixes (-di, -ke, -se)."""
     # Initialize DictionaryManager with the test dictionary file
-    test_dict_path = "c:\\Users\\neima\\OneDrive\\Documents\\modern_kata_kupas\\tests\\data\\test_kata_dasar.txt"
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    test_dict_path = os.path.join(current_dir, "data", "test_kata_dasar.txt")
     dictionary_manager = DictionaryManager(dictionary_path=test_dict_path)
     # Initialize ModernKataKupas with the test dictionary manager
     mkk = ModernKataKupas()
@@ -88,7 +92,8 @@ def test_strip_basic_prefixes():
 def test_strip_combined_affixes():
     """Test stripping of combined prefixes and suffixes using segment()."""
     # Initialize DictionaryManager with the test dictionary file
-    test_dict_path = "c:\\Users\\neima\\OneDrive\\Documents\\modern_kata_kupas\\tests\\data\\test_kata_dasar.txt"
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    test_dict_path = os.path.join(current_dir, "data", "test_kata_dasar.txt")
     dictionary_manager = DictionaryManager(dictionary_path=test_dict_path)
     # Initialize ModernKataKupas with the test dictionary manager
     mkk = ModernKataKupas()
