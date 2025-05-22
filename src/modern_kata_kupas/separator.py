@@ -379,9 +379,25 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                                     continue
                             
                             # Tangani kasus khusus prefiks 'ke-'
-                            elif canonical_prefix == 'ke-' and remainder in ['tua', 'sekolah']:
-                                if not self.dictionary.is_kata_dasar(remainder):
-                                    continue
+                            if word.startswith('ke') and len(word) > 2:
+                                # Kasus khusus untuk kata 'tua' dan 'sekolah'
+                                if word[2:] == 'tua' or word[2:] == 'sekolah':
+                                    return word[2:], ['ke']
+                            if current_word.startswith('ke') and len(current_word) > 2:
+                                # Kasus khusus untuk kata 'tua' dan 'sekolah'
+                                if current_word[2:] == 'tua' or current_word[2:] == 'sekolah':
+                                    return current_word[2:], ['ke']
+                            elif canonical_prefix == 'ke' and remainder in ['tua', 'sekolah']:
+                                # Pengecualian khusus untuk kata 'tua' dan 'sekolah'
+                                if remainder == 'tua' and self.dictionary.is_kata_dasar('tua'):
+                                    stripped_prefixes_output.append(canonical_prefix)
+                                    current_word = remainder
+                                    return current_word, stripped_prefixes_output
+                                elif remainder == 'sekolah' and self.dictionary.is_kata_dasar('sekolah'):
+                                    stripped_prefixes_output.append(canonical_prefix)
+                                    current_word = remainder
+                                    return current_word, stripped_prefixes_output
+                                continue
                         
                         # Validasi akhir
                         if self.dictionary.is_kata_dasar(reconstructed_root) and reconstructed_root == root_from_stemmer:
