@@ -446,8 +446,7 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                     # Kondisi baru:
                     # 1. Stem dari kata asli harus merupakan kata dasar yang valid.
                     # 2. Stem dari sisa kata setelah pelepasan awalan harus sama dengan stem kata asli.
-                    if self.dictionary.is_kata_dasar(stem_of_original) and \
-                       stem_of_remainder == stem_of_original:
+                    if self.dictionary.is_kata_dasar(potential_root_after_simple_strip):
                         stripped_prefixes_output.append(canonical_prefix)
                         current_word = potential_root_after_simple_strip
                         # Setelah menemukan dan melepaskan awalan sederhana yang valid,
