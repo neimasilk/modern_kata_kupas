@@ -114,6 +114,72 @@
           "elision": false
         }
       ]
+    },
+    {
+      "canonical": "ber",
+      "type": "prefix_derivational_complex",
+      "allomorphs": [
+        {
+          "surface": "bel",
+          "next_char_is": ["a"],
+          "reconstruct_root_initial": null,
+          "elision": true
+        },
+        {
+          "surface": "be",
+          "next_char_is": ["k"],
+          "reconstruct_root_initial": null,
+          "elision": true
+        },
+        {
+          "surface": "ber",
+          "next_char_is": ["b", "c", "d", "e", "f", "g", "h", "i", "j", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "ng", "ny"],
+          "reconstruct_root_initial": null,
+          "elision": false
+        }
+      ]
+    },
+    {
+      "canonical": "ter",
+      "type": "prefix_derivational_complex",
+      "allomorphs": [
+        {
+          "surface": "tel",
+          "next_char_is": ["a"],
+          "reconstruct_root_initial": null,
+          "elision": true
+        },
+        {
+          "surface": "ter",
+          "next_char_is": ["b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "ng", "ny"],
+          "reconstruct_root_initial": null,
+          "elision": false
+        }
+      ]
+    },
+    {
+      "canonical": "per",
+      "type": "prefix_derivational_complex",
+      "allomorphs": [
+        {
+          "surface": "pel",
+          "next_char_is": ["a"],
+          "reconstruct_root_initial": null,
+          "elision": true
+        },
+        {
+          "surface": "pe",
+          "next_char_is": ["t"],
+          "reconstruct_root_initial": null,
+          "elision": true
+        },
+        {
+          "surface": "per",
+          "next_char_is": ["b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "u", "v", "w", "x", "y", "z", "ng", "ny"],
+          "reconstruct_root_initial": null,
+          "elision": false
+        }
+      ]
     }
   ],
   "suffixes": []
