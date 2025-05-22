@@ -2,6 +2,7 @@
 """
 Modul untuk memisahkan kata berimbuhan menjadi kata dasar dan afiksnya.
 """
+import re
 
 from .normalizer import TextNormalizer
 from .dictionary_manager import DictionaryManager
@@ -54,66 +55,155 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                     self.rules = MorphologicalRules()
 
     def segment(self, word: str) -> str:
-        """Memisahkan kata berimbuhan menjadi kata dasar dan afiksnya.
-
-        Args:
-            word (str): Kata yang akan dipisahkan.
-
-        Returns:
-            str: Kata setelah proses segmentasi dalam format prefiks~kata_dasar~sufiks.
+        """
+        Memisahkan kata berimbuhan menjadi kata dasar dan afiksnya,
+        termasuk menangani reduplikasi.
         """
         # 1. Normalisasi kata
         normalized_word = self.normalizer.normalize_word(word)
-        
-        # Jika kata sudah merupakan kata dasar, langsung kembalikan
+        if not normalized_word: # Handle empty string after normalization
+            return ""
+
+        # 2. Jika kata sudah merupakan kata dasar, langsung kembalikan
         if self.dictionary.is_kata_dasar(normalized_word):
             return normalized_word
-        
-        # Strategi 1: Prefiks dulu, baru sufiks
-        stem_after_prefixes, stripped_prefix_list = self._strip_prefixes(normalized_word)
-        final_stem_strat1, stripped_suffix_list_strat1 = self._strip_suffixes(stem_after_prefixes)
-        is_strat1_valid_root = self.dictionary.is_kata_dasar(final_stem_strat1)
-        
-        # Strategi 2: Sufiks dulu, baru prefiks
-        stem_after_suffixes, stripped_suffix_list_strat2 = self._strip_suffixes(normalized_word)
-        final_stem_strat2, stripped_prefix_list_strat2 = self._strip_prefixes(stem_after_suffixes)
-        is_strat2_valid_root = self.dictionary.is_kata_dasar(final_stem_strat2)
-        
-        # Pilih strategi yang menghasilkan kata dasar valid
-        if is_strat1_valid_root:
-            # Gunakan hasil dari Strategi 1
-            parts = []
-            if stripped_prefix_list:
-                parts.extend(stripped_prefix_list)
-            parts.append(final_stem_strat1)
-            if stripped_suffix_list_strat1:
-                parts.extend(stripped_suffix_list_strat1)
-            
-            if not stripped_prefix_list and not stripped_suffix_list_strat1:
-                return final_stem_strat1
-            return '~'.join(parts)
-            
-        elif is_strat2_valid_root:
-            # Gunakan hasil dari Strategi 2
-            parts = []
-            if stripped_prefix_list_strat2:
-                parts.extend(stripped_prefix_list_strat2)
-            parts.append(final_stem_strat2)
-            if stripped_suffix_list_strat2:
-                parts.extend(stripped_suffix_list_strat2)
-            
-            if not stripped_prefix_list_strat2 and not stripped_suffix_list_strat2:
-                return final_stem_strat2
-            return '~'.join(parts)
-        
-        # Jika kedua strategi gagal, kembalikan kata yang sudah dinormalisasi
-        return normalized_word
 
-    def _handle_reduplication(self, word: str) -> str:
+        # 3. Initial Suffix Stripping (primarily for particles like -lah, -kah, -pun
+        #    that might be outside the core reduplication pattern or main derivational affixes)
+        word_after_initial_suffixes, initial_suffixes = self._strip_suffixes(normalized_word)
+        
+        # 4. Handle Reduplication
+        #    word_to_process is the base part (e.g., "mobil" from "mobil-mobilan", "main" from "bermain-main")
+        #    direct_redup_suffixes are those like "-an" in "X-Xan" (e.g. "mobil-mobilan" -> direct_redup_suffixes = ["an"])
+        word_to_process, redup_marker, direct_redup_suffixes = self._handle_reduplication(word_after_initial_suffixes)
+
+        # 5. Affix Stripping Strategies on word_to_process
+        # Strategy 1: Prefixes then Suffixes on word_to_process
+        stem_after_prefixes_s1, prefixes_s1 = self._strip_prefixes(word_to_process)
+        final_stem_s1, suffixes_s1_from_base = self._strip_suffixes(stem_after_prefixes_s1)
+        is_s1_valid_root = self.dictionary.is_kata_dasar(final_stem_s1)
+
+        # Strategy 2: Suffixes then Prefixes on word_to_process
+        stem_after_suffixes_s2, suffixes_s2_from_base = self._strip_suffixes(word_to_process)
+        final_stem_s2, prefixes_s2 = self._strip_prefixes(stem_after_suffixes_s2)
+        is_s2_valid_root = self.dictionary.is_kata_dasar(final_stem_s2)
+        
+        # 6. Determine Best Result from strategies
+        chosen_final_stem = None
+        chosen_prefixes = []
+        chosen_main_suffixes = [] # These are suffixes stripped from word_to_process
+
+        if is_s1_valid_root:
+            chosen_final_stem = final_stem_s1
+            chosen_prefixes = prefixes_s1
+            chosen_main_suffixes = suffixes_s1_from_base
+        elif is_s2_valid_root:
+            chosen_final_stem = final_stem_s2
+            chosen_prefixes = prefixes_s2
+            chosen_main_suffixes = suffixes_s2_from_base
+        else:
+            # If neither strategy yielded a valid root for word_to_process,
+            # consider word_to_process itself as the stem for this part.
+            # This is important if word_to_process is already a base word (e.g. "main" from "bermain-main")
+            # or if it's an unanalyzable stem after reduplication handling.
+            if self.dictionary.is_kata_dasar(word_to_process):
+                 chosen_final_stem = word_to_process
+            # If word_to_process is NOT a KD, and no strategy worked, then it's possible
+            # that the original word was not correctly segmented or is an unknown base.
+            # In this scenario, if redup_marker is present, we might still want to show it.
+            # If no redup_marker, and no initial_suffixes, then likely it's just normalized_word.
+            else: # word_to_process is not a KD, and strategies failed
+                chosen_final_stem = word_to_process # Fallback to word_to_process
+                                                # Prefixes/suffixes remain empty for this part.
+        
+        # If after all this, chosen_final_stem is still None (e.g. if word_to_process was empty, though unlikely here)
+        # or if chosen_final_stem is not a KD and no affixes found at all, we might revert.
+        # However, the logic above ensures chosen_final_stem is at least word_to_process.
+
+        # 7. Assemble Final Result
+        final_parts = []
+        if chosen_prefixes:
+            final_parts.extend(chosen_prefixes)
+        
+        final_parts.append(chosen_final_stem)
+        
+        if redup_marker: # "ulg"
+            final_parts.append(redup_marker)
+        if direct_redup_suffixes: # e.g. ["an"] from X-Xan
+            final_parts.extend(direct_redup_suffixes)
+        if chosen_main_suffixes: # Suffixes from stripping word_to_process
+            final_parts.extend(chosen_main_suffixes)
+        if initial_suffixes: # Suffixes from initial strip (e.g. -lah)
+            final_parts.extend(initial_suffixes)
+            
+        # Filter out any None or empty strings that might have crept in, though unlikely with append/extend.
+        # Ensure chosen_final_stem is not None before joining.
+        # If chosen_final_stem ended up being an empty string (e.g. if word_to_process was empty and dictionary allows empty KD)
+        # this could lead to "pref~~suffix". Filter empty strings before join.
+        valid_parts = [part for part in final_parts if part] 
+        result_str = '~'.join(valid_parts)
+
+        # 8. Return Logic
+        # Condition 1: No effective segmentation occurred (all parts are empty except the stem,
+        # and the stem is the original normalized word). This also covers cases where original word is not in KD.
+        is_effectively_unchanged = (not chosen_prefixes and 
+                                    not redup_marker and 
+                                    not direct_redup_suffixes and 
+                                    not chosen_main_suffixes and 
+                                    not initial_suffixes and
+                                    chosen_final_stem == normalized_word)
+
+        if not result_str: # Handles if valid_parts was empty for some reason
+            return normalized_word
+            
+        if is_effectively_unchanged:
+            # If it's unchanged AND it's not a known kata_dasar (already handled at the top),
+            # it means it's an unsegmentable, unknown word. Return it as is.
+            # If it IS a kata_dasar, it would have been returned at step 2.
+            return normalized_word
+
+        # If the result string is identical to normalized_word, but affixes *were* identified (e.g. "di~makan" for "dimakan")
+        # then it's a valid segmentation. The is_effectively_unchanged handles the other case.
+        # However, if result_str == normalized_word and the word is NOT a KD, it implies no segmentation found.
+        if result_str == normalized_word and not self.dictionary.is_kata_dasar(normalized_word):
+             return normalized_word
+
+        return result_str
+
+    def _handle_reduplication(self, word: str) -> tuple[str, str, list[str]]:
         """
-        Helper method to handle reduplication (stub).
+        Handles full reduplication (Dwilingga) like X-X or X-Xsuffix.
+
+        Args:
+            word (str): The word to check for reduplication.
+
+        Returns:
+            tuple[str, str, list[str]]: 
+                - base_form_for_stripping: The base part (X) for further affix stripping.
+                - reduplication_marker: "ulg" if full reduplication is detected, "" otherwise.
+                - direct_redup_suffixes: List of suffixes directly attached to reduplication 
+                                         (e.g., ["an"] for "mobil-mobilan"). Empty if none.
         """
-        pass # Stub implementation
+        # Check for X-Xsuffix (e.g., mobil-mobilan, buku-bukunya)
+        # Suffixes considered: an, nya.
+        match_with_suffix = re.match(r"^([^-]+)-\1(an|nya)$", word)
+        if match_with_suffix:
+            base_form = match_with_suffix.group(1)
+            suffix = match_with_suffix.group(2)
+            # Validate that the base_form is not empty or just a hyphen (though regex should prevent this)
+            if base_form and base_form != '-':
+                return base_form, "ulg", [suffix]
+
+        # Check for X-X (e.g., rumah-rumah, bermain-main)
+        match_simple = re.match(r"^([^-]+)-\1$", word)
+        if match_simple:
+            base_form = match_simple.group(1)
+            # Validate that the base_form is not empty or just a hyphen
+            if base_form and base_form != '-':
+                return base_form, "ulg", []
+
+        # No reduplication pattern matched
+        return word, "", []
 
 
     def _strip_suffixes(self, word: str) -> tuple[str, list[str]]:

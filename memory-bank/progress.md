@@ -20,4 +20,10 @@ This file will track the progress of the ModernKataKupas project.
 - [x] Step 2.1: Advanced Prefix Stripping (meN-, peN-) with Morphophonemic Rules
 - [x] Step 2.2: Advanced Prefix Stripping (ber-, ter-, per-) with Morphophonemic Rules
 - [x] Step 2.3: Handling Layered Prefixes and Suffixes (Confixes)
+
+## Phase 3: Reduplication and Reconstruction
+
+**Objective:** Implement robust handling for various reduplication types and the word reconstruction functionality.
+
+- [x] Step 3.1: Implement Full Reduplication Logic (Dwilingga)
 - [ ] ... (other steps)

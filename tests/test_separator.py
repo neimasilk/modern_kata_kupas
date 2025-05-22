@@ -223,3 +223,36 @@ def test_layered_affixes_and_confixes_step23():
     assert mkk.segment("keberhasilan") == "ke~ber~hasil~an"
     assert mkk.segment("mempermainkan") == "meN~per~main~kan"
     assert mkk.segment("dikesampingkan") == "di~ke~samping~kan"
+
+def test_dwilingga_reduplication_step31():
+    """Test kasus Step 3.1: Dwilingga (full reduplication) handling via segment()."""
+    import os
+    from src.modern_kata_kupas.dictionary_manager import DictionaryManager
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    test_dict_path = os.path.join(current_dir, "data", "test_kata_dasar.txt")
+    dictionary_manager = DictionaryManager(dictionary_path=test_dict_path)
+    mkk = ModernKataKupas()
+    mkk.dictionary = dictionary_manager
+
+    # Note: These tests depend on the presence of root words in test_kata_dasar.txt:
+    # rumah, anak, meja, mobil, buku, main, tendang.
+    # Failures might indicate missing root words in the test dictionary.
+
+    # Simple Dwilingga (X-X)
+    assert mkk.segment("rumah-rumah") == "rumah~ulg"
+    assert mkk.segment("anak-anak") == "anak~ulg"
+    assert mkk.segment("meja-meja") == "meja~ulg"
+
+    # Affixed Dwilingga (X-Xsuffix)
+    assert mkk.segment("mobil-mobilan") == "mobil~ulg~an"
+    assert mkk.segment("buku-bukunya") == "buku~ulg~nya"
+
+    # Prefixed Base Reduplication (PX-PX where PX is X for _handle_reduplication)
+    # The _handle_reduplication sees "bermain-main" as X-X where X="bermain".
+    # Then "bermain" is processed by affix stripping.
+    assert mkk.segment("bermain-main") == "ber~main~ulg"
+
+    # Complex Interaction
+    assert mkk.segment("tendang-tendangan") == "tendang~ulg~an"
+    assert mkk.segment("rumah-rumahanlah") == "rumah~ulg~an~lah"
+    assert mkk.segment("bermain-mainkan") == "ber~main~ulg~kan"
