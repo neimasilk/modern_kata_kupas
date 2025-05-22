@@ -297,16 +297,16 @@ class ModernKataKupas:
         current_word = word
         stripped_prefixes = []
 
-        # Strip basic prefixes (-di, -ke, -se)
-        prefixes = ['di', 'ke', 'se']
-        for prefix in prefixes:
+        # Basic prefixes to check (-di, -ke, -se)
+        basic_prefixes = ['di', 'ke', 'se']
+        
+        for prefix in basic_prefixes:
             if current_word.startswith(prefix):
                 potential_root = current_word[len(prefix):]
-                # Strip the prefix if found. Dictionary validation happens in segment().
+                # Strip the prefix if found
                 current_word = potential_root
                 stripped_prefixes.append(prefix)
-                break # Assuming only one basic prefix at the beginning
-
+                break # Only one basic prefix at the beginning
 
         # Return the remaining word and the list of stripped prefixes
         return current_word, stripped_prefixes
