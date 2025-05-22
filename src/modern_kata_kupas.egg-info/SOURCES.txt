@@ -8,12 +8,14 @@ src/modern_kata_kupas/normalizer.py
 src/modern_kata_kupas/reconstructor.py
 src/modern_kata_kupas/rules.py
 src/modern_kata_kupas/separator.py
+src/modern_kata_kupas/stemmer_interface.py
 src/modern_kata_kupas/test_rules.py
 src/modern_kata_kupas.egg-info/PKG-INFO
 src/modern_kata_kupas.egg-info/SOURCES.txt
 src/modern_kata_kupas.egg-info/dependency_links.txt
 src/modern_kata_kupas.egg-info/top_level.txt
 src/modern_kata_kupas/data/__init__.py
+src/modern_kata_kupas/data/affix_rules.json
 src/modern_kata_kupas/data/kata_dasar.txt
 src/modern_kata_kupas/utils/__init__.py
 src/modern_kata_kupas/utils/alignment.py
@@ -24,4 +26,5 @@ tests/test_normalizer.py
 tests/test_reconstructor.py
 tests/test_rules.py
 tests/test_separator.py
+tests/test_stemmer_interface.py
 tests/test_utils.py

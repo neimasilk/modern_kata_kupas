@@ -281,15 +281,16 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                                 next_char_in_remainder = remainder[0] if remainder else ''
                                 elided_char = None
                                 print(f"[DEBUG_PREFIX]       Next char in remainder: {next_char_in_remainder}")
-                                # Find the original elided character based on the character in the remainder
-                                for original_char, char_in_remainder in reconstruct_rule.items():
-                                    if next_char_in_remainder == char_in_remainder:
-                                        elided_char = original_char
-                                        break
+                                # Determine the elided_char_to_prepend from the first key of reconstruct_rule
+                                if reconstruct_rule: # Ensure reconstruct_rule is not empty
+                                    elided_char_to_prepend = list(reconstruct_rule.keys())[0]
+                                    elided_char = elided_char_to_prepend # Set elided_char
+                                else:
+                                    elided_char_to_prepend = None # Should not happen if elision is true
 
-                                print(f"[DEBUG_PREFIX]       Determined elided_char: {elided_char}")
+                                print(f"[DEBUG_PREFIX]       Determined elided_char (to prepend): {elided_char}")
 
-                                if elided_char:
+                                if elided_char: # elided_char is now elided_char_to_prepend
                                     temp_reconstructed = elided_char + remainder
                                     print(f"[DEBUG_PREFIX]       Temp reconstructed: {temp_reconstructed}")
                                     # Prioritize dictionary lookup for validation of the reconstructed root
