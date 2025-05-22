@@ -32,7 +32,7 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         import importlib
         
         # Constants for default rules file location
-        DEFAULT_DATA_PACKAGE_PATH = 'modern_kata_kupas.data'
+        DEFAULT_DATA_PACKAGE_PATH = 'src.modern_kata_kupas.data' # Corrected path
         DEFAULT_RULES_FILENAME = 'affix_rules.json'
         
         self.normalizer = TextNormalizer()
@@ -68,32 +68,44 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         if self.dictionary.is_kata_dasar(normalized_word):
             return normalized_word
 
-        # 3. Initial Suffix Stripping (primarily for particles like -lah, -kah, -pun
-        #    that might be outside the core reduplication pattern or main derivational affixes)
-        word_after_initial_suffixes, initial_suffixes = self._strip_suffixes(normalized_word)
-        
-        # 4. Handle Reduplication
+        # 3. Handle Reduplication
         #    word_to_process is the base part (e.g., "mobil" from "mobil-mobilan", "main" from "bermain-main")
         #    direct_redup_suffixes are those like "-an" in "X-Xan" (e.g. "mobil-mobilan" -> direct_redup_suffixes = ["an"])
-        word_to_process, redup_marker, direct_redup_suffixes = self._handle_reduplication(word_after_initial_suffixes)
+        word_to_process, redup_marker, direct_redup_suffixes = self._handle_reduplication(normalized_word)
+        if word == "bermain-main": # DEBUG for bermain-main specifically
+            print(f"DEBUG: segment({word}): after _handle_reduplication: word_to_process='{word_to_process}', redup_marker='{redup_marker}'")
+        initial_suffixes = [] # Initialize initial_suffixes, its role is re-evaluated
 
-        # 5. Affix Stripping Strategies on word_to_process
+        # 4. Affix Stripping Strategies on word_to_process
         # Strategy 1: Prefixes then Suffixes on word_to_process
+        print(f"DEBUG: S1 calling _strip_prefixes with word_to_process: '{word_to_process}' (orig_word='{word}')")
         stem_after_prefixes_s1, prefixes_s1 = self._strip_prefixes(word_to_process)
         final_stem_s1, suffixes_s1_from_base = self._strip_suffixes(stem_after_prefixes_s1)
         is_s1_valid_root = self.dictionary.is_kata_dasar(final_stem_s1)
+        print(f"DEBUG: segment({word}): S1 result: final_stem='{final_stem_s1}', prefixes={prefixes_s1}, suffixes={suffixes_s1_from_base}, is_valid={is_s1_valid_root}")
 
         # Strategy 2: Suffixes then Prefixes on word_to_process
         stem_after_suffixes_s2, suffixes_s2_from_base = self._strip_suffixes(word_to_process)
+        print(f"DEBUG: S2 calling _strip_prefixes with stem_after_suffixes_s2: '{stem_after_suffixes_s2}' (orig_word='{word}')")
         final_stem_s2, prefixes_s2 = self._strip_prefixes(stem_after_suffixes_s2)
         is_s2_valid_root = self.dictionary.is_kata_dasar(final_stem_s2)
+        print(f"DEBUG: segment({word}): S2 result: final_stem='{final_stem_s2}', prefixes={prefixes_s2}, suffixes={suffixes_s2_from_base}, is_valid={is_s2_valid_root}")
         
         # 6. Determine Best Result from strategies
         chosen_final_stem = None
         chosen_prefixes = []
         chosen_main_suffixes = [] # These are suffixes stripped from word_to_process
 
-        if is_s1_valid_root:
+        if is_s1_valid_root and is_s2_valid_root:
+            if len(final_stem_s1) >= len(final_stem_s2):
+                chosen_final_stem = final_stem_s1
+                chosen_prefixes = prefixes_s1
+                chosen_main_suffixes = suffixes_s1_from_base
+            else:
+                chosen_final_stem = final_stem_s2
+                chosen_prefixes = prefixes_s2
+                chosen_main_suffixes = suffixes_s2_from_base
+        elif is_s1_valid_root:
             chosen_final_stem = final_stem_s1
             chosen_prefixes = prefixes_s1
             chosen_main_suffixes = suffixes_s1_from_base
@@ -119,8 +131,19 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         # If after all this, chosen_final_stem is still None (e.g. if word_to_process was empty, though unlikely here)
         # or if chosen_final_stem is not a KD and no affixes found at all, we might revert.
         # However, the logic above ensures chosen_final_stem is at least word_to_process.
+        
+        # Debug prints for chosen components
+        print(f"DEBUG: segment({word}): Chosen final_stem: '{chosen_final_stem}'")
+        print(f"DEBUG: segment({word}): Chosen prefixes: {chosen_prefixes}")
+        print(f"DEBUG: segment({word}): Chosen main_suffixes: {chosen_main_suffixes}")
+        print(f"DEBUG: segment({word}): Redup_marker: '{redup_marker}'")
+        print(f"DEBUG: segment({word}): Direct_redup_suffixes: {direct_redup_suffixes}")
+        print(f"DEBUG: segment({word}): Initial_suffixes: {initial_suffixes}")
 
         # 7. Assemble Final Result
+        # Suffixes are assembled in a specific order:
+        # main_suffixes (from S1/S2 on word_to_process) -> direct_redup_suffixes -> initial_suffixes (if any, from original word)
+        
         final_parts = []
         if chosen_prefixes:
             final_parts.extend(chosen_prefixes)
@@ -129,45 +152,53 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         
         if redup_marker: # "ulg"
             final_parts.append(redup_marker)
-        if direct_redup_suffixes: # e.g. ["an"] from X-Xan
-            final_parts.extend(direct_redup_suffixes)
-        if chosen_main_suffixes: # Suffixes from stripping word_to_process
-            final_parts.extend(chosen_main_suffixes)
-        if initial_suffixes: # Suffixes from initial strip (e.g. -lah)
-            final_parts.extend(initial_suffixes)
+        
+        # Assemble suffixes in order: main_suffixes, then direct_redup_suffixes, then initial_suffixes
+        assembled_suffixes = []
+        if chosen_main_suffixes:
+            assembled_suffixes.extend(chosen_main_suffixes)
+        if direct_redup_suffixes:
+            assembled_suffixes.extend(direct_redup_suffixes)
+        if initial_suffixes: # Suffixes from initial strip (e.g. -lah) - currently, this will be empty
+            assembled_suffixes.extend(initial_suffixes)
+        
+        if assembled_suffixes:
+             final_parts.extend(assembled_suffixes)
+        
+        print(f"DEBUG: segment({word}): final_parts before join: {final_parts}")
             
-        # Filter out any None or empty strings that might have crept in, though unlikely with append/extend.
-        # Ensure chosen_final_stem is not None before joining.
-        # If chosen_final_stem ended up being an empty string (e.g. if word_to_process was empty and dictionary allows empty KD)
-        # this could lead to "pref~~suffix". Filter empty strings before join.
         valid_parts = [part for part in final_parts if part] 
         result_str = '~'.join(valid_parts)
+        print(f"DEBUG: segment({word}): result_str: '{result_str}'")
 
         # 8. Return Logic
-        # Condition 1: No effective segmentation occurred (all parts are empty except the stem,
-        # and the stem is the original normalized word). This also covers cases where original word is not in KD.
+        # Condition 1: No effective segmentation occurred
         is_effectively_unchanged = (not chosen_prefixes and 
                                     not redup_marker and 
-                                    not direct_redup_suffixes and 
-                                    not chosen_main_suffixes and 
-                                    not initial_suffixes and
+                                    not assembled_suffixes and # Check assembled_suffixes instead of individual lists
                                     chosen_final_stem == normalized_word)
 
-        if not result_str: # Handles if valid_parts was empty for some reason
+        if not result_str: 
+            print(f"DEBUG: segment({word}): Returning (empty result_str) normalized_word: '{normalized_word}'")
             return normalized_word
             
         if is_effectively_unchanged:
-            # If it's unchanged AND it's not a known kata_dasar (already handled at the top),
-            # it means it's an unsegmentable, unknown word. Return it as is.
-            # If it IS a kata_dasar, it would have been returned at step 2.
+            print(f"DEBUG: segment({word}): Returning (is_effectively_unchanged) normalized_word: '{normalized_word}'")
             return normalized_word
 
-        # If the result string is identical to normalized_word, but affixes *were* identified (e.g. "di~makan" for "dimakan")
-        # then it's a valid segmentation. The is_effectively_unchanged handles the other case.
-        # However, if result_str == normalized_word and the word is NOT a KD, it implies no segmentation found.
+        # If the result string is identical to normalized_word, but the word is NOT a KD, 
+        # it implies no segmentation was found or was truly effective.
         if result_str == normalized_word and not self.dictionary.is_kata_dasar(normalized_word):
+             print(f"DEBUG: segment({word}): Returning (result_str == normalized_word and not KD) normalized_word: '{normalized_word}'")
              return normalized_word
+        
+        # Additional check: if the process resulted in a stem that is not a KD, and no affixes were found,
+        # then it's likely an unsegmentable word.
+        if not self.dictionary.is_kata_dasar(chosen_final_stem) and not chosen_prefixes and not assembled_suffixes and not redup_marker:
+            print(f"DEBUG: segment({word}): Returning (final_stem not KD and no affixes/redup) normalized_word: '{normalized_word}'")
+            return normalized_word
 
+        print(f"DEBUG: segment({word}): Returning final result_str: '{result_str}'")
         return result_str
 
     def _handle_reduplication(self, word: str) -> tuple[str, str, list[str]]:
@@ -250,56 +281,24 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                         # Kasus khusus untuk kata seperti "sekolah" yang bukan "se~kolah"
                         if sfx == "lah" and current_word == "sekolah" and stem_candidate == "seko":
                             continue
+
+                        # Conservative check: If the current word is not a KD, only strip if the resulting stem is a KD.
+                        # Or, if the current word IS a KD, then stripping is generally safer (e.g. "makanan" -> "makan")
+                        # This helps prevent "katadenganspas~i" from "katadenganspasi"
+                        if not self.dictionary.is_kata_dasar(current_word) and \
+                           not self.dictionary.is_kata_dasar(stem_candidate) and \
+                           sfx in suffix_types[2]: # Be extra careful with derivational suffixes
+                            continue
                         
                         # Tambahkan sufiks ke daftar dan perbarui kata saat ini
                         current_word = stem_candidate
                         stripped_suffixes_in_stripping_order.append(sfx)
                         something_stripped = True
                         # Restart the stripping process from the outermost suffix type
-                        # This handles cases like 'rumahkupun' where 'pun' is stripped, then 'ku' can be stripped from 'rumahku'
-                        break # Break inner loop (suffixes_list)
+                        break 
                 if something_stripped:
-                    break # Break outer loop (suffix_types) and restart while loop
+                    break 
         
-        # `stripped_suffixes_in_stripping_order` contains suffixes in stripping order (outermost to innermost).
-        # For test output expecting order like ['kan', 'lah'], we need to reverse it.
-        return current_word, list(reversed(stripped_suffixes_in_stripping_order))
-
-        # Kode di bawah ini sudah tidak digunakan lagi karena sudah digantikan dengan implementasi di atas
-        # Tetap disimpan sebagai referensi untuk pengembangan lebih lanjut
-
-        # Define suffix types and their order of stripping preference (outermost first)
-        suffix_types = [
-            ['kah', 'lah', 'pun'], # Particles
-            ['ku', 'mu', 'nya'],   # Possessives
-            ['kan', 'i', 'an']     # Derivational
-        ]
-
-        # Iteratively strip suffixes until no more known suffixes are found
-        something_stripped = True
-        while something_stripped:
-            something_stripped = False
-            # Try stripping each type of suffix in order
-            for suffixes_list in suffix_types:
-                # Check for each suffix within the current type list
-                for sfx in suffixes_list:
-                    if current_word.endswith(sfx):
-                        # Check minimum stem length for possessive and derivational
-                        if (sfx in suffix_types[1] and len(current_word[:-len(sfx)]) < self.MIN_STEM_LENGTH_FOR_POSSESSIVE) or \
-                           (sfx in suffix_types[2] and len(current_word[:-len(sfx)]) < self.MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING):
-                            continue # Skip stripping if minimum stem length is not met
-
-                        current_word = current_word[:-len(sfx)]
-                        stripped_suffixes_in_stripping_order.append(sfx)
-                        something_stripped = True
-                        # Restart the stripping process from the outermost suffix type
-                        # This handles cases like 'rumahkupun' where 'pun' is stripped, then 'ku' can be stripped from 'rumahku'
-                        break # Break inner loop (suffixes_list)
-                if something_stripped:
-                    break # Break outer loop (suffix_types) and restart while loop
-
-        # `stripped_suffixes_in_stripping_order` contains suffixes in stripping order (outermost to innermost).
-        # For test output expecting order like ['kan', 'lah'], we need to reverse it.
         return current_word, list(reversed(stripped_suffixes_in_stripping_order))
 
     def _is_monosyllabic(self, word: str) -> bool:
@@ -340,59 +339,71 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
             for rule_group in prefix_rules_all:
                 canonical_prefix = rule_group.get("canonical")
                 
-                potential_root_after_this_rule = None # Stores the root if this rule_group matches
+                potential_root_after_this_rule = None # Reset for this rule_group
                 
-                if "allomorphs" in rule_group:  # Handles any complex prefix (meN, peN, ber, ter, per, etc.)
+                if "allomorphs" in rule_group:
+                    first_non_kd_allomorph_root = None # Store the first non-KD root from this group
+                    # potential_root_after_this_rule is already None from outside the allomorph loop
                     for allomorph_rule in rule_group["allomorphs"]:
                         surface_form = allomorph_rule.get("surface")
 
                         if current_word.startswith(surface_form):
                             remainder = current_word[len(surface_form):]
-                            if not remainder: # Cannot be a valid root if empty
+                            if not remainder:
                                 continue
 
-                            # --- Allomorph Applicability Checks ---
-                            next_char_conditions = allomorph_rule.get("next_char_is")
-                            if next_char_conditions:
-                                applicable_by_next_char = False
-                                for cond_char in next_char_conditions:
-                                    if remainder.startswith(cond_char):
-                                        applicable_by_next_char = True
-                                        break
-                                if not applicable_by_next_char:
-                                    continue
+                            elision_for_this_rule = allomorph_rule.get("elision")
+                            applicable_allomorph = True
+                            if not elision_for_this_rule:
+                                next_char_conditions = allomorph_rule.get("next_char_is")
+                                if next_char_conditions:
+                                    if not any(remainder.startswith(c) for c in next_char_conditions):
+                                        applicable_allomorph = False
+                            
+                            if not applicable_allomorph:
+                                continue
 
                             if allomorph_rule.get("is_monosyllabic_root"):
                                 if not self.dictionary.is_kata_dasar(remainder) or \
                                    not self._is_monosyllabic(remainder):
                                     continue
-                            # --- End of Applicability Checks ---
-
-                            # Determine potential_root based on elision and reconstruction rules
-                            temp_potential_root = None
-                            if allomorph_rule.get("elision"):
-                                reconstruct_rule = allomorph_rule.get("reconstruct_root_initial")
-                                if reconstruct_rule:
-                                    elided_char_key = list(reconstruct_rule.keys())[0]
-                                    temp_reconstructed = elided_char_key + remainder
-                                    if self.dictionary.is_kata_dasar(temp_reconstructed):
-                                        temp_potential_root = temp_reconstructed
-                                else: # Elision true, but no reconstruction rule (e.g., ber- -> bel-)
-                                    if self.dictionary.is_kata_dasar(remainder):
-                                        temp_potential_root = remainder
-                            else: # No elision
-                                if self.dictionary.is_kata_dasar(remainder):
-                                    temp_potential_root = remainder
                             
-                            if temp_potential_root:
-                                potential_root_after_this_rule = temp_potential_root
-                                break # Found a matching allomorph for this rule_group
-                                
-                else:  # Simple prefixes (e.g., "di-", "ke-", "se-", without allomorphs)
+                            temp_potential_root = None
+                            reconstruct_dict = allomorph_rule.get("reconstruct_root_initial")
+                            if elision_for_this_rule:
+                                if reconstruct_dict:
+                                    key_to_prepend = list(reconstruct_dict.keys())[0]
+                                    temp_potential_root = key_to_prepend + remainder
+                                else:
+                                    temp_potential_root = remainder
+                            else:
+                                temp_potential_root = remainder
+                            
+                            # DEBUG PRINT for ber- and per-
+                            if canonical_prefix in ["ber", "per"] and surface_form == canonical_prefix : # Default allomorph
+                                print(f"DEBUG _strip_prefixes: current_word='{current_word}', rule_group='{canonical_prefix}', allomorph_surface='{surface_form}', remainder='{remainder}', temp_potential_root='{temp_potential_root}', is_kd(temp_potential_root)={self.dictionary.is_kata_dasar(temp_potential_root if temp_potential_root else '')}")
+
+                            if temp_potential_root is not None:
+                                if self.dictionary.is_kata_dasar(temp_potential_root):
+                                    potential_root_after_this_rule = temp_potential_root
+                                    # DEBUG PRINT
+                                    print(f"DEBUG _strip_prefixes: KD found for '{canonical_prefix}' allomorph '{surface_form}'. Root: '{temp_potential_root}'. Breaking allomorph loop.")
+                                    break # Found KD, this is the one for this rule_group. Exit allomorph loop.
+                                if first_non_kd_allomorph_root is None: # Capture the first non-KD result
+                                    first_non_kd_allomorph_root = temp_potential_root
+                    
+                    if potential_root_after_this_rule is None: # No KD was found from any allomorph
+                        potential_root_after_this_rule = first_non_kd_allomorph_root # Use the first non-KD attempt
+                    # DEBUG PRINT
+                    if canonical_prefix in ["ber", "per"]:
+                        print(f"DEBUG _strip_prefixes: After allomorph loop for '{canonical_prefix}'. potential_root_after_this_rule='{potential_root_after_this_rule}'")
+
+
+                else:  # Simple prefixes
                     simple_prefix_form = rule_group.get("form")
                     if simple_prefix_form and current_word.startswith(simple_prefix_form):
                         potential_remainder = current_word[len(simple_prefix_form):]
-                        if potential_remainder and self.dictionary.is_kata_dasar(potential_remainder):
+                        if potential_remainder:
                             potential_root_after_this_rule = potential_remainder
                 
                 # If a prefix (complex or simple) was successfully processed for this rule_group
@@ -400,12 +411,31 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                     all_stripped_prefixes.append(canonical_prefix)
                     current_word = potential_root_after_this_rule
                     successfully_stripped_one_prefix_this_iteration = True
-                    break # Break from the inner for rule_group loop to restart the while loop
+                    # DEBUG PRINT
+                    if canonical_prefix in ["ber", "per"]:
+                         print(f"DEBUG _strip_prefixes: Rule group '{canonical_prefix}' processed. current_word='{current_word}', all_stripped_prefixes={all_stripped_prefixes}")
+
+                    # If the new current_word is a KD, this is a valid segmentation point.
+                    # _strip_prefixes will return this as the result for this path.
+                    if self.dictionary.is_kata_dasar(current_word):
+                        # DEBUG PRINT
+                        if canonical_prefix in ["ber", "per"]:
+                            print(f"DEBUG _strip_prefixes: Early KD exit. current_word='{current_word}', all_stripped_prefixes={all_stripped_prefixes}")
+                        return current_word, all_stripped_prefixes # Exit early
+                    
+                    # Break from the rule_group loop to restart the while loop for further stripping on new current_word
+                    break 
             
             # If a full pass through all prefix rules did not strip any prefix
             if not successfully_stripped_one_prefix_this_iteration:
-                break # Break from the outer while True loop
-            
+                # DEBUG PRINT
+                if original_word_for_prefix_stripping in ["perbuat", "perjuangan", "bermain"]:
+                    print(f"DEBUG _strip_prefixes: No prefix stripped in full pass for '{original_word_for_prefix_stripping}'. current_word='{current_word}'")
+                break # Break from the outer while True loop (no more layers of prefixes)
+        
+        # DEBUG PRINT
+        if original_word_for_prefix_stripping in ["perbuat", "perjuangan", "bermain"]:
+            print(f"DEBUG _strip_prefixes: Final return for '{original_word_for_prefix_stripping}'. current_word='{current_word}', all_stripped_prefixes={all_stripped_prefixes}")
         return current_word, all_stripped_prefixes
 
     def _apply_morphophonemic_segmentation_rules(self, word: str) -> str:

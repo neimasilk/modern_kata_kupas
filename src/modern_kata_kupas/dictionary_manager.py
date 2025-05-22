@@ -13,7 +13,7 @@ class DictionaryManager:
     Attributes:
         kata_dasar_set: Set yang berisi kata-kata dasar yang telah dinormalisasi.
     """
-    DEFAULT_DICT_PACKAGE_PATH = "modern_kata_kupas.data"
+    DEFAULT_DICT_PACKAGE_PATH = "src.modern_kata_kupas.data" # Corrected path
     DEFAULT_DICT_FILENAME = "kata_dasar.txt"
 
     def __init__(self, dictionary_path: Optional[str] = None):
