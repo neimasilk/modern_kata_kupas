@@ -4,6 +4,7 @@ buku
 ambil
 makan
 sekolah
+siapa
 milik
 panas
 rumah
@@ -17,3 +18,4 @@ bisa
 baca
 tua
 kolah
+siapa

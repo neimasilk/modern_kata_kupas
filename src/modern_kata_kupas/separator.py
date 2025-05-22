@@ -17,6 +17,7 @@ class ModernKataKupas:
     """
     MIN_STEM_LENGTH_FOR_POSSESSIVE = 3 # Define minimum stem length for possessive stripping
     MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING = 4 # Define minimum stem length for derivational suffix stripping
+    MIN_STEM_LENGTH_FOR_PARTICLE = 3 # Define minimum stem length for particle stripping
     def __init__(self):
         """
         Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
@@ -182,10 +183,35 @@ class ModernKataKupas:
 
         # Partikel: -kah, -lah, -pun
         particles = ['kah', 'lah', 'pun']
+        # Ambil konstanta dari kelas, bukan mendefinisikannya secara lokal di sini lagi
+        
+        word_before_particle_stripping = current_word # Simpan state awal sebelum loop partikel
+
         for particle_sfx in particles:
             if current_word.endswith(particle_sfx):
-                current_word = current_word[:-len(particle_sfx)]
+                remainder = current_word[:-len(particle_sfx)]
+                
+                if len(remainder) < self.MIN_STEM_LENGTH_FOR_PARTICLE: # Gunakan self.
+                    continue # Sisa kata terlalu pendek, jangan lepaskan partikel ini
+
+                # Pemeriksaan Kunci: Jika kata_awal_cek_partikel adalah kata dasar,
+                # dan pelepasan partikel ini membuatnya BUKAN lagi kata dasar,
+                # maka pelepasan partikel ini kemungkinan tidak benar (misalnya, "sekolah" -> "seko").
+                # Pengecualian: "adalah" -> "ada", di mana keduanya adalah kata dasar.
+                is_current_word_root = self.dictionary.is_kata_dasar(current_word)
+                is_remainder_root = self.dictionary.is_kata_dasar(remainder)
+
+                if is_current_word_root and not is_remainder_root:
+                    # Tambahkan pengecualian spesifik jika diperlukan.
+                    # Contoh untuk "adalah":
+                    if not (current_word == "adalah" and remainder == "ada" and particle_sfx == "lah"):
+                        # Jika kata saat ini adalah root ("sekolah") dan sisanya bukan root ("seko"),
+                        # jangan lepaskan partikelnya.
+                        continue 
+                
+                current_word = remainder # Lakukan pelepasan
                 stripped_suffixes_in_stripping_order.append(particle_sfx)
+                # Setelah partikel dilepas, kita keluar dari loop partikel dan lanjut ke posesif
                 break
 
         # Posesif: -ku, -mu, -nya
