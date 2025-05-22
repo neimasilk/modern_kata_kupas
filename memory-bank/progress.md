@@ -13,4 +13,5 @@ This file will track the progress of the ModernKataKupas project.
 - [x] Step 1.3: Main Separator Class Structure (`ModernKataKupas`)
 - [x] Step 1.4: Basic Suffix Stripping (Particles and Possessives)
 - [x] Step 1.5: Basic Derivational Suffix Stripping (`-kan`, `-i`, `-an`)
+- [x] Step 1.6: Basic Prefix Stripping (Simple, Non-Morphophonemic: `di-`, `ke-`, `se-`)
 - [ ] ... (other steps)

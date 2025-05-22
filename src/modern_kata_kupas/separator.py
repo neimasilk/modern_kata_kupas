@@ -303,23 +303,97 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         # For test output expecting order like ['kan', 'lah'], we need to reverse it.
         return current_word, list(reversed(stripped_suffixes_in_stripping_order))
 
-    def _strip_prefixes(self, word: str) -> tuple[str, list[str]]:
-        current_word = str(word)
+    def _is_monosyllabic(self, word: str) -> bool:
+        """
+        Helper sederhana untuk mengecek apakah sebuah kata (calon akar) monosilabik.
+        Ini adalah placeholder, Anda mungkin memerlukan logika yang lebih baik
+        atau daftar kata dasar monosilabik.
+        """
+        if not word:
+            return False
+        # Logika deteksi suku kata bisa kompleks. Untuk awal:
+        # Anggap saja jika pendek dan ada di kamus, atau jika hanya punya satu vokal.
+        # Ini perlu disempurnakan. Contoh: 'bom', 'cat', 'las'.
+        vowels = "aiueo"
+        vowel_count = sum(1 for char in word if char in vowels)
+        # Kasar: jika jumlah vokal = 1 dan ada di kamus ATAU sangat pendek
+        if vowel_count == 1 and (len(word) <= 3 or self.dictionary.is_kata_dasar(word)):
+            return True
+        # Ini hanya contoh kasar, perlu analisis lebih lanjut atau daftar kata monosilabik.
+        # Untuk kasus seperti "tes", "kon" (dari "rekonstruksi"), "bor"
+        # Mungkin lebih baik jika aturan "menge-" hanya berlaku jika sisanya adalah kata dasar yang diketahui monosilabik.
+        if self.dictionary.is_kata_dasar(word):
+            # Jika kata ada di kamus, baru cek suku katanya (logika bisa rumit)
+            # Untuk sekarang, kita asumsikan jika kata ada di kamus dan jumlah vokal=1, itu monosilabik.
+             return vowel_count == 1
+        return False # Default
+
+    def _strip_prefixes(self, original_word_for_prefix_stripping: str) -> tuple[str, list[str]]:
+        current_word = str(original_word_for_prefix_stripping)
         stripped_prefixes_output = []
 
-        prefix_rules = self.rules.get_prefix_rules()
+        # Dapatkan kata dasar dari stemmer SEBELUM iterasi prefiks. Ini penting untuk validasi.
+        root_from_stemmer = self.stemmer.get_root_word(original_word_for_prefix_stripping)
 
-        for rule in prefix_rules:
-            prefix_form = rule.get("form")
-            canonical_form = rule.get("canonical", prefix_form)
+        prefix_rules_all = self.rules.get_prefix_rules()
 
-            if prefix_form and current_word.startswith(prefix_form):
-                potential_root = current_word[len(prefix_form):]
-                
-                current_word = potential_root
-                stripped_prefixes_output.append(canonical_form)
-                break
+        # Prioritaskan aturan kompleks (meN-/peN-) terlebih dahulu
+        for rule_group in prefix_rules_all:
+            canonical_prefix = rule_group.get("canonical")
+            
+            # Tangani prefiks kompleks (meN-, peN-)
+            if "allomorphs" in rule_group and (canonical_prefix == "meN" or canonical_prefix == "peN"):
+                for allomorph_rule in rule_group["allomorphs"]:
+                    surface_form = allomorph_rule.get("surface")
+                    
+                    if current_word.startswith(surface_form):
+                        remainder = current_word[len(surface_form):]
+                        if not remainder: # Jika setelah dipotong tidak ada sisa
+                            continue
 
+                        reconstructed_root = remainder # Default jika tidak ada peluluhan
+                        
+                        # Tangani kasus peluluhan
+                        if allomorph_rule.get("elision"):
+                            next_char_original = remainder[0] if remainder else ''
+                            valid_next_chars = allomorph_rule.get("next_char_is", [])
+                            
+                            if allomorph_rule.get("reconstruct_root_initial"):
+                                possible_reconstructions = allomorph_rule["reconstruct_root_initial"]
+                                for original_char, reconstructed_char in possible_reconstructions.items():
+                                    temp_reconstructed = reconstructed_char + remainder
+                                    if (self.dictionary.is_kata_dasar(temp_reconstructed) and 
+                                        temp_reconstructed == root_from_stemmer):
+                                        reconstructed_root = temp_reconstructed
+                                        break
+                                else:
+                                    continue # Rekonstruksi gagal
+                        
+                        # Tangani kasus monosilabik (menge-/penge-)
+                        elif allomorph_rule.get("is_monosyllabic_root"):
+                            if not self._is_monosyllabic(remainder) or not self.dictionary.is_kata_dasar(remainder):
+                                continue
+                        
+                        # Validasi akhir
+                        if self.dictionary.is_kata_dasar(reconstructed_root) and reconstructed_root == root_from_stemmer:
+                            stripped_prefixes_output.append(canonical_prefix)
+                            current_word = reconstructed_root
+                            return current_word, stripped_prefixes_output
+                        
+                        # Debug jika diperlukan
+                        # print(f"Debug: For '{original_word_for_prefix_stripping}', rule produced '{reconstructed_root}', stemmer produced '{root_from_stemmer}'")
+            
+            # Tangani prefiks sederhana sebagai fallback
+            elif "allomorphs" not in rule_group: 
+                simple_prefix_form = rule_group.get("form")
+                if simple_prefix_form and current_word.startswith(simple_prefix_form):
+                    potential_root = current_word[len(simple_prefix_form):]
+                    if (self.dictionary.is_kata_dasar(potential_root) and 
+                        potential_root == root_from_stemmer):
+                        stripped_prefixes_output.append(canonical_prefix)
+                        current_word = potential_root
+                        return current_word, stripped_prefixes_output
+        
         return current_word, stripped_prefixes_output
 
     def _apply_morphophonemic_segmentation_rules(self, word: str) -> str:

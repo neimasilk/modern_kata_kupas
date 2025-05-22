@@ -24,6 +24,7 @@ Metode kunci dalam modul ini meliputi:
 
 - `segment()`: Metode publik utama untuk memulai proses segmentasi.
 - `_strip_suffixes()`: Metode helper yang bertanggung jawab untuk memisahkan sufiks dari kata. Saat ini diimplementasikan untuk menangani sufiks infleksional (partikel dan posesif) serta sufiks derivasional dasar (`-kan`, `-i`, `-an`) sesuai dengan Step 1.4 dan Step 1.5. Logika pelepasan sufiks ini mengikuti urutan tertentu untuk memastikan pelepasan yang benar.
+- `_strip_prefixes()`: Metode helper yang bertanggung jawab untuk memisahkan prefiks sederhana (`di-`, `ke-`, `se-`) dari kata sesuai dengan Step 1.6. Metode ini berinteraksi dengan `MorphologicalRules` untuk mendapatkan dan menerapkan aturan prefiks.
 
 ### Reconstructor
 
