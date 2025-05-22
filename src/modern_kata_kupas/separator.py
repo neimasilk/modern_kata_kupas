@@ -64,187 +64,52 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         Returns:
             str: Kata setelah proses segmentasi dalam format prefiks~kata_dasar~sufiks.
         """
-        # Kasus khusus untuk kata-kata tertentu dalam tes
-        if word == "membaca":
-            return "meN~baca"
-        if word == "mengambil":
-            return "meN~ambil"
-        if word == "menggambar":
-            return "meN~gambar"
-        if word == "menyapu":
-            return "meN~sapu"
-        if word == "mencari":
-            return "meN~cari"
-        if word == "memukul":
-            return "meN~pukul"
-        if word == "menulis":
-            return "meN~tulis"
-        if word == "mengupas":
-            return "meN~kupas"
-        if word == "mengebom":
-            return "meN~bom"
-        if word == "pemukul":
-            return "peN~pukul"
-        if word == "pengirim":
-            return "peN~kirim"
-        if word == "sekolah":
-            return "se~kolah"
-        if word == "dimakanlah":
-            return "di~makan~lah"
-        if word == "kesekolah":
-            return "ke~sekolah"
-        if word == "dibukukan":
-            return "di~buku~kan"
-        if word == "dilemparkan":
-            return "di~lempar~kan"
-        if word == "disiagakan":
-            return "di~siaga~kan"
-        if word == "kepadanya":
-            return "ke~pada~nya"
-        if word == "sebaiknya":
-            return "se~baik~nya"
-        if word == "sebisanya":
-            return "se~bisa~nya"
-        if word == "dibaca":
-            return "di~baca"
-        if word == "ketua":
-            return "ke~tua"
-        if word == "rumahkupun" or word == "rumahpunku":
-            return "rumah~ku~pun"
-            
-        normalized_word = self.normalizer.normalize_word(word)
-        if word == "dimakanlah" or word == "kesekolah": # Kondisi debug sementara
-            print(f"DEBUG: segment() called with '{word}'")
-
-        # Strategi 1: Prefiks dulu, baru sufiks
-        stem_after_prefixes, stripped_prefix_list = self._strip_prefixes(normalized_word)
-        if word == "dimakanlah" or word == "kesekolah":
-            print(f"DEBUG_STRAT1: stem_after_prefixes='{stem_after_prefixes}', stripped_prefix_list={stripped_prefix_list}")
-
-        final_stem, stripped_suffix_list = self._strip_suffixes(stem_after_prefixes)
-        if word == "dimakanlah" or word == "kesekolah":
-            print(f"DEBUG_STRAT1: final_stem='{final_stem}', stripped_suffix_list={stripped_suffix_list}")
-            print(f"DEBUG_STRAT1: Checking dictionary for '{final_stem}'...")
-            print(f"DEBUG_KS: Is '{final_stem}' in mkk.dictionary.kata_dasar_set? { final_stem in self.dictionary.kata_dasar_set }")
-
-        is_strat1_valid_root = self.dictionary.is_kata_dasar(final_stem)
-        if word == "dimakanlah" or word == "kesekolah":
-            print(f"DEBUG_STRAT1: is_kata_dasar('{final_stem}') is {is_strat1_valid_root}")
-
-        if is_strat1_valid_root:
-            parts = []
-            if stripped_prefix_list: 
-                parts.extend(stripped_prefix_list)
-            parts.append(final_stem)
-            if stripped_suffix_list: 
-                parts.extend(stripped_suffix_list)
-            
-            if not stripped_prefix_list and not stripped_suffix_list:
-                return final_stem 
-            return '~'.join(parts)
-        else:
-            if word == "dimakanlah" or word == "kesekolah":
-                print(f"DEBUG: Strat1 failed for '{final_stem}'. Trying Strat2.")
-            # Strategi 2: Sufiks dulu, baru prefiks (Fallback)
-            stem_after_suffixes, stripped_suffix_list = self._strip_suffixes(normalized_word)
-            if word == "dimakanlah":
-                print(f"DEBUG_STRAT2: stem_after_suffixes='{stem_after_suffixes}', stripped_suffix_list={stripped_suffix_list}")
-
-            final_stem, stripped_prefix_list = self._strip_prefixes(stem_after_suffixes)
-            if word == "dimakanlah":
-                print(f"DEBUG_STRAT2: final_stem='{final_stem}', stripped_prefix_list={stripped_prefix_list}")
-                print(f"DEBUG_STRAT2: Checking dictionary for '{final_stem}'...")
-            
-            is_strat2_valid_root = self.dictionary.is_kata_dasar(final_stem)
-            if word == "dimakanlah":
-                 print(f"DEBUG_STRAT2: is_kata_dasar('{final_stem}') is {is_strat2_valid_root}")
-
-            if is_strat2_valid_root:
-                parts = []
-                if stripped_prefix_list:
-                    parts.extend(stripped_prefix_list)
-                parts.append(final_stem)
-                if stripped_suffix_list:
-                    parts.extend(stripped_suffix_list)
-                
-                if not stripped_prefix_list and not stripped_suffix_list:
-                     return final_stem
-                return '~'.join(parts)
-            
-            if word == "dimakanlah" or word == "kesekolah":
-                print(f"DEBUG: Both strats failed. Fallback for '{normalized_word}'.")
-            if self.dictionary.is_kata_dasar(normalized_word):
-                return normalized_word
-            return normalized_word
-        """
-        Memisahkan kata berimbuhan menjadi kata dasar dan afiksnya.
-
-        Args:
-            word (str): Kata yang akan dipisahkan.
-
-        Returns:
-            str: Kata setelah proses segmentasi (saat ini hanya pelepasan afiks dasar).
-        """
         # 1. Normalisasi kata
         normalized_word = self.normalizer.normalize_word(word)
-
-        # 2. Handle reduplikasi (stub)
-        # word_after_reduplication = self._handle_reduplication(normalized_word)
-        word_after_reduplication = normalized_word # Placeholder
-
-        # 3. Strip prefixes
-        word_after_prefixes, stripped_prefixes = self._strip_prefixes(word_after_reduplication)
-
-        # 4. Strip suffixes
-        # Note: The order of stripping prefixes and suffixes can be complex
-        # For now, we apply suffixes after prefixes. This might need refinement.
-
-        # word_after_reduplication = self._handle_reduplication(normalized_word) # Untuk nanti
-        current_processing_word = normalized_word
-
-        # Langkah 1: Coba lepaskan sufiks terlebih dahulu
-        stem_after_suffixes, stripped_suffix_list = self._strip_suffixes(current_processing_word)
-
-        # Langkah 2: Coba lepaskan prefiks dari hasil pelepasan sufiks
-        final_stem, stripped_prefix_list = self._strip_prefixes(stem_after_suffixes)
-
-        # Langkah 3: Validasi
-        # Hanya gabungkan jika final_stem adalah kata dasar yang valid
-        if self.dictionary.is_kata_dasar(final_stem):
+        
+        # Jika kata sudah merupakan kata dasar, langsung kembalikan
+        if self.dictionary.is_kata_dasar(normalized_word):
+            return normalized_word
+        
+        # Strategi 1: Prefiks dulu, baru sufiks
+        stem_after_prefixes, stripped_prefix_list = self._strip_prefixes(normalized_word)
+        final_stem_strat1, stripped_suffix_list_strat1 = self._strip_suffixes(stem_after_prefixes)
+        is_strat1_valid_root = self.dictionary.is_kata_dasar(final_stem_strat1)
+        
+        # Strategi 2: Sufiks dulu, baru prefiks
+        stem_after_suffixes, stripped_suffix_list_strat2 = self._strip_suffixes(normalized_word)
+        final_stem_strat2, stripped_prefix_list_strat2 = self._strip_prefixes(stem_after_suffixes)
+        is_strat2_valid_root = self.dictionary.is_kata_dasar(final_stem_strat2)
+        
+        # Pilih strategi yang menghasilkan kata dasar valid
+        if is_strat1_valid_root:
+            # Gunakan hasil dari Strategi 1
             parts = []
             if stripped_prefix_list:
                 parts.extend(stripped_prefix_list)
-            parts.append(final_stem)
-            if stripped_suffix_list: # stripped_suffix_list sudah dalam urutan yang benar dari _strip_suffixes (misal: [kan, lah])
-                parts.extend(stripped_suffix_list)
-
-            if not stripped_prefix_list and not stripped_suffix_list: # Tidak ada afiks yang dilepas
-                 return final_stem # Kembalikan kata dasar jika memang itu inputnya
+            parts.append(final_stem_strat1)
+            if stripped_suffix_list_strat1:
+                parts.extend(stripped_suffix_list_strat1)
+            
+            if not stripped_prefix_list and not stripped_suffix_list_strat1:
+                return final_stem_strat1
             return '~'.join(parts)
-        else:
-            # Jika setelah semua pelepasan, tidak menghasilkan kata dasar yang valid,
-            # kembalikan kata yang sudah dinormalisasi (atau kata asli jika normalisasi tidak menghasilkan apa-apa).
-            # Perilaku fallback ini mungkin perlu dipertimbangkan lebih lanjut sesuai kebutuhan.
-            # Untuk sekarang, jika normalisasi adalah kata dasar, kembalikan itu.
-            if self.dictionary.is_kata_dasar(normalized_word):
-                return normalized_word
-            # Jika kata input yang dinormalisasi juga bukan kata dasar, dan segmentasi gagal,
-            # tes mungkin mengharapkan kata asli yang dinormalisasi dikembalikan.
-            # Untuk "dimakanlah", jika gagal total, apakah "dimakanlah" atau "di~makan~lah" yang diharapkan?
-            # Tes "dimakanlah" == "di~makan~lah" berarti segmentasi HARUS berhasil.
-            # Jika final_stem tidak valid, berarti ada yang salah dalam logika _strip_suffixes atau _strip_prefixes
-            # atau kata tersebut memang tidak bisa disegmentasi dengan aturan saat ini.
-            # Untuk tujuan tes, kita asumsikan jika tidak valid, maka tidak ada segmen.
-            # Namun, jika input awal adalah kata dasar, itu harus dikembalikan.
-            return normalized_word # Fallback sementara
-        parts = []
-        if stripped_prefixes:
-            parts.extend(stripped_prefixes)
-        parts.append(final_word)
-        if stripped_suffixes:
-            parts.extend(stripped_suffixes)
-
-        return '~'.join(parts)
+            
+        elif is_strat2_valid_root:
+            # Gunakan hasil dari Strategi 2
+            parts = []
+            if stripped_prefix_list_strat2:
+                parts.extend(stripped_prefix_list_strat2)
+            parts.append(final_stem_strat2)
+            if stripped_suffix_list_strat2:
+                parts.extend(stripped_suffix_list_strat2)
+            
+            if not stripped_prefix_list_strat2 and not stripped_suffix_list_strat2:
+                return final_stem_strat2
+            return '~'.join(parts)
+        
+        # Jika kedua strategi gagal, kembalikan kata yang sudah dinormalisasi
+        return normalized_word
 
     def _handle_reduplication(self, word: str) -> str:
         """
@@ -252,133 +117,65 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         """
         pass # Stub implementation
 
-    def _strip_prefixes(self, word: str) -> tuple[str, list[str]]:
-        current_word = str(word)
-        prefixes = []
-        
-        # Prefiks dasar
-        basic_prefixes = ["di", "ke", "se"]
-        for pref in basic_prefixes:
-            if current_word.startswith(pref):
-                stem_candidate = current_word[len(pref):]
-                # Kasus khusus untuk "sekolah" yang merupakan kata dasar
-                if current_word == "sekolah":
-                    continue
-                if len(stem_candidate) >= 2 and (not self.dictionary.is_kata_dasar(current_word) or pref == "se"):
-                    # Validasi tambahan untuk prefiks "se"
-                    if pref == "se" and self.dictionary.is_kata_dasar(current_word):
-                        # Jika kata dengan prefiks "se" adalah kata dasar, jangan lepaskan prefiks
-                        # kecuali untuk kasus khusus
-                        if current_word not in ["sebaiknya", "sebisanya"]:
-                            continue
-                    prefixes.append(pref)
-                    current_word = stem_candidate
-                    break
-        
-        # Prefiks kompleks meN- dan peN-
-        men_pen_patterns = [
-            ("meng", "kghq"),
-            ("meny", "s"),
-            ("men", "cdjtz"),
-            ("mem", "bfv"),
-            ("me", "lmnrywaeiou"),
-            ("peng", "kghq"),
-            ("peny", "s"),
-            ("pen", "cdjtz"),
-            ("pem", "bfv"),
-            ("pe", "lmnrywaeiou")
-        ]
-        
-        for pref, after in men_pen_patterns:
-            if current_word.startswith(pref):
-                sisa = current_word[len(pref):]
-                if sisa:
-                    # Cek peluluhan konsonan
-                    if pref in ["meng", "peng"] and sisa and sisa[0] == "k":
-                        stem_candidate = sisa[1:]
-                    elif pref in ["meny", "peny"] and sisa and sisa[0] == "s":
-                        stem_candidate = sisa[1:]
-                    elif pref in ["men", "pen"] and sisa and sisa[0] in "cdjtz":
-                        stem_candidate = sisa
-                    elif pref in ["mem", "pem"] and sisa and sisa[0] in "bfv":
-                        stem_candidate = sisa
-                    elif pref in ["me", "pe"] and sisa and sisa[0] in "lmnrywaeiou":
-                        stem_candidate = sisa
-                    else:
-                        stem_candidate = sisa
-                    
-                    # Validasi kata dasar
-                    if self.dictionary.is_kata_dasar(stem_candidate):
-                        if pref.startswith("me"):
-                            prefixes.append("meN")
-                        else:
-                            prefixes.append("peN")
-                        current_word = stem_candidate
-                        break
-        
-        return current_word, prefixes
 
     def _strip_suffixes(self, word: str) -> tuple[str, list[str]]:
-        # Kasus khusus untuk kata-kata tertentu dalam tes
-        if word == "ambilkanlah":
-            return "ambil", ["kan", "lah"]
-        if word == "mainkanlah":
-            return "main", ["kan", "lah"]
-        if word == "rumahpunku" or word == "rumahkupun":
-            return "rumah", ["ku", "pun"]
-        if word == "buku":
-            return "buku", []
-            
         current_word = str(word)
-        suffixes = []
+        stripped_suffixes_in_stripping_order = []
         
-        # Urutan prioritas pelepasan sufiks
+        # Urutan prioritas pelepasan sufiks (dari luar ke dalam)
         # 1. Partikel: -lah, -kah, -pun
         # 2. Posesif: -ku, -mu, -nya
         # 3. Derivasional: -kan, -i, -an
-        suffix_groups = [
+        suffix_types = [
             ["lah", "kah", "pun"],  # Partikel
             ["ku", "mu", "nya"],    # Posesif
             ["kan", "i", "an"]      # Derivasional
         ]
         
-        # Iterasi untuk setiap kelompok sufiks
-        for suffix_group in suffix_groups:
-            for suffix in suffix_group:
-                if current_word.endswith(suffix):
-                    stem_candidate = current_word[:-len(suffix)]
-                    
-                    # Validasi panjang stem minimal
-                    if len(stem_candidate) < 2:
-                        continue
+        # Iteratively strip suffixes until no more known suffixes are found
+        something_stripped = True
+        while something_stripped:
+            something_stripped = False
+            # Try stripping each type of suffix in order
+            for suffixes_list in suffix_types:
+                # Check for each suffix within the current type list
+                for sfx in suffixes_list:
+                    if current_word.endswith(sfx):
+                        stem_candidate = current_word[:-len(sfx)]
                         
-                    # Untuk sufiks derivatif, cek panjang minimal
-                    if suffix in ["kan", "i", "an"] and len(stem_candidate) < 3:
-                        continue
+                        # Validasi panjang stem minimal
+                        if len(stem_candidate) < 2:
+                            continue
+                            
+                        # Untuk sufiks derivatif, cek panjang minimal
+                        if sfx in suffix_types[2] and len(stem_candidate) < self.MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING:
+                            continue
+                            
+                        # Untuk sufiks posesif, cek panjang minimal
+                        if sfx in suffix_types[1] and len(stem_candidate) < self.MIN_STEM_LENGTH_FOR_POSSESSIVE:
+                            continue
+                            
+                        # Untuk sufiks partikel, cek panjang minimal
+                        if sfx in suffix_types[0] and len(stem_candidate) < self.MIN_STEM_LENGTH_FOR_PARTICLE:
+                            continue
                         
-                    # Untuk sufiks posesif/partikel, cek panjang minimal
-                    if suffix in ["ku", "mu", "nya", "lah", "kah", "pun"] and len(stem_candidate) < 2:
-                        continue
-                    
-                    # Kasus khusus untuk kata seperti "sekolah" yang bukan "se~kolah"
-                    if suffix == "lah" and current_word == "sekolah" and stem_candidate == "seko":
-                        continue
+                        # Kasus khusus untuk kata seperti "sekolah" yang bukan "se~kolah"
+                        if sfx == "lah" and current_word == "sekolah" and stem_candidate == "seko":
+                            continue
                         
-                    # Tambahkan sufiks ke daftar dan perbarui kata saat ini
-                    suffixes.append(suffix)
-                    current_word = stem_candidate
-                    
-                    # Lanjutkan ke kelompok sufiks berikutnya
-                    break
+                        # Tambahkan sufiks ke daftar dan perbarui kata saat ini
+                        current_word = stem_candidate
+                        stripped_suffixes_in_stripping_order.append(sfx)
+                        something_stripped = True
+                        # Restart the stripping process from the outermost suffix type
+                        # This handles cases like 'rumahkupun' where 'pun' is stripped, then 'ku' can be stripped from 'rumahku'
+                        break # Break inner loop (suffixes_list)
+                if something_stripped:
+                    break # Break outer loop (suffix_types) and restart while loop
         
-        # Kembalikan kata setelah pelepasan sufiks dan daftar sufiks yang dilepas
-        # Untuk kasus khusus, urutkan sufiks sesuai dengan urutan yang diharapkan dalam tes
-        if len(suffixes) > 1 and "kan" in suffixes and "lah" in suffixes:
-            return current_word, ["kan", "lah"]
-        if len(suffixes) > 1 and "ku" in suffixes and "pun" in suffixes:
-            return current_word, ["ku", "pun"]
-            
-        return current_word, suffixes
+        # `stripped_suffixes_in_stripping_order` contains suffixes in stripping order (outermost to innermost).
+        # For test output expecting order like ['kan', 'lah'], we need to reverse it.
+        return current_word, list(reversed(stripped_suffixes_in_stripping_order))
 
         # Kode di bawah ini sudah tidak digunakan lagi karena sudah digantikan dengan implementasi di atas
         # Tetap disimpan sebagai referensi untuk pengembangan lebih lanjut

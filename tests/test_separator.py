@@ -114,7 +114,7 @@ def test_strip_combined_affixes():
     # Test cases with only prefixes
     assert mkk.segment("dibaca") == "di~baca"
     assert mkk.segment("ketua") == "ke~tua"
-    assert mkk.segment("sekolah") == "se~kolah"
+    assert mkk.segment("sekolah") == "sekolah"
 
     # Test cases with only suffixes (should still work via segment calling _strip_suffixes)
     assert mkk.segment("bukuku") == "buku~ku"
