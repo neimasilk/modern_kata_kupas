@@ -18,23 +18,42 @@ class ModernKataKupas:
     MIN_STEM_LENGTH_FOR_POSSESSIVE = 3 # Define minimum stem length for possessive stripping
     MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING = 4 # Define minimum stem length for derivational suffix stripping
     MIN_STEM_LENGTH_FOR_PARTICLE = 3 # Define minimum stem length for particle stripping
-    def __init__(self):
+    def __init__(self, dictionary_path: str = None, rules_file_path: str = None):
         """
-        Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
+Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
+
+        Args:
+            dictionary_path (str, optional): Path ke file kamus khusus.
+                                            Jika None, kamus default akan dimuat.
+            rules_file_path (str, optional): Path ke file aturan khusus.
+                                           Jika None, file aturan default akan dimuat.
         """
-        # Initialize dependencies (stubs for now)
-        # self.normalizer = TextNormalizer()
-        # self.dictionary = RootWordDictionary()
-        # self.rules = AffixRuleRepository()
-        # self.stemmer = IndonesianStemmer()
-        # self.aligner = alignment_function # Placeholder for the function/callable
+        import importlib
         
-        # Initialize dependencies
+        # Constants for default rules file location
+        DEFAULT_DATA_PACKAGE_PATH = 'modern_kata_kupas.data'
+        DEFAULT_RULES_FILENAME = 'affix_rules.json'
+        
         self.normalizer = TextNormalizer()
-        self.dictionary = DictionaryManager()
-        self.rules = MorphologicalRules()
+        self.dictionary = DictionaryManager(dictionary_path=dictionary_path)
         self.stemmer = IndonesianStemmer()
         self.aligner = align
+
+        if rules_file_path:
+            self.rules = MorphologicalRules(rules_path=rules_file_path)
+        else:
+            try:
+                with importlib.resources.path(DEFAULT_DATA_PACKAGE_PATH, DEFAULT_RULES_FILENAME) as default_rules_path:
+                    self.rules = MorphologicalRules(rules_path=str(default_rules_path))
+            except (FileNotFoundError, TypeError, ModuleNotFoundError) as e:
+                print(f"Warning: Could not load rules via importlib.resources ({e}). Trying relative path.")
+                base_dir = os.path.dirname(os.path.abspath(__file__))
+                default_rules_path_rel = os.path.join(base_dir, "data", DEFAULT_RULES_FILENAME)
+                if os.path.exists(default_rules_path_rel):
+                    self.rules = MorphologicalRules(rules_path=default_rules_path_rel)
+                else:
+                    print(f"Error: Default rules file '{DEFAULT_RULES_FILENAME}' not found at expected locations. Initializing with placeholder rules.")
+                    self.rules = MorphologicalRules()
 
     def segment(self, word: str) -> str:
         normalized_word = self.normalizer.normalize_word(word)

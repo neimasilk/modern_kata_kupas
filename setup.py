@@ -6,7 +6,7 @@ setup(
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     package_data={
-        'modern_kata_kupas.data': ['*.txt'],
+        'modern_kata_kupas.data': ['*.txt', '*.json', 'affix_rules.json'],
     },
     install_requires=[
         # dependensi Anda, jika ada

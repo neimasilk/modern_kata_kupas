@@ -1,241 +1,331 @@
-Tentu, mari kita bahas saran yang lengkap dan mendetail untuk menyelesaikan Langkah 1.6 dari rencana implementasi Anda (`ModernKataKupas_ImplementationPlan_v1.md`).
+Baik, saya telah menganalisis output \`pytest\` Anda. Terdapat dua kegagalan utama:
 
-**Tujuan Langkah 1.6:** Implementasi pelepasan prefiks dasar (`di-`, `ke-`, `se-`) yang non-morfofonemik, dengan menggunakan `AffixRuleRepository`.
+1.  **`test_strip_basic_prefixes`**: Gagal karena `mkk._strip_prefixes("dibaca")` mengembalikan `('dibaca', [])` padahal seharusnya `('baca', ['di'])`.
+2.  **`test_strip_combined_affixes`**: Gagal karena `mkk.segment("dimakanlah")` mengembalikan `'dimakanlah'` padahal seharusnya `'di~makan~lah'`.
 
-Berikut adalah langkah-langkah mendetail yang disarankan:
+Pesan *stdout* yang paling menonjol dan muncul di kedua kegagalan adalah:
+`Placeholder: MorphologicalRules initialized without specific rules file.`
 
-**1. Persiapan dan Pemahaman Aturan Afiks (AffixRuleRepository)**
+Ini adalah akar masalahnya. Kelas `ModernKataKupas` saat diinisialisasi dalam tes tidak memuat file `affix_rules.json` yang berisi aturan-aturan prefiks. Akibatnya, `self.rules` di dalam `ModernKataKupas` tidak memiliki aturan yang diperlukan, sehingga `_strip_prefixes` tidak dapat melepaskan prefiks apa pun.
 
-* **Tinjau Struktur `AffixRuleRepository` (Langkah 0.4)**:
-    * Pastikan Anda memahami bagaimana `AffixRuleRepository` (yang diimplementasikan sebagai kelas `MorphologicalRules` di `src/modern_kata_kupas/rules.py`) memuat dan menyediakan aturan.
-    * Rencana implementasi Langkah 0.4 memberikan contoh struktur JSON untuk `affix_rules.json`. Contohnya adalah:
-        ```json
-        {
-          "prefixes": {
-            "di-": {"canonical": "di", "type": "prefix_derivational", "surface_forms": ["di"]},
-            "ke-": {"canonical": "ke", "type": "prefix_derivational", "surface_forms": ["ke"]},
-            "meN-": { ... }
-          },
-          "suffixes": { ... }
-        }
-        ```
-    * Namun, kelas `MorphologicalRules` Anda saat ini tampaknya mengharapkan format yang sedikit berbeda saat memuat aturan dari file JSON, yaitu daftar kamus (list of dictionaries) di bawah kunci `"prefixes"` dan `"suffixes"`:
-        ```python
-        # src/modern_kata_kupas/rules.py - MorphologicalRules.load_rules
-        # ...
-        # if not isinstance(loaded_rules[section], list):
-        #     raise ValueError(f"Bagian {section} harus berupa list")
-        # ...
-        ```
-        Contoh di `test_rules.py` juga menggunakan format ini:
-        ```python
-        # tests/test_rules.py - dummy_rules_file fixture
-        rules_content = {
-            "prefixes": [
-                {"form": "meN-", "allomorphs": [...]},
-                {"form": "di-"}
-            ],
-            # ...
-        }
-        ```
-    * **Keputusan**: Pilih salah satu format dan pastikan konsisten antara file `affix_rules.json` (yang akan Anda buat atau perbarui) dan cara `MorphologicalRules` mem-parsingnya. Untuk prefiks sederhana seperti `di-`, `ke-`, `se-`, Anda mungkin hanya memerlukan `form` (bentuk permukaan) dan `canonical` (bentuk kanonik).
+Mari kita perbaiki ini dengan memastikan `ModernKataKupas` memuat file aturan saat inisialisasi.
 
-* **Buat atau Perbarui `affix_rules.json`**:
-    * Buat file `affix_rules.json` di direktori `src/modern_kata_kupas/data/` (sesuai rencana Langkah 0.4).
-    * Isi file ini dengan aturan untuk prefiks `di-`, `ke-`, dan `se-`. Mengikuti format yang diharapkan oleh `MorphologicalRules.py` (list of dictionaries):
-        ```json
-        {
-          "prefixes": [
-            {
-              "form": "di",
-              "canonical": "di",
-              "type": "prefix_derivational"
-              // Anda bisa menambahkan "surface_forms": ["di"] jika diperlukan,
-              // namun untuk prefiks sederhana ini, 'form' mungkin cukup.
-            },
-            {
-              "form": "ke",
-              "canonical": "ke",
-              "type": "prefix_derivational"
-            },
-            {
-              "form": "se",
-              "canonical": "se",
-              "type": "prefix_derivational"
-            }
-            // Tambahkan aturan prefiks lain dari Langkah 0.4 jika belum ada,
-            // misalnya contoh untuk meN- (meskipun ini akan digunakan di Langkah 2.1)
-          ],
-          "suffixes": [
-            // Definisikan juga aturan sufiks dari Langkah 0.4 dan 1.5 di sini
-            // jika Anda ingin semua aturan terpusat.
-            // Contoh:
-            // { "form": "kan", "canonical": "kan", "type": "suffix_derivational" },
-            // { "form": "lah", "canonical": "lah", "type": "particle" }
-          ]
-        }
-        ```
-    * Pastikan `MorphologicalRules` diinisialisasi untuk memuat file ini. Jika Anda belum menentukan path file aturan saat inisialisasi `MorphologicalRules` di `ModernKataKupas.__init__`, Anda perlu melakukannya, atau pastikan `MorphologicalRules` memiliki path default ke `src/modern_kata_kupas/data/affix_rules.json`.
-        ```python
-        # src/modern_kata_kupas/separator.py
-        # class ModernKataKupas:
-        #     def __init__(self):
-        #         # ...
-        #         # Pastikan rules_path_actual menunjuk ke file affix_rules.json Anda
-        #         rules_path_actual = "src/modern_kata_kupas/data/affix_rules.json" # atau path yang sesuai
-        #         self.rules = MorphologicalRules(rules_path_actual)
-        #         # ...
-        ```
-        Perhatikan bahwa `MorphologicalRules` saat ini mencetak pesan placeholder jika tidak ada path yang diberikan.
+**Langkah-langkah Perbaikan:**
 
-**2. Refaktor Metode `_strip_prefixes` di `separator.py`**
+1.  **Modifikasi `ModernKataKupas.__init__` di `src/modern_kata_kupas/separator.py`**:
+    Kita akan mengubah konstruktor untuk memuat `affix_rules.json` menggunakan `importlib.resources`, mirip dengan cara `DictionaryManager` memuat kamus default. Ini memastikan bahwa file aturan dapat ditemukan terlepas dari bagaimana paket diinstal atau dijalankan.
 
-* Ubah implementasi `_strip_prefixes` untuk menggunakan aturan yang dimuat oleh `self.rules`.
-    ```python
-    # src/modern_kata_kupas/separator.py
+2.  **Perbarui `setup.py`**:
+    File `setup.py` saat ini hanya menyertakan file `*.txt` dalam `package_data` untuk `modern_kata_kupas.data`. Ini perlu diperbarui untuk juga menyertakan file `*.json`.
+
+Berikut adalah modifikasi yang diusulkan:
+
+**1. Modifikasi `src/modern_kata_kupas/separator.py`**
+
+```python
+# src/modern_kata_kupas/separator.py
+"""
+Modul untuk memisahkan kata berimbuhan menjadi kata dasar dan afiksnya.
+"""
+import os # Tambahkan ini jika belum ada
+import importlib.resources # Tambahkan ini
+
+from .normalizer import TextNormalizer
+from .dictionary_manager import DictionaryManager
+from .rules import MorphologicalRules
+from .stemmer_interface import IndonesianStemmer
+from .utils.alignment import align
+
+MIN_STEM_LENGTH_FOR_POSSESSIVE = 3 # Panjang minimal kata dasar untuk pemisahan sufiks posesif
+
+# Path untuk data default dalam paket
+DEFAULT_DATA_PACKAGE_PATH = "modern_kata_kupas.data"
+DEFAULT_RULES_FILENAME = "affix_rules.json"
+
+class ModernKataKupas:
+    """
+    Kelas utama untuk proses pemisahan kata berimbuhan.
+    """
+    MIN_STEM_LENGTH_FOR_POSSESSIVE = 3 
+    MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING = 4 
+    MIN_STEM_LENGTH_FOR_PARTICLE = 3 
+
+    def __init__(self, dictionary_path: str = None, rules_file_path: str = None): # Modifikasi __init__
+        """
+        Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
+
+        Args:
+            dictionary_path (str, optional): Path ke file kamus khusus. 
+                                            Jika None, kamus default akan dimuat.
+            rules_file_path (str, optional): Path ke file aturan khusus. 
+                                           Jika None, file aturan default akan dimuat.
+        """
+        self.normalizer = TextNormalizer()
+        self.dictionary = DictionaryManager(dictionary_path=dictionary_path)
+        self.stemmer = IndonesianStemmer()
+        self.aligner = align
+
+        if rules_file_path:
+            self.rules = MorphologicalRules(rules_path=rules_file_path)
+        else:
+            try:
+                # Menggunakan importlib.resources untuk memuat file aturan default dari paket
+                # Ini mengharuskan __init__.py ada di dalam direktori 'data' agar bisa dianggap sebagai paket
+                # atau path yang benar ke resource
+                
+                # Pastikan direktori 'data' memiliki file __init__.py agar bisa diakses sebagai package
+                # Jika tidak, kita bisa menggunakan path relatif dari file ini
+                # Untuk konsistensi dengan DictionaryManager, kita akan mencoba memuatnya sebagai resource paket.
+
+                # Cara 1: Jika 'modern_kata_kupas.data' adalah sebuah paket (memiliki __init__.py)
+                # Coba untuk mendapatkan path ke file rules menggunakan importlib.resources
+                # Ini lebih aman jika file tersebut berada di dalam package yang terinstal
+                with importlib.resources.path(DEFAULT_DATA_PACKAGE_PATH, DEFAULT_RULES_FILENAME) as default_rules_path:
+                    self.rules = MorphologicalRules(rules_path=str(default_rules_path))
+            except (FileNotFoundError, TypeError, ModuleNotFoundError) as e:
+                # Fallback jika importlib.resources.path gagal atau jika DEFAULT_DATA_PACKAGE_PATH bukan package
+                # Ini bisa terjadi jika struktur direktori tidak tepat atau file tidak ada.
+                # Coba path relatif dari direktori src/modern_kata_kupas
+                print(f"Warning: Could not load rules via importlib.resources ({e}). Trying relative path.")
+                base_dir = os.path.dirname(os.path.abspath(__file__))
+                default_rules_path_rel = os.path.join(base_dir, "data", DEFAULT_RULES_FILENAME)
+                if os.path.exists(default_rules_path_rel):
+                    self.rules = MorphologicalRules(rules_path=default_rules_path_rel)
+                else:
+                    # Jika semua gagal, inisialisasi dengan placeholder rules
+                    print(f"Error: Default rules file '{DEFAULT_RULES_FILENAME}' not found at expected locations. Initializing with placeholder rules.")
+                    self.rules = MorphologicalRules() # Akan mencetak pesan placeholder dari MorphologicalRules
+
+    def segment(self, word: str) -> str:
+        normalized_word = self.normalizer.normalize_word(word)
+        # Hapus print debug jika tidak diperlukan lagi
+        # if word == "dimakanlah" or word == "kesekolah": 
+        #     print(f"DEBUG: segment() called with '{word}'")
+
+        # Strategi 1: Prefiks dulu, baru sufiks
+        stem_after_prefixes, stripped_prefix_list = self._strip_prefixes(normalized_word)
+        # if word == "dimakanlah" or word == "kesekolah":
+        #     print(f"DEBUG_STRAT1: stem_after_prefixes='{stem_after_prefixes}', stripped_prefix_list={stripped_prefix_list}")
+
+        final_stem_strat1, stripped_suffix_list_strat1 = self._strip_suffixes(stem_after_prefixes)
+        # if word == "dimakanlah" or word == "kesekolah":
+        #     print(f"DEBUG_STRAT1: final_stem='{final_stem_strat1}', stripped_suffix_list={stripped_suffix_list_strat1}")
+            # print(f"DEBUG_STRAT1: Checking dictionary for '{final_stem_strat1}'...")
+            # print(f"DEBUG_KS: Is '{final_stem_strat1}' in self.dictionary.kata_dasar_set? { final_stem_strat1 in self.dictionary.kata_dasar_set }")
+
+        is_strat1_valid_root = self.dictionary.is_kata_dasar(final_stem_strat1)
+        # if word == "dimakanlah" or word == "kesekolah":
+        #     print(f"DEBUG_STRAT1: is_kata_dasar('{final_stem_strat1}') is {is_strat1_valid_root}")
+
+        if is_strat1_valid_root:
+            parts = []
+            if stripped_prefix_list: 
+                parts.extend(stripped_prefix_list)
+            parts.append(final_stem_strat1)
+            if stripped_suffix_list_strat1: 
+                parts.extend(stripped_suffix_list_strat1)
+            
+            if not stripped_prefix_list and not stripped_suffix_list_strat1: # Hanya jika kata dasar tanpa afiks
+                return final_stem_strat1 
+            return '~'.join(parts)
+        
+        # if word == "dimakanlah" or word == "kesekolah":
+        #     print(f"DEBUG: Strat1 failed for '{final_stem_strat1}'. Trying Strat2.")
+        
+        # Strategi 2: Sufiks dulu, baru prefiks (Fallback)
+        stem_after_suffixes, stripped_suffix_list_strat2 = self._strip_suffixes(normalized_word)
+        # if word == "dimakanlah" or word == "kesekolah":
+        #     print(f"DEBUG_STRAT2: stem_after_suffixes='{stem_after_suffixes}', stripped_suffix_list={stripped_suffix_list_strat2}")
+
+        final_stem_strat2, stripped_prefix_list_strat2 = self._strip_prefixes(stem_after_suffixes)
+        # if word == "dimakanlah" or word == "kesekolah":
+        #     print(f"DEBUG_STRAT2: final_stem='{final_stem_strat2}', stripped_prefix_list={stripped_prefix_list_strat2}")
+            # print(f"DEBUG_STRAT2: Checking dictionary for '{final_stem_strat2}'...")
+        
+        is_strat2_valid_root = self.dictionary.is_kata_dasar(final_stem_strat2)
+        # if word == "dimakanlah" or word == "kesekolah":
+        #         print(f"DEBUG_STRAT2: is_kata_dasar('{final_stem_strat2}') is {is_strat2_valid_root}")
+
+        if is_strat2_valid_root:
+            parts = []
+            if stripped_prefix_list_strat2:
+                parts.extend(stripped_prefix_list_strat2)
+            parts.append(final_stem_strat2)
+            if stripped_suffix_list_strat2:
+                parts.extend(stripped_suffix_list_strat2)
+            
+            if not stripped_prefix_list_strat2 and not stripped_suffix_list_strat2: # Hanya jika kata dasar tanpa afiks
+                    return final_stem_strat2
+            return '~'.join(parts)
+        
+        # if word == "dimakanlah" or word == "kesekolah":
+        #     print(f"DEBUG: Both strats failed. Fallback for '{normalized_word}'.")
+        
+        # Fallback: Jika kedua strategi gagal, kembalikan kata yang sudah dinormalisasi
+        # Ini akan terjadi jika kata tersebut adalah kata dasar atau tidak dapat disegmentasi oleh aturan saat ini.
+        return normalized_word
+
+
+    def _handle_reduplication(self, word: str) -> str:
+        """
+        Helper method to handle reduplication (stub).
+        """
+        # pass # Stub implementation - Komentari atau hapus jika tidak digunakan
+        return word # Untuk saat ini kembalikan kata aslinya
+
+
+    def _strip_suffixes(self, word: str) -> tuple[str, list[str]]:
+        current_word = str(word) 
+        stripped_suffixes_in_stripping_order = []
+
+        particles = ['kah', 'lah', 'pun']
+        
+        # Strip partikel
+        original_word_before_particle_check = current_word
+        for particle_sfx in particles:
+            if current_word.endswith(particle_sfx):
+                remainder = current_word[:-len(particle_sfx)]
+                if len(remainder) >= self.MIN_STEM_LENGTH_FOR_PARTICLE:
+                    # Logika untuk mencegah pelepasan salah (misal "sekolah" -> "seko")
+                    is_original_root = self.dictionary.is_kata_dasar(original_word_before_particle_check)
+                    is_remainder_root = self.dictionary.is_kata_dasar(remainder)
+                    
+                    # Izinkan pelepasan jika:
+                    # 1. Sisa kata adalah root ("ada" dari "adalah")
+                    # 2. Atau, kata asli bukan root (jadi pelepasan tidak merusak root yang sudah ada)
+                    # 3. Atau, keduanya adalah root (misalnya "adalah" -> "ada")
+                    if is_remainder_root or not is_original_root or (is_original_root and is_remainder_root):
+                        # Pengecualian spesifik (opsional, jika ada kasus sulit)
+                        if current_word == "adalah" and remainder == "ada" and particle_sfx == "lah":
+                             current_word = remainder
+                             stripped_suffixes_in_stripping_order.append(particle_sfx)
+                             break # Hanya satu partikel yang dilepas
+                        elif not (is_original_root and not is_remainder_root) : # General case
+                             current_word = remainder
+                             stripped_suffixes_in_stripping_order.append(particle_sfx)
+                             break # Hanya satu partikel yang dilepas
+        
+        # Strip Posesif
+        possessives = ['ku', 'mu', 'nya']
+        word_before_possessives = current_word
+        for poss_sfx in possessives:
+            if word_before_possessives.endswith(poss_sfx) and \
+               len(word_before_possessives[:-len(poss_sfx)]) >= self.MIN_STEM_LENGTH_FOR_POSSESSIVE:
+                current_word = word_before_possessives[:-len(poss_sfx)]
+                stripped_suffixes_in_stripping_order.append(poss_sfx)
+                break # Hanya satu posesif yang dilepas
+
+        # Strip Derivasional
+        derivational_suffixes = ['kan', 'i', 'an']
+        word_before_derivational = current_word
+        for deriv_sfx in derivational_suffixes:
+            if word_before_derivational.endswith(deriv_sfx):
+                remainder = word_before_derivational[:-len(deriv_sfx)]
+                if len(remainder) >= self.MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING:
+                    current_word = remainder
+                    stripped_suffixes_in_stripping_order.append(deriv_sfx)
+                    break # Hanya satu sufiks derivasional yang dilepas
+
+        return current_word, list(reversed(stripped_suffixes_in_stripping_order))
+
 
     def _strip_prefixes(self, word: str) -> tuple[str, list[str]]:
-        current_word = str(word) # Pastikan bekerja dengan string
-        stripped_prefixes_output = [] # Akan menyimpan bentuk kanonik prefiks
+        current_word = str(word)
+        stripped_prefixes_output = []
 
-        # Dapatkan aturan prefiks dari AffixRuleRepository
-        prefix_rules = self.rules.get_prefix_rules() # Asumsi ini mengembalikan list of dicts
+        # Pastikan self.rules diinisialisasi dengan benar dan memiliki aturan
+        if not hasattr(self.rules, 'get_prefix_rules') or not callable(self.rules.get_prefix_rules):
+             # Ini seharusnya tidak terjadi jika __init__ berjalan dengan benar
+            print("Error: self.rules.get_prefix_rules is not available.")
+            return current_word, stripped_prefixes_output
 
-        # Untuk Langkah 1.6, kita fokus pada prefiks sederhana non-morfofonemik
-        # yang tidak berlapis-lapis (hanya satu prefiks di awal).
-        # Iterasi melalui aturan prefiks yang relevan (misalnya, di-, ke-, se-)
+        prefix_rules = self.rules.get_prefix_rules()
+        if not prefix_rules and (word.startswith("di") or word.startswith("ke") or word.startswith("se")):
+            # Jika aturan kosong tapi kita tahu ada potensi prefiks dari tes yang gagal
+            # ini menunjukkan masalah pemuatan aturan.
+            # Pesan ini hanya untuk debug jika masalah berlanjut.
+            print(f"Warning: Prefix rules are empty. Word: {word}")
+
+
         for rule in prefix_rules:
-            # Asumsikan 'form' adalah bentuk permukaan yang dicari, dan 'canonical' adalah yang disimpan
-            prefix_form = rule.get("form") # Misalnya "di", "ke", "se"
-            canonical_form = rule.get("canonical", prefix_form) # Default ke form jika canonical tidak ada
+            prefix_form = rule.get("form")
+            canonical_form = rule.get("canonical", prefix_form)
 
             if prefix_form and current_word.startswith(prefix_form):
-                # Periksa apakah ini prefiks yang diinginkan untuk Langkah 1.6 (di, ke, se)
-                # Ini bisa dibuat lebih dinamis, tapi untuk awal, filter sederhana bisa digunakan
-                # Atau, pastikan `get_prefix_rules()` hanya mengembalikan yang relevan jika memungkinkan,
-                # atau tambahkan properti 'type' atau 'complexity' pada aturan.
-                # Untuk sekarang, asumsikan semua prefix_form dari aturan adalah kandidat.
-
                 potential_root = current_word[len(prefix_form):]
                 
-                # Validasi apakah potential_root adalah kata dasar atau bisa diproses lebih lanjut
-                # Untuk Langkah 1.6, validasi utama akan dilakukan di metode segment() setelah _strip_suffixes juga.
-                # Di sini kita hanya melakukan pelepasan.
-
+                # Untuk Langkah 1.6, validasi utama akan dilakukan di metode segment()
+                # setelah _strip_suffixes juga. Di sini kita hanya melakukan pelepasan.
                 current_word = potential_root
-                stripped_prefixes_output.append(canonical_form) # Simpan bentuk kanonik
+                stripped_prefixes_output.append(canonical_form)
                 
                 # Untuk Langkah 1.6 (prefiks sederhana, non-morfofonemik, tidak berlapis),
                 # kita biasanya hanya melepas satu prefiks dari jenis ini.
-                break # Hentikan setelah prefiks pertama yang cocok dilepas
+                break 
 
         return current_word, stripped_prefixes_output
-    ```
 
-**3. Tinjau dan Perbarui Pengujian di `test_separator.py`**
+    def _apply_morphophonemic_segmentation_rules(self, word: str) -> str:
+        """
+        Helper method to apply morphophonemic segmentation rules (stub).
+        """
+        # pass # Stub implementation
+        return word # Kembalikan kata asli untuk saat ini
+```
 
-* **Kata Dasar untuk Pengujian**:
-    * Tambahkan kata `sana` dan `buah` ke dalam file `tests/data/test_kata_dasar.txt` jika Anda mengharapkannya menjadi kata dasar yang valid setelah pelepasan prefiks `ke-` dan `se-`.
-        ```text
-        // tests/data/test_kata_dasar.txt
-        // ... (kata-kata yang sudah ada)
-        sana
-        buah
-        ```
-    * Jika `kesana` atau `sebuah` adalah kata dasar utuh dalam kamus Anda (dan tidak seharusnya disegmentasi), maka pengujiannya harus mencerminkan hal tersebut (misalnya, `mkk.segment("kesana") == "kesana"`). Berdasarkan rencana, tampaknya `ke~sana` dan `se~buah` adalah hasil yang diharapkan, yang menyiratkan `sana` dan `buah` adalah kata dasar.
+**Penjelasan Perubahan di `ModernKataKupas.__init__`:**
 
-* **Pengujian Unit untuk `_strip_prefixes`**:
-    * Pastikan pengujian unit untuk `_strip_prefixes` (yaitu `test_strip_basic_prefixes`) masih valid setelah refaktorisasi. Anda mungkin perlu menyesuaikan ekspektasi jika bentuk kanonik prefiks berbeda dari bentuk permukaannya (meskipun untuk `di-`, `ke-`, `se-`, biasanya sama).
-        ```python
-        # tests/test_separator.py
-        def test_strip_basic_prefixes(self): # Ganti self dengan mkk_instance jika menggunakan fixture
-            # ... (setup mkk instance dengan dictionary dan rules yang dimuat)
-            mkk = ModernKataKupas() # Pastikan dictionary dan rules dimuat dengan benar
-            # Contoh: mkk.rules.load_rules("path/to/your/affix_rules.json") jika belum di __init__
-            #         atau pastikan __init__ mkk memuatnya.
+  * Menggunakan `importlib.resources.path(DEFAULT_DATA_PACKAGE_PATH, DEFAULT_RULES_FILENAME)` untuk mendapatkan path ke `affix_rules.json` yang berada di dalam paket. Ini adalah cara yang lebih robust.
+  * Menambahkan fallback ke path relatif jika `importlib.resources` gagal, dan akhirnya ke inisialisasi `MorphologicalRules()` tanpa argumen jika file tetap tidak ditemukan (yang akan mencetak pesan placeholder dari `MorphologicalRules`).
+  * Parameter `rules_file_path` pada `__init__` tetap ada untuk memungkinkan pengguna menyediakan file aturan kustom jika diperlukan.
+  * Saya juga menyederhanakan logika di `segment()` dan `_strip_suffixes()` sedikit berdasarkan observasi dari *trace* dan untuk lebih fokus pada masalah utama yaitu pemuatan aturan. Logika di `_strip_suffixes` diperbarui agar lebih mirip dengan implementasi sebelumnya yang berhasil melewati tes sufiks.
 
-            assert mkk._strip_prefixes("dibaca") == ("baca", ["di"]) # Asumsi kanoniknya "di"
-            assert mkk._strip_prefixes("ketua") == ("tua", ["ke"])   # Asumsi kanoniknya "ke"
-            assert mkk._strip_prefixes("sekolah") == ("kolah", ["se"]) # Asumsi kanoniknya "se"
-            assert mkk._strip_prefixes("dimakan") == ("makan", ["di"])
+**2. Modifikasi `setup.py`**
 
-            # Tambahkan pengujian untuk kesana dan sebuah jika relevan dengan kata dasar Anda
-            if mkk.dictionary.is_kata_dasar("sana"): # Cek apakah "sana" ada di kamus tes
-                 assert mkk._strip_prefixes("kesana") == ("sana", ["ke"])
-            if mkk.dictionary.is_kata_dasar("buah"): # Cek apakah "buah" ada di kamus tes
-                 assert mkk._strip_prefixes("sebuah") == ("buah", ["se"])
+```python
+from setuptools import setup, find_packages
 
-            assert mkk._strip_prefixes("baca") == ("baca", [])
-            assert mkk._strip_prefixes("prabaca") == ("prabaca", []) # Tidak ada aturan "pra"
-        ```
+setup(
+    name='modern_kata_kupas',
+    version='0.1.0',
+    packages=find_packages(where='src'),
+    package_dir={'': 'src'},
+    package_data={
+        'modern_kata_kupas.data': ['*.txt', '*.json'], # Tambahkan '*.json'
+    },
+    install_requires=[
+        'PySastrawi', # Pastikan ini ada jika belum
+        # dependensi Anda, jika ada
+    ],
+    # ... (sisa konfigurasi setup.py Anda)
+)
+```
 
-* **Pengujian Integrasi dalam `segment()`**:
-    * Pastikan pengujian dalam `test_strip_combined_affixes` (yang memanggil `mkk.segment()`) masih mencakup kasus-kasus yang relevan untuk Langkah 1.6 dan memberikan hasil yang benar.
-        ```python
-        # tests/test_separator.py
-        def test_strip_combined_affixes(self): # Ganti self dengan mkk_instance jika menggunakan fixture
-            mkk = ModernKataKupas() # Pastikan dictionary dan rules dimuat dengan benar
+**Penjelasan Perubahan di `setup.py`:**
 
-            # Kasus dari rencana implementasi Langkah 1.6
-            assert mkk.segment("dibaca") == "di~baca"
-            # Untuk kesana dan sebuah, tergantung pada ketersediaan kata dasar
-            if mkk.dictionary.is_kata_dasar("sana"):
-                assert mkk.segment("kesana") == "ke~sana"
-            else:
-                # Jika "sana" tidak ada, dan "kesana" juga tidak, mungkin hasilnya "kesana" (tidak disegmentasi)
-                # atau perilaku lain sesuai logika fallback Anda.
-                # Untuk saat ini, asumsikan "sana" akan ada jika tes ini ingin berhasil.
-                pass # Tambahkan assertion yang sesuai jika "sana" tidak ada
+  * Pada `package_data`, `'modern_kata_kupas.data': ['*.txt']` diubah menjadi `'modern_kata_kupas.data': ['*.txt', '*.json']`. Ini akan memastikan bahwa file `affix_rules.json` (dan file JSON lainnya di direktori tersebut) disertakan saat paket dibuat dan diinstal.
+  * Saya juga menambahkan `PySastrawi` ke `install_requires` untuk memastikan dependensi tersebut terinstal, karena kelas `IndonesianStemmer` Anda menggunakannya.
 
-            if mkk.dictionary.is_kata_dasar("buah"):
-                assert mkk.segment("sebuah") == "se~buah"
-            else:
-                pass # Tambahkan assertion yang sesuai jika "buah" tidak ada
-            
-            assert mkk.segment("dimakanan") == "di~makan~an" # Ini sudah dicakup oleh "dimakanlah" atau "dibukukan"
+**3. Tambahkan `__init__.py` ke `src/modern_kata_kupas/data/` (Jika Belum Ada)**
 
-            # Verifikasi ulang kasus lain yang melibatkan prefiks ini:
-            assert mkk.segment("dimakanlah") == "di~makan~lah"
-            assert mkk.segment("kesekolah") == "ke~sekolah" # Membutuhkan "sekolah" atau "kolah" sebagai dasar
-                                                          # Dictionary tes Anda punya "kolah"
-                                                          # Logika segment() Anda akan mencoba:
-                                                          # 1. ke + sekolah -> _strip_prefixes("kesekolah") -> ("sekolah", ["ke"])
-                                                          #    _strip_suffixes("sekolah") -> ("sekolah", []) -> final_stem="sekolah"
-                                                          #    Apakah "sekolah" ada di kamus? Jika tidak, strategi 1 gagal.
-                                                          # 2. _strip_suffixes("kesekolah") -> ("kesekolah", [])
-                                                          #    _strip_prefixes("kesekolah") -> ("sekolah", ["ke"]) -> final_stem="sekolah"
-                                                          #    Jika "sekolah" tidak di kamus, maka hasil akhirnya "kesekolah".
-                                                          # Jika "kolah" yang ada di kamus, maka segmentasi "kesekolah" 
-                                                          # dengan aturan saat ini mungkin tidak menghasilkan "ke~se~kolah"
-                                                          # kecuali jika "sekolah" di-stem menjadi "kolah" atau
-                                                          # "se-" adalah prefiks yang bisa dilepas dari "sekolah" untuk menghasilkan "kolah".
-                                                          # Ini menyoroti pentingnya urutan dan validasi pada tiap langkah.
-                                                          # Untuk Langkah 1.6, fokus pada "ke~[kata dasar]" jika "[kata dasar]" ada.
-                                                          # Jadi, jika "sekolah" adalah kata dasar, "ke~sekolah". Jika "sana" kd, "ke~sana".
-    ```
+Agar `importlib.resources` dapat menganggap `modern_kata_kupas.data` sebagai sebuah *package resource*, direktori `src/modern_kata_kupas/data/` sebaiknya berisi file `__init__.py` (bisa kosong).
 
-**4. Verifikasi Urutan Pemrosesan dalam `segment()`**
+```
+src/
+└── modern_kata_kupas/
+    ├── __init__.py
+    ├── data/
+    │   ├── __init__.py  <-- Tambahkan file ini (kosong)
+    │   ├── affix_rules.json
+    │   └── kata_dasar.txt
+    ├── dictionary_manager.py
+    ├── ... (file lainnya)
+```
 
-* Rencana menyebutkan: "*This highlights the need for a clear processing order: Suffixes first, then Prefixes for simple cases*."
-* Metode `segment()` Anda saat ini sudah memiliki dua strategi:
-    1.  Prefiks dulu, baru sufiks.
-    2.  Jika gagal, sufiks dulu, baru prefiks.
-* Ini adalah pendekatan yang masuk akal untuk eksplorasi. Untuk prefiks dan sufiks sederhana (non-morfofonemik dan tidak banyak lapisan), urutan mungkin tidak terlalu krusial selama kata dasar akhir divalidasi. Namun, untuk kasus yang lebih kompleks nanti, urutan yang lebih tetap berdasarkan prinsip linguistik mungkin diperlukan.
-* Untuk Langkah 1.6, pastikan strategi ini menghasilkan segmentasi yang benar untuk kasus uji yang diberikan. Misalnya, untuk `dimakanan`:
-    * **Strategi 1 (P->S)**: `dimakanan` -> `_strip_prefixes` -> `makanan`, `["di"]`. `_strip_suffixes("makanan")` -> `makan`, `["an"]`. `final_stem = "makan"`. Valid. Hasil: `di~makan~an`.
-    * Ini tampaknya bekerja dengan baik untuk contoh ini.
+**Setelah melakukan perubahan ini:**
 
-**5. Jalankan Semua Pengujian**
+1.  Pastikan file `src/modern_kata_kupas/data/__init__.py` ada (bisa kosong).
+2.  Jika Anda menginstal paket secara lokal untuk pengembangan (misalnya dengan `pip install -e .`), Anda mungkin perlu menjalankan ulang instalasi tersebut agar perubahan pada `setup.py` (terutama `package_data`) diterapkan dengan benar.
+3.  Jalankan `pytest` lagi.
 
-* Setelah melakukan perubahan, jalankan seluruh suite pengujian Anda (`pytest`) untuk memastikan tidak ada regresi pada fungsionalitas yang sudah ada (terutama Langkah 1.4 dan 1.5).
-
-**Contoh Tambahan Pertimbangan untuk `kesekolah`:**
-
-Jika kamus tes Anda memiliki `kolah` tetapi tidak `sekolah`:
-* `_strip_prefixes("kesekolah")` akan menghasilkan `("sekolah", ["ke"])`.
-* Kemudian, jika `sekolah` tidak ada di kamus, `segment` akan mencoba strategi fallback atau mengembalikan `kesekolah`.
-* Jika Anda ingin `kesekolah` disegmentasi menjadi `ke~se~kolah` (dengan asumsi `se-` adalah prefiks lain dan `kolah` adalah kata dasar), ini memerlukan logika pelepasan prefiks yang lebih canggih (mungkin berlapis atau iteratif) yang mungkin di luar cakupan Langkah 1.6 (yang berfokus pada prefiks sederhana tunggal di awal).
-
-Untuk Langkah 1.6, target utamanya adalah `di~[root]`, `ke~[root]`, `se~[root]` dimana `[root]` adalah kata dasar yang valid.
-
-Setelah menyelesaikan poin-poin ini, Anda akan memiliki implementasi Langkah 1.6 yang lebih sesuai dengan rencana dan prinsip Vibe Coding, terutama dalam hal eksternalisasi aturan.
+Dengan perubahan ini, `ModernKataKupas` seharusnya dapat menemukan dan memuat `affix_rules.json` dengan benar, yang akan mengatasi pesan `Placeholder: MorphologicalRules initialized without specific rules file.` dan memungkinkan tes prefiks berjalan sesuai harapan.
