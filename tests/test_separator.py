@@ -143,6 +143,9 @@ def test_strip_men_peN_prefixes_step21():
     dictionary_manager = DictionaryManager(dictionary_path=test_dict_path)
     mkk = ModernKataKupas()
     mkk.dictionary = dictionary_manager
+    # Tambahkan assertion untuk memeriksa kamus
+    assert "baca" in mkk.dictionary.kata_dasar_set, "Test dictionary does not contain 'baca' before segmentation call!"
+    assert mkk.dictionary.is_kata_dasar("baca"), "is_kata_dasar('baca') returned False unexpectedly!"
     # Kasus meN-
     assert mkk.segment("membaca") == "meN~baca"
     assert mkk.segment("memukul") == "meN~pukul"

@@ -258,82 +258,84 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
             
             # Tangani prefiks kompleks (meN-, peN-)
             if "allomorphs" in rule_group and (canonical_prefix == "meN" or canonical_prefix == "peN"):
+                print(f"[DEBUG_PREFIX] Processing canonical prefix: {canonical_prefix}")
                 for allomorph_rule in rule_group["allomorphs"]:
                     surface_form = allomorph_rule.get("surface")
-                    
+                    print(f"[DEBUG_PREFIX]   Trying allomorph: {surface_form}")
+
                     if current_word.startswith(surface_form):
                         remainder = current_word[len(surface_form):]
+                        print(f"[DEBUG_PREFIX]     Match found. Remainder: {remainder}")
                         if not remainder: # Jika setelah dipotong tidak ada sisa
+                            print(f"[DEBUG_PREFIX]     Remainder is empty. Skipping.")
                             continue
 
                         reconstructed_root = remainder # Default jika tidak ada peluluhan
-                        
-                        # Tangani kasus peluluhan
+
+                        # Tangani kasus peluluhan dan rekonstruksi
                         if allomorph_rule.get("elision"):
-                            next_char_original = remainder[0] if remainder else ''
-                            valid_next_chars = allomorph_rule.get("next_char_is", [])
-                            
-                            if allomorph_rule.get("reconstruct_root_initial"):
-                                possible_reconstructions = allomorph_rule["reconstruct_root_initial"]
-                                for original_char, reconstructed_char in possible_reconstructions.items():
-                                    temp_reconstructed = reconstructed_char + remainder
-                                    if temp_reconstructed == root_from_stemmer:
-                                        reconstructed_root = temp_reconstructed
+                            print(f"[DEBUG_PREFIX]     Elision rule detected.")
+                            reconstruct_rule = allomorph_rule.get("reconstruct_root_initial")
+                            print(f"[DEBUG_PREFIX]       Reconstruct rule: {reconstruct_rule}")
+                            if reconstruct_rule:
+                                next_char_in_remainder = remainder[0] if remainder else ''
+                                elided_char = None
+                                print(f"[DEBUG_PREFIX]       Next char in remainder: {next_char_in_remainder}")
+                                # Find the original elided character based on the character in the remainder
+                                for original_char, char_in_remainder in reconstruct_rule.items():
+                                    if next_char_in_remainder == char_in_remainder:
+                                        elided_char = original_char
                                         break
+
+                                print(f"[DEBUG_PREFIX]       Determined elided_char: {elided_char}")
+
+                                if elided_char:
+                                    temp_reconstructed = elided_char + remainder
+                                    print(f"[DEBUG_PREFIX]       Temp reconstructed: {temp_reconstructed}")
+                                    # Prioritize dictionary lookup for validation of the reconstructed root
+                                    is_temp_recon_kd = self.dictionary.is_kata_dasar(temp_reconstructed)
+                                    print(f"[DEBUG_PREFIX]       Is temp reconstructed ('{temp_reconstructed}') a base word? {is_temp_recon_kd}")
+                                    if is_temp_recon_kd:
+                                        reconstructed_root = temp_reconstructed
+                                        # If reconstruction is successful and the root is valid, we found the stem
+                                        stripped_prefixes_output.append(canonical_prefix)
+                                        current_word = reconstructed_root
+                                        print(f"[DEBUG_PREFIX]       Found valid reconstructed root: {current_word}, Prefixes: {stripped_prefixes_output}. Returning.")
+                                        return current_word, stripped_prefixes_output
+                                    # If reconstruction failed or result is not a base word, continue trying other rules
                                 else:
-                                    continue # Rekonstruksi gagal
-                        
-                        # Tangani kasus monosilabik (menge-/penge-)
-                            elif allomorph_rule.get("is_monosyllabic_root"):
-                                if not self._is_monosyllabic(remainder):
-                                    continue
-                            
-                            # Tangani kasus khusus prefiks 'ke-'
-                            if word.startswith('ke') and len(word) > 2:
-                                # Kasus khusus untuk kata 'tua' dan 'sekolah'
-                                if word[2:] == 'tua' or word[2:] == 'sekolah':
-                                    return word[2:], ['ke']
-                            if current_word.startswith('ke') and len(current_word) > 2:
-                                # Kasus khusus untuk kata 'tua' dan 'sekolah'
-                                if current_word[2:] == 'tua':
-                                    print("[[DEBUG_IF_ENTERED]] Stripping 'ke' from '" + current_word + "' NOW.")
-                                    return current_word[2:], ['ke']
-                                elif current_word[2:] == 'sekolah':
-                                    print("[[DEBUG_IF_ENTERED]] Stripping 'ke' from '" + current_word + "' NOW.")
-                                    return current_word[2:], ['ke']
-                            elif canonical_prefix == 'ke' and remainder in ['tua', 'sekolah']:
-                                # Pengecualian khusus untuk kata 'tua' dan 'sekolah'
-                                if remainder == 'tua' and self.dictionary.is_kata_dasar('tua'):
-                                    print("[[DEBUG_IF_ENTERED]] Stripping 'ke' from '" + current_word + "' NOW.")
-                                    stripped_prefixes_output.append(canonical_prefix)
-                                    current_word = remainder
-                                    return current_word, stripped_prefixes_output
-                                elif remainder == 'sekolah' and self.dictionary.is_kata_dasar('sekolah'):
-                                    print("[[DEBUG_IF_ENTERED]] Stripping 'ke' from '" + current_word + "' NOW.")
-                                    stripped_prefixes_output.append(canonical_prefix)
-                                    current_word = remainder
-                                    return current_word, stripped_prefixes_output
-                                continue
-                        
-                        # Validasi akhir
-                        if self.dictionary.is_kata_dasar(reconstructed_root) and reconstructed_root == root_from_stemmer:
+                                    print(f"[DEBUG_PREFIX]       Could not determine elided_char for next char '{next_char_in_remainder}'.")
+
+                            # If elision rule didn't apply or didn't result in a valid root, check if remainder itself is a root
+                            is_remainder_kd = self.dictionary.is_kata_dasar(remainder)
+                            print(f"[DEBUG_PREFIX]     Is remainder ('{remainder}') a base word? {is_remainder_kd}")
+                            if is_remainder_kd:
+                                stripped_prefixes_output.append(canonical_prefix)
+                                current_word = remainder
+                                print(f"[DEBUG_PREFIX]     Found valid remainder as root: {current_word}, Prefixes: {stripped_prefixes_output}. Returning.")
+                                return current_word, stripped_prefixes_output
+
+                        # If not an elision rule or elision handling didn't return, check if stripping the prefix results in a valid root
+                        elif self.dictionary.is_kata_dasar(remainder):
+                            print(f"[DEBUG_PREFIX]     Remainder ('{remainder}') is base word (non-elision path). Returning.")
                             stripped_prefixes_output.append(canonical_prefix)
-                            current_word = reconstructed_root
+                            current_word = remainder
                             return current_word, stripped_prefixes_output
-                        
-                        # Debug jika diperlukan
-                        # print(f"Debug: For '{original_word_for_prefix_stripping}', rule produced '{reconstructed_root}', stemmer produced '{root_from_stemmer}'")
-            
+
+                        # If none of the above conditions met for this allomorph, continue to next allomorph/rule
+                        print(f"[DEBUG_PREFIX]     No valid root found for allomorph {surface_form}. Continuing to next allomorph.")
+
             # Tangani prefiks sederhana sebagai fallback
-            elif "allomorphs" not in rule_group: # Ini adalah kondisi untuk awalan sederhana
+            # This block should handle simple prefixes like 'di-', 'ter-', 'se-', 'ke-'
+            elif "allomorphs" not in rule_group: # This is the condition for simple prefixes
                 simple_prefix_form = rule_group.get("form")
-                # canonical_prefix sudah diambil di awal loop rule_group
+                canonical_prefix = rule_group.get("canonical") # Ensure canonical_prefix is available here
 
                 if simple_prefix_form and current_word.startswith(simple_prefix_form):
                     potential_root_after_simple_strip = current_word[len(simple_prefix_form):]
 
                     # --- BEGIN DETAILED DEBUG FOR SIMPLE PREFIX CONDITION ---
-                    if original_word_for_prefix_stripping in ["ketua", "kesekolah"]: # Fokus pada kasus bermasalah
+                    if original_word_for_prefix_stripping in ["ketua", "kesekolah"]: # Focus on problematic cases
                         is_potential_root_in_dict = self.dictionary.is_kata_dasar(potential_root_after_simple_strip)
                         stem_of_potential_root = self.stemmer.get_root_word(potential_root_after_simple_strip)
                         is_potential_root_a_true_base = (stem_of_potential_root == potential_root_after_simple_strip)
@@ -349,7 +351,7 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                     if not potential_root_after_simple_strip:
                         continue
 
-                    # root_from_stemmer adalah stem dari kata input asli ke _strip_prefixes
+                    # root_from_stemmer is the stem of the original input word to _strip_prefixes
                     stem_of_original = root_from_stemmer
                     stem_of_remainder = self.stemmer.get_root_word(potential_root_after_simple_strip)
 
