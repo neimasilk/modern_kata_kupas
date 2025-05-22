@@ -157,3 +157,46 @@ def test_strip_men_peN_prefixes_step21():
     # Kasus peN-
     assert mkk.segment("pemukul") == "peN~pukul"
     assert mkk.segment("pengirim") == "peN~kirim"
+
+def test_strip_ber_ter_per_prefixes_step22():
+    """Test kasus Step 2.2: prefiks ber-, ter-, dan per- (alokasi alomorf dan peluluhan)."""
+    import os
+    from src.modern_kata_kupas.dictionary_manager import DictionaryManager
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    test_dict_path = os.path.join(current_dir, "data", "test_kata_dasar.txt")
+    dictionary_manager = DictionaryManager(dictionary_path=test_dict_path)
+    mkk = ModernKataKupas()
+    mkk.dictionary = dictionary_manager
+
+    # Asumsi kata dasar yang relevan ada di test_kata_dasar.txt:
+    # lari, buat, ajar, kerja, ternak, bawa, asa, lihat, anjur, percik, luas, tani
+
+    # Kasus ber-
+    assert mkk.segment("berlari") == "ber~lari"
+    assert mkk.segment("berbuat") == "ber~buat"
+    assert mkk.segment("belajar") == "ber~ajar"    # bel- allomorph
+    assert mkk.segment("bekerja") == "ber~kerja"    # be- allomorph (specific to kerja or k-initial)
+    assert mkk.segment("beternak") == "ber~ternak"  # be- allomorph (specific to ternak or t-initial, based on rule)
+                                                  # Note: rule for ber- was be- + k. If ternak starts with t, this might test fallback or other rules.
+                                                  # The affix_rules.json has ber- (default), bel- (a), be- (k).
+                                                  # So "beternak" should be "ber~ternak" if "be-" is only for "k".
+                                                  # If "beternak" is expected as "ber~ternak", the "be-" allomorph for "ber-" must specifically target "k".
+                                                  # The current rules are: ber->be + k. So "beternak" should be "ber~ternak" via default "ber-" rule.
+
+    # Kasus ter-
+    assert mkk.segment("terbawa") == "ter~bawa"
+    assert mkk.segment("terasa") == "ter~asa"      # Assuming "asa" is a root.
+    assert mkk.segment("terlihat") == "ter~lihat"
+    assert mkk.segment("telanjur") == "ter~anjur"  # tel- allomorph
+    assert mkk.segment("terpercik") == "ter~percik"
+
+    # Kasus per-
+    assert mkk.segment("perbuat") == "per~buat"
+    assert mkk.segment("perluas") == "per~luas"
+    assert mkk.segment("pelajar") == "per~ajar"    # pel- allomorph
+    assert mkk.segment("petani") == "per~tani"      # pe- allomorph
+
+    # Kasus kombinasi dengan sufiks
+    assert mkk.segment("terlihatlah") == "ter~lihat~lah"
+    assert mkk.segment("perbuatannya") == "per~buat~an~nya"
+    assert mkk.segment("belajarlah") == "ber~ajar~lah"

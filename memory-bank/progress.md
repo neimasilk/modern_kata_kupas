@@ -18,4 +18,5 @@ This file will track the progress of the ModernKataKupas project.
 ## Phase 2: Advanced Morphological Processing
 
 - [x] Step 2.1: Advanced Prefix Stripping (meN-, peN-) with Morphophonemic Rules
+- [x] Step 2.2: Advanced Prefix Stripping (ber-, ter-, per-) with Morphophonemic Rules
 - [ ] ... (other steps)

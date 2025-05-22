@@ -246,91 +246,88 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         
         prefix_rules_all = self.rules.get_prefix_rules()
 
-        # Prioritaskan aturan kompleks (meN-/peN-) terlebih dahulu
+        # Process prefix rules.
+        # Complex prefixes (with allomorphs) are processed first, then simple prefixes.
         for rule_group in prefix_rules_all:
             canonical_prefix = rule_group.get("canonical")
-            
-            # Tangani prefiks kompleks (meN-, peN-)
-            if "allomorphs" in rule_group and (canonical_prefix == "meN" or canonical_prefix == "peN"):
+
+            if "allomorphs" in rule_group:  # Handles any complex prefix (meN, peN, ber, ter, per, etc.)
                 for allomorph_rule in rule_group["allomorphs"]:
                     surface_form = allomorph_rule.get("surface")
 
                     if current_word.startswith(surface_form):
                         remainder = current_word[len(surface_form):]
-                        if not remainder: # Jika setelah dipotong tidak ada sisa
+                        if not remainder: # Cannot be a valid root if empty
                             continue
 
-                        reconstructed_root = remainder # Default jika tidak ada peluluhan
+                        # --- Allomorph Applicability Checks ---
+                        # 1. Check next_char_is (if specified in the rule)
+                        # This ensures the allomorph is appropriate for the following characters of the remainder.
+                        next_char_conditions = allomorph_rule.get("next_char_is")
+                        if next_char_conditions:
+                            applicable_by_next_char = False
+                            for cond_char in next_char_conditions:
+                                if remainder.startswith(cond_char):
+                                    applicable_by_next_char = True
+                                    break
+                            if not applicable_by_next_char:
+                                continue  # Allomorph not valid for this remainder based on next_char.
 
-                        # Tangani kasus peluluhan dan rekonstruksi
+                        # 2. Check is_monosyllabic_root (specific to rules like "menge-")
+                        # This ensures the remainder is a monosyllabic root if the rule requires it.
+                        if allomorph_rule.get("is_monosyllabic_root"):
+                            if not self.dictionary.is_kata_dasar(remainder) or \
+                               not self._is_monosyllabic(remainder):
+                                continue # Not a valid monosyllabic root for this allomorph rule.
+                        # --- End of Applicability Checks ---
+
+                        potential_root = None  # Will be set if a valid root is found through subsequent logic.
+
                         if allomorph_rule.get("elision"):
                             reconstruct_rule = allomorph_rule.get("reconstruct_root_initial")
-                            if reconstruct_rule:
-                                next_char_in_remainder = remainder[0] if remainder else ''
-                                elided_char = None
-                                # Determine the elided_char_to_prepend from the first key of reconstruct_rule
-                                if reconstruct_rule: # Ensure reconstruct_rule is not empty
-                                    elided_char_to_prepend = list(reconstruct_rule.keys())[0]
-                                    elided_char = elided_char_to_prepend # Set elided_char
-                                else:
-                                    elided_char_to_prepend = None # Should not happen if elision is true
-
-                                if elided_char: # elided_char is now elided_char_to_prepend
-                                    temp_reconstructed = elided_char + remainder
-                                    # Prioritize dictionary lookup for validation of the reconstructed root
-                                    is_temp_recon_kd = self.dictionary.is_kata_dasar(temp_reconstructed)
-                                    if is_temp_recon_kd:
-                                        reconstructed_root = temp_reconstructed
-                                        # If reconstruction is successful and the root is valid, we found the stem
-                                        stripped_prefixes_output.append(canonical_prefix)
-                                        current_word = reconstructed_root
-                                        return current_word, stripped_prefixes_output
-                                    # If reconstruction failed or result is not a base word, continue trying other rules
-
-                            # If elision rule didn't apply or didn't result in a valid root, check if remainder itself is a root
-                            is_remainder_kd = self.dictionary.is_kata_dasar(remainder)
-                            if is_remainder_kd:
-                                stripped_prefixes_output.append(canonical_prefix)
-                                current_word = remainder
-                                return current_word, stripped_prefixes_output
-
-                        # If not an elision rule or elision handling didn't return, check if stripping the prefix results in a valid root
-                        elif self.dictionary.is_kata_dasar(remainder):
+                            if reconstruct_rule:  # Case 1: Root's initial char was elided (e.g., meN- + tulis -> menulis)
+                                                  # `reconstruct_root_initial` provides the char to prepend.
+                                elided_char_key = list(reconstruct_rule.keys())[0]
+                                temp_reconstructed = elided_char_key + remainder
+                                if self.dictionary.is_kata_dasar(temp_reconstructed):
+                                    potential_root = temp_reconstructed
+                            else:  # Case 2: Elision is true, but reconstruct_root_initial is null.
+                                   # This means part of the prefix was elided (e.g., ber- + ajar -> bel-ajar).
+                                   # The `remainder` itself is the potential root.
+                                if self.dictionary.is_kata_dasar(remainder):
+                                    potential_root = remainder
+                        else:  # Case 3: No elision involved with this allomorph.
+                               # The `remainder` is the potential root.
+                            if self.dictionary.is_kata_dasar(remainder):
+                                potential_root = remainder
+                        
+                        if potential_root: # If any of the above cases yielded a valid root
                             stripped_prefixes_output.append(canonical_prefix)
-                            current_word = remainder
+                            current_word = potential_root
+                            # Once a prefix is successfully stripped and validated, return.
+                            # This implies prefixes are stripped one by one from the outside.
                             return current_word, stripped_prefixes_output
-
-                        # If none of the above conditions met for this allomorph, continue to next allomorph/rule
-
-            # Tangani prefiks sederhana sebagai fallback
-            # This block should handle simple prefixes like 'di-', 'ter-', 'se-', 'ke-'
-            elif "allomorphs" not in rule_group: # This is the condition for simple prefixes
+                            
+                # If this inner loop completes, no allomorph of the current complex prefix rule_group 
+                # matched and resulted in a valid root. Continue to the next rule_group.
+            
+            else:  # Simple prefixes (e.g., "di-", "ke-", "se-", without allomorphs)
                 simple_prefix_form = rule_group.get("form")
-                canonical_prefix = rule_group.get("canonical") # Ensure canonical_prefix is available here
-
+                # canonical_prefix is already fetched at the start of the outer loop.
+                
                 if simple_prefix_form and current_word.startswith(simple_prefix_form):
-                    potential_root_after_simple_strip = current_word[len(simple_prefix_form):]
-
-                    if not potential_root_after_simple_strip:
+                    potential_root = current_word[len(simple_prefix_form):]
+                    if not potential_root: # Cannot be a valid root if empty
                         continue
-
-                    # root_from_stemmer is the stem of the original input word to _strip_prefixes
-                    stem_of_original = root_from_stemmer
-                    stem_of_remainder = self.stemmer.get_root_word(potential_root_after_simple_strip)
-
-                    # Modifikasi untuk membuat prefiks sederhana lebih permisif
-                    if potential_root_after_simple_strip:
+                    
+                    # For simple prefixes, strip if the remainder is a valid base word.
+                    if self.dictionary.is_kata_dasar(potential_root):
                         stripped_prefixes_output.append(canonical_prefix)
-                        current_word = potential_root_after_simple_strip
-                        return current_word, stripped_prefixes_output
-                    if self.dictionary.is_kata_dasar(potential_root_after_simple_strip):
-                        stripped_prefixes_output.append(canonical_prefix)
-                        current_word = potential_root_after_simple_strip
-                        # Setelah menemukan dan melepaskan awalan sederhana yang valid,
-                        # kita bisa langsung return karena biasanya awalan sederhana tidak berlapis keluar setelah awalan kompleks
-                        # dan satu awalan sederhana per pemanggilan _strip_prefixes sudah cukup.
+                        current_word = potential_root
+                        # Once a simple prefix is found and validated, return.
                         return current_word, stripped_prefixes_output
         
+        # If the outer loop completes, no prefix rule (complex or simple) could be stripped.
         return current_word, stripped_prefixes_output
 
     def _apply_morphophonemic_segmentation_rules(self, word: str) -> str:
