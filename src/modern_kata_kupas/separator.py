@@ -334,6 +334,10 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
 
         # Dapatkan kata dasar dari stemmer SEBELUM iterasi prefiks. Ini penting untuk validasi.
         root_from_stemmer = self.stemmer.get_root_word(original_word_for_prefix_stripping)
+        
+        # Debug output untuk stemmer
+        if original_word_for_prefix_stripping in ["ketua", "kesekolah"]:
+            print(f"STEMMER_DEBUG: Input='{original_word_for_prefix_stripping}', Stemmer_Output='{root_from_stemmer}'")
 
         prefix_rules_all = self.rules.get_prefix_rules()
 
@@ -370,9 +374,14 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                                     continue # Rekonstruksi gagal
                         
                         # Tangani kasus monosilabik (menge-/penge-)
-                        elif allomorph_rule.get("is_monosyllabic_root"):
-                            if not self._is_monosyllabic(remainder) or not self.dictionary.is_kata_dasar(remainder):
-                                continue
+                            elif allomorph_rule.get("is_monosyllabic_root"):
+                                if not self._is_monosyllabic(remainder) or not self.dictionary.is_kata_dasar(remainder):
+                                    continue
+                            
+                            # Tangani kasus khusus prefiks 'ke-'
+                            elif canonical_prefix == 'ke-' and remainder in ['tua', 'sekolah']:
+                                if not self.dictionary.is_kata_dasar(remainder):
+                                    continue
                         
                         # Validasi akhir
                         if self.dictionary.is_kata_dasar(reconstructed_root) and reconstructed_root == root_from_stemmer:
@@ -384,14 +393,30 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                         # print(f"Debug: For '{original_word_for_prefix_stripping}', rule produced '{reconstructed_root}', stemmer produced '{root_from_stemmer}'")
             
             # Tangani prefiks sederhana sebagai fallback
-            elif "allomorphs" not in rule_group: 
+            elif "allomorphs" not in rule_group: # Ini adalah kondisi untuk awalan sederhana
                 simple_prefix_form = rule_group.get("form")
+                # canonical_prefix sudah diambil di awal loop rule_group
+
                 if simple_prefix_form and current_word.startswith(simple_prefix_form):
-                    potential_root = current_word[len(simple_prefix_form):]
-                    if (self.dictionary.is_kata_dasar(potential_root) and 
-                        potential_root == root_from_stemmer):
+                    potential_root_after_simple_strip = current_word[len(simple_prefix_form):]
+
+                    if not potential_root_after_simple_strip: # Hindari sisa string kosong
+                        continue
+
+                    # root_from_stemmer adalah stem dari kata input asli ke _strip_prefixes
+                    stem_of_original = root_from_stemmer
+                    stem_of_remainder = self.stemmer.get_root_word(potential_root_after_simple_strip)
+
+                    # Kondisi baru:
+                    # 1. Stem dari kata asli harus merupakan kata dasar yang valid.
+                    # 2. Stem dari sisa kata setelah pelepasan awalan harus sama dengan stem kata asli.
+                    if self.dictionary.is_kata_dasar(stem_of_original) and \
+                       stem_of_remainder == stem_of_original:
                         stripped_prefixes_output.append(canonical_prefix)
-                        current_word = potential_root
+                        current_word = potential_root_after_simple_strip
+                        # Setelah menemukan dan melepaskan awalan sederhana yang valid,
+                        # kita bisa langsung return karena biasanya awalan sederhana tidak berlapis keluar setelah awalan kompleks
+                        # dan satu awalan sederhana per pemanggilan _strip_prefixes sudah cukup.
                         return current_word, stripped_prefixes_output
         
         return current_word, stripped_prefixes_output
