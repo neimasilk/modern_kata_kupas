@@ -200,3 +200,26 @@ def test_strip_ber_ter_per_prefixes_step22():
     assert mkk.segment("terlihatlah") == "ter~lihat~lah"
     assert mkk.segment("perbuatannya") == "per~buat~an~nya"
     assert mkk.segment("belajarlah") == "ber~ajar~lah"
+
+def test_layered_affixes_and_confixes_step23():
+    """Test kasus Step 2.3: Layered affixes and confixes."""
+    import os
+    from src.modern_kata_kupas.dictionary_manager import DictionaryManager
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    test_dict_path = os.path.join(current_dir, "data", "test_kata_dasar.txt")
+    dictionary_manager = DictionaryManager(dictionary_path=test_dict_path)
+    mkk = ModernKataKupas()
+    mkk.dictionary = dictionary_manager
+
+    # Note: These tests depend on the presence of root words in test_kata_dasar.txt:
+    # adil, juang, bangun, taruh, timbang, hasil, main, samping.
+    # Failures might indicate missing root words in the test dictionary.
+
+    assert mkk.segment("keadilan") == "ke~adil~an"
+    assert mkk.segment("perjuangan") == "per~juang~an"
+    assert mkk.segment("pembangunan") == "peN~bangun~an"
+    assert mkk.segment("mempertaruhkan") == "meN~per~taruh~kan"
+    assert mkk.segment("dipertimbangkan") == "di~per~timbang~kan"
+    assert mkk.segment("keberhasilan") == "ke~ber~hasil~an"
+    assert mkk.segment("mempermainkan") == "meN~per~main~kan"
+    assert mkk.segment("dikesampingkan") == "di~ke~samping~kan"

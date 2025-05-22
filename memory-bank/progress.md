@@ -19,4 +19,5 @@ This file will track the progress of the ModernKataKupas project.
 
 - [x] Step 2.1: Advanced Prefix Stripping (meN-, peN-) with Morphophonemic Rules
 - [x] Step 2.2: Advanced Prefix Stripping (ber-, ter-, per-) with Morphophonemic Rules
+- [x] Step 2.3: Handling Layered Prefixes and Suffixes (Confixes)
 - [ ] ... (other steps)
