@@ -202,17 +202,17 @@ class Reconstructor:
                     continue # This allomorph doesn't apply
             
             # 2. Root starting character condition(s)
-            # The separator rules use "next_char_is" (array) or "reconstruct_root_initial" (string or dict)
-            # For reconstructor, we need to check what the base_word starts with.
-            # Let's assume forward rules might use "condition_root_starts_with": ["k", "t", "s", "p"]
-            # or "condition_root_vowel_initial": true
-            condition_starts_with = allomorph_rule.get("condition_root_starts_with") # List of chars
-            if condition_starts_with:
+            # The separator rules use "next_char_is" (array). For reconstruction, this means the base_word should start with one of these characters.
+            condition_next_char_is = allomorph_rule.get("next_char_is") # List of chars (e.g., ["k", "t", "s", "p"])
+            if condition_next_char_is:
                 expected_conditions += 1
-                if any(base_word.startswith(char) for char in condition_starts_with):
+                if any(base_word.startswith(char) for char in condition_next_char_is):
                     conditions_met += 1
                 else:
-                    continue # This allomorph doesn't apply
+                    # If the rule specifies characters the root MUST start with, and it doesn't, this allomorph doesn't apply.
+                    # However, some allomorphs (like default "me-" for "meN-") might not have "next_char_is".
+                    # These should only be skipped if "next_char_is" is present and the condition is not met.
+                    continue 
             
             # 3. Exact root condition (e.g., for "ber-" + "ajar" -> "belajar")
             # Separator rules use "condition_root_is": ["ajar"]
@@ -257,10 +257,12 @@ class Reconstructor:
             # Or the separator's `reconstruct_root_initial` IS the char that was elided.
             char_elided_from_root = allomorph_rule.get("reconstruct_root_initial") # This is from separator perspective.
 
-            if allomorph_rule.get("elision") == "consonant" and isinstance(char_elided_from_root, str):
+            # Simplified elision check based on Sastrawi rules using boolean `true`.
+            elision_type = allomorph_rule.get("elision")
+            if elision_type and isinstance(char_elided_from_root, str): # Handles `elision: true`
                 if temp_base_word.startswith(char_elided_from_root):
                     temp_base_word = temp_base_word[len(char_elided_from_root):]
-            elif allomorph_rule.get("elision") == "vowel_sound_meng": # for meN- + e.g. undur -> mengundur
+            elif elision_type == "vowel_sound_meng": # for meN- + e.g. undur -> mengundur
                 # This case typically means `meng-` is used and no change to root.
                 # The surface form "meng" already handles it.
                 pass
