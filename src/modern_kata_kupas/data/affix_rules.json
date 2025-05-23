@@ -43,6 +43,7 @@
       "type": "prefix_derivational_complex",
       "allomorphs": [
         { "surface": "pe", "next_char_is": ["l","m","n","r","w","y","ng","ny"], "reconstruct_root_initial": null, "elision": false },
+        { "surface": "pe", "next_char_is": ["t"], "reconstruct_root_initial": null, "elision": false },
         { "surface": "penge", "is_monosyllabic_root": true, "reconstruct_root_initial": null, "elision": false },
         { "surface": "pem", "next_char_is": ["p"], "reconstruct_root_initial": "p", "elision": true },
         { "surface": "pen", "next_char_is": ["t"], "reconstruct_root_initial": "t", "elision": true },

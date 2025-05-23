@@ -196,7 +196,7 @@ def test_strip_ber_ter_per_prefixes_step22():
     assert mkk.segment("perbuat") == "per~buat"
     assert mkk.segment("perluas") == "per~luas"
     assert mkk.segment("pelajar") == "per~ajar"    # pel- allomorph
-    assert mkk.segment("petani") == "per~tani"      # pe- allomorph
+    assert mkk.segment("petani") == "peN~tani"     # pe- allomorph of peN-
 
     # Kasus kombinasi dengan sufiks
     assert mkk.segment("terlihatlah") == "ter~lihat~lah"
@@ -216,6 +216,8 @@ def test_layered_affixes_and_confixes_step23():
     # Note: These tests depend on the presence of root words in test_kata_dasar.txt:
     # adil, juang, bangun, taruh, timbang, hasil, main, samping.
     # Failures might indicate missing root words in the test dictionary.
+    print(f"DEBUG_TEST: is_kata_dasar('taruh') = {mkk.dictionary.is_kata_dasar('taruh')}")
+    print(f"DEBUG_TEST: is_kata_dasar('bangun') = {mkk.dictionary.is_kata_dasar('bangun')}")
 
     assert mkk.segment("keadilan") == "ke~adil~an"
     assert mkk.segment("perjuangan") == "per~juang~an"

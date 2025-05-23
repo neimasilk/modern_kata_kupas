@@ -29,11 +29,36 @@ class Reconstructor:
             result["root"] = segmented_word
             return result
 
-        parts = segmented_word.split('~')
+        # Placeholder strategy for rs(~variant)
+        rs_placeholder = "__RS_VARIANT_MARKER__"
+        original_rs_segment = None
+
+        # Find if rs(~variant) exists
+        # Example: "sayur~rs(~mayur)" or "rs(~mayur)" or "prefix~rs(~mayur)~suffix"
+        # Regex to find "rs(~...)" that is a whole segment (preceded by ~ or start, followed by ~ or end)
         
+        # First, try to isolate the rs(~...) segment string if it exists
+        # This regex captures "rs(~...)"
+        rs_pattern_match = re.search(r"(rs\(\~[^)]+\))", segmented_word)
+        
+        temp_word_for_splitting = segmented_word
+        
+        if rs_pattern_match:
+            original_rs_segment = rs_pattern_match.group(1) # This is "rs(~mayur)"
+            # Replace it with a placeholder before splitting
+            temp_word_for_splitting = segmented_word.replace(original_rs_segment, rs_placeholder, 1)
+
+        parts = temp_word_for_splitting.split('~')
+        
+        # Restore the original_rs_segment if placeholder is present
+        for i, p in enumerate(parts):
+            if p == rs_placeholder:
+                parts[i] = original_rs_segment # Restore "rs(~mayur)"
+
         if segmented_word == "sayur~rs(~mayur)":
             print(f"DEBUG_SAYUR: Input to parse_segmented_string: '{segmented_word}'")
-            print(f"DEBUG_SAYUR: parts: {parts}")
+            print(f"DEBUG_SAYUR: Temp word for splitting: '{temp_word_for_splitting}'")
+            print(f"DEBUG_SAYUR: Parts after split and restore: {parts}")
             
         root_candidates = []
 
@@ -42,6 +67,7 @@ class Reconstructor:
                 print(f"DEBUG_SAYUR: Current part: '{part}'")
                 print(f"DEBUG_SAYUR: part.startswith('rs('): {part.startswith('rs(')}")
                 print(f"DEBUG_SAYUR: part.endswith(')'): {part.endswith(')')}")
+            
             if not part: # Handle cases like "~~" or trailing/leading "~"
                 continue
 
@@ -52,12 +78,19 @@ class Reconstructor:
             if part == "rp":
                 result["redup_marker"] = "rp"
                 continue
-            if part.startswith("rs(") and part.endswith(")"):
+            # This now expects `part` to be exactly "rs(~mayur)"
+            if part.startswith("rs(") and part.endswith(")") and part.count('~') == 1 and part.startswith("rs(~"):
                 result["redup_marker"] = "rs"
-                variant = part[3:-1]
+                variant = part[len("rs(~"):-1] # Extracts "mayur" from "rs(~mayur)"
                 if variant: 
+                    result["redup_variant"] = variant # variant is "mayur"
+                continue
+            # Fallback for rs(variant) without internal tilde, if ever needed.
+            elif part.startswith("rs(") and part.endswith(")"):
+                result["redup_marker"] = "rs"
+                variant = part[len("rs("):-1] # Extracts "mayur" from "rs(mayur)"
+                if variant:
                     result["redup_variant"] = variant
-                # else: # Invalid "rs()" - variant is empty, handled by None default
                 continue
 
             # 2. Check for Prefixes using MorphologicalRules
@@ -113,7 +146,10 @@ class Reconstructor:
         elif marker == "rs":
             if variant:
                 # The variant as parsed from "rs(variant_content)" will just be "variant_content"
-                actual_variant = variant 
+                # If variant is "~mayur", we want "mayur"
+                actual_variant = variant
+                if actual_variant.startswith("~"):
+                    actual_variant = actual_variant[1:]
                 return f"{stem}-{actual_variant}"
             else:
                 # This case (rs marker without variant) should ideally not occur if parsing is correct
