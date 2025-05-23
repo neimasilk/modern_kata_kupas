@@ -6,6 +6,7 @@ Unit tests untuk Reconstructor.
 import pytest
 from modern_kata_kupas.reconstructor import Reconstructor
 from modern_kata_kupas.rules import MorphologicalRules # Mungkin diperlukan nanti
+from modern_kata_kupas.dictionary_manager import DictionaryManager # Added import
 
 @pytest.fixture
 def dummy_rules_recon():
@@ -16,7 +17,11 @@ def dummy_rules_recon():
 
 @pytest.fixture
 def reconstructor_instance(dummy_rules_recon):
-    return Reconstructor(rules=dummy_rules_recon)
+    # Create a DictionaryManager instance.
+    # This might require a path to a dummy dictionary or allowing it to use default.
+    # For simplicity, let's assume it can initialize with default or None.
+    dictionary_manager = DictionaryManager() 
+    return Reconstructor(rules=dummy_rules_recon, dictionary_manager=dictionary_manager)
 
 def test_reconstructor_init(reconstructor_instance):
     """Tes inisialisasi Reconstructor."""
@@ -25,24 +30,22 @@ def test_reconstructor_init(reconstructor_instance):
 
 def test_reconstruct_simple_word_no_affixes(reconstructor_instance):
     """Tes rekonstruksi kata dasar tanpa afiks (placeholder)."""
-    root_word = "makan"
-    affixes = []
-    # Implementasi placeholder saat ini mungkin hanya mengembalikan root_word
-    reconstructed = reconstructor_instance.reconstruct(root_word, affixes)
-    assert reconstructed == root_word
+    segmented_word = "makan"
+    # Reconstructor.reconstruct expects a single segmented string.
+    reconstructed = reconstructor_instance.reconstruct(segmented_word)
+    assert reconstructed == segmented_word
 
 def test_reconstruct_with_simple_prefix(reconstructor_instance):
     """Tes rekonstruksi dengan prefiks sederhana (placeholder)."""
-    root_word = "coba"
-    affixes = ["men-"] # Asumsi "men-" adalah bentuk afiks yang disimpan
-    # Implementasi placeholder saat ini mungkin naif
-    # hasil yang diharapkan setelah implementasi: "mencoba"
-    reconstructed = reconstructor_instance.reconstruct(root_word, affixes)
+    segmented_word = "meN~coba" # Using segmented string format
+    expected_reconstruction = "mencoba" # Expected output
+    # Reconstructor.reconstruct expects a single segmented string.
+    reconstructed = reconstructor_instance.reconstruct(segmented_word)
     # Perbarui assertion ini setelah implementasi Reconstructor lebih baik
     # Untuk placeholder saat ini, mungkin hasilnya "mencoba" atau "men-coba"
     # tergantung logika placeholder di reconstructor.py
     # print(f"Hasil reconstruct placeholder: {reconstructed}")
-    assert reconstructed is not None # Ganti dengan assertion yang lebih spesifik
+    assert reconstructed == expected_reconstruction # Ganti dengan assertion yang lebih spesifik
 
 # Tambahkan lebih banyak tes di sini seiring pengembangan Reconstructor
 # Contoh:

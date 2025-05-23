@@ -69,6 +69,14 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         # Initialize Reconstructor
         self.reconstructor = Reconstructor(rules=self.rules, dictionary_manager=self.dictionary)
 
+    def reconstruct(self, segmented_word: str) -> str:
+        """
+        Rekonstruksi kata dari bentuk tersegmentasi.
+        Delegates to the Reconstructor class.
+        """
+        # self.reconstructor is guaranteed by __init__
+        return self.reconstructor.reconstruct(segmented_word)
+
     def segment(self, word: str) -> str:
         """
         Memisahkan kata berimbuhan menjadi kata dasar dan afiksnya,
@@ -596,10 +604,5 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"Error instantiating ModernKataKupas: {e}")
 
-    def reconstruct(self, segmented_word: str) -> str:
-        """
-        Rekonstruksi kata dari bentuk tersegmentasi.
-        Delegates to the Reconstructor class.
-        """
-        # self.reconstructor is guaranteed by __init__
-        return self.reconstructor.reconstruct(segmented_word)
+# The reconstruct method was here due to an indentation error. 
+# It has been moved into the ModernKataKupas class.
