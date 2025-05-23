@@ -259,7 +259,7 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
             # Check for Dwilingga Salin Suara (e.g., "bolak-balik")
             for base, variant in self.DWILINGGA_SALIN_SUARA_PAIRS:
                 if part1 == base and part2 == variant:
-                    return base, f"rs(~{variant})", []
+                    return base, f"rs({variant})", []
 
             # Sub-pattern 2a: Simple X-X (e.g., "rumah-rumah", "main-main")
             if part1 == part2:

@@ -171,27 +171,21 @@ class MorphologicalRules:
         return False
 
     def get_suffix_type(self, suffix_form: str) -> str | None:
-        """
+        '''
         Returns the type of the suffix ("derivational", "particle", "possessive").
-        Assumes a richer structure for suffixes in rules, e.g.:
-        "suffixes": {
-            "derivational": [{"form": "-kan"}, ...],
-            "particle": [{"form": "-lah"}, ...],
-            "possessive": [{"form": "-ku"}, ...]
-        }
-        Returns None if not found or if rules are not structured this way.
-        """
-        suffixes_data = self.rules.get("suffixes", {})
-        if not isinstance(suffixes_data, dict):
-            # If suffixes are a flat list, we cannot determine type from here
-            # without hardcoding or changing rule structure.
+        Assumes "suffixes" in rules is a list of rule objects, each with a "form" and "type".
+        '''
+        suffixes_list = self.rules.get("suffixes", []) 
+        if not isinstance(suffixes_list, list): 
+            # This case should ideally not be reached if load_rules enforces a list structure.
+            # However, it's a safeguard.
             return None 
             
-        for suffix_type, suffix_list in suffixes_data.items():
-            if not isinstance(suffix_list, list): continue # Skip if malformed
-            for suffix_rule in suffix_list:
-                if suffix_rule.get("form") == suffix_form:
-                    return suffix_type
+        for suffix_rule in suffixes_list: 
+            if not isinstance(suffix_rule, dict): 
+                continue # Skip malformed rule object
+            if suffix_rule.get("form") == suffix_form:
+                return suffix_rule.get("type") 
         return None
 
     def get_rule_details(self, prefix_form: str) -> dict | None:

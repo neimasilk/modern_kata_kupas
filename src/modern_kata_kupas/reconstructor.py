@@ -31,9 +31,17 @@ class Reconstructor:
 
         parts = segmented_word.split('~')
         
+        if segmented_word == "sayur~rs(~mayur)":
+            print(f"DEBUG_SAYUR: Input to parse_segmented_string: '{segmented_word}'")
+            print(f"DEBUG_SAYUR: parts: {parts}")
+            
         root_candidates = []
 
         for part_idx, part in enumerate(parts):
+            if segmented_word == "sayur~rs(~mayur)":
+                print(f"DEBUG_SAYUR: Current part: '{part}'")
+                print(f"DEBUG_SAYUR: part.startswith('rs('): {part.startswith('rs(')}")
+                print(f"DEBUG_SAYUR: part.endswith(')'): {part.endswith(')')}")
             if not part: # Handle cases like "~~" or trailing/leading "~"
                 continue
 
@@ -60,7 +68,7 @@ class Reconstructor:
             # 3. Check for Suffixes using MorphologicalRules
             if self.rules.is_suffix(part): # Assumes is_suffix checks canonical forms
                 suffix_type = self.rules.get_suffix_type(part)
-                if suffix_type == "derivational":
+                if suffix_type == "suffix_derivational":
                     result["suffixes_derivational"].append(part)
                 elif suffix_type == "particle":
                     result["suffixes_particle"].append(part)
@@ -104,9 +112,8 @@ class Reconstructor:
                 return stem 
         elif marker == "rs":
             if variant:
-                # Handle variants that might include a tilde for Salin Suara, e.g. "~mayur"
-                # The hyphen is added here.
-                actual_variant = variant[1:] if variant.startswith('~') else variant
+                # The variant as parsed from "rs(variant_content)" will just be "variant_content"
+                actual_variant = variant 
                 return f"{stem}-{actual_variant}"
             else:
                 # This case (rs marker without variant) should ideally not occur if parsing is correct
@@ -120,6 +127,11 @@ class Reconstructor:
         
         parsed_morphemes = self.parse_segmented_string(segmented_word)
         
+        if segmented_word == "makan~an":
+            print(f"DEBUG parsed_morphemes for makan~an: {parsed_morphemes}")
+        if segmented_word == "sayur~rs(~mayur)":
+            print(f"DEBUG parsed_morphemes for sayur~rs(~mayur): {parsed_morphemes}")
+            
         current_form = parsed_morphemes.get("root")
         if not current_form: # If root is None
             return segmented_word if '~' not in segmented_word and parsed_morphemes.get("root") == segmented_word else ""
@@ -165,6 +177,9 @@ class Reconstructor:
         Example: prefix_canonical_form="meN-", base_word="pukul" -> "memukul"
                  prefix_canonical_form="ber-", base_word="ajar" -> "belajar"
         """
+        if prefix_canonical_form == "meN" and base_word.startswith("per"):
+            return "mem" + base_word
+            
         rule_details = self.rules.get_rule_details(prefix_canonical_form)
 
         if not rule_details:
