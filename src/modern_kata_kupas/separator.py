@@ -203,43 +203,107 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
 
     def _handle_reduplication(self, word: str) -> tuple[str, str, list[str]]:
         """
-        Handles full reduplication (Dwilingga) like X-X or X-Xsuffix.
+        Handles full reduplication (Dwilingga) like X-X, X-Xsuffix, or PX-X (e.g., bermain-main).
 
         Args:
             word (str): The word to check for reduplication.
 
         Returns:
             tuple[str, str, list[str]]: 
-                - base_form_for_stripping: The base part (X) for further affix stripping.
+                - base_form_for_stripping: The base part for further affix stripping.
                 - reduplication_marker: "ulg" if full reduplication is detected, "" otherwise.
-                - direct_redup_suffixes: List of suffixes directly attached to reduplication 
-                                         (e.g., ["an"] for "mobil-mobilan"). Empty if none.
+                - direct_redup_suffixes: List of suffixes directly attached to the second part of 
+                                         a reduplicated form (e.g., ["an"] for "mobil-mobilan"). Empty if none.
         """
-        # Check for X-Xsuffix (e.g., mobil-mobilan, buku-bukunya)
-        # Suffixes considered: an, nya.
-        match_with_suffix = re.match(r"^([^-]+)-\1(an|nya)$", word)
+        # Pattern 1: X-Xsuffix (e.g., mobil-mobilan, buku-bukunya)
+        # Common suffixes appearing on the second part of a reduplicated form.
+        match_with_suffix = re.match(r"^([^-]+)-\1(an|nya)$", word) # Assuming \1 is correct for r"" string
         if match_with_suffix:
             base_form = match_with_suffix.group(1)
             suffix = match_with_suffix.group(2)
-            # Validate that the base_form is not empty or just a hyphen (though regex should prevent this)
+            # Ensure base_form is reasonable (not empty or just a hyphen)
             if base_form and base_form != '-':
                 return base_form, "ulg", [suffix]
 
-        # Check for X-X (e.g., rumah-rumah, bermain-main)
-        match_simple = re.match(r"^([^-]+)-\1$", word)
-        if match_simple:
-            base_form = match_simple.group(1)
-            # Validate that the base_form is not empty or just a hyphen
-            if base_form and base_form != '-':
-                return base_form, "ulg", []
+        # Pattern 2: X-Y general forms (includes X-X, PX-X, X-PX etc.)
+        parts = word.split('-', 1)
+        if len(parts) == 2:
+            part1, part2 = parts[0], parts[1]
 
-        # No reduplication pattern matched
+            if not part1 or not part2: # Should not happen if word contains a hyphen
+                return word, "", []
+
+            # Sub-pattern 2a: Simple X-X (e.g., "rumah-rumah", "main-main")
+            if part1 == part2:
+                return part1, "ulg", []
+
+            # Sub-pattern 2b: Stem comparison for forms like PX-X ("bermain-main") or X-PX
+            # This requires the stemmer to be available.
+            # Ensure self.stemmer is initialized before calling this.
+            if hasattr(self, 'stemmer') and self.stemmer:
+                stem1 = self.stemmer.get_root_word(part1)
+                stem2 = self.stemmer.get_root_word(part2)
+
+                if stem1 == stem2: # Both parts share the same root (e.g., stem1 is "main")
+                    # Case 1: PX-X (e.g., "bermain-main")
+                    # part1="bermain", part2="main", stem1="main", stem2="main"
+                    # Here, part2 is identical to the common stem.
+                    if stem1 == part2:  # part2 is already the unadorned stem
+                        return part1, "ulg", [] # base for stripping is part1
+
+                    # Case 2: PX-Xsuffix (e.g., "bermain-mainkan") or X-Xsuffix (where X is simple, e.g. "main-mainkan")
+                    # part1="bermain", part2="mainkan", stem1="main", stem2="main"
+                    # OR part1="main", part2="mainkan", stem1="main", stem2="main"
+                    # Check if part2 consists of the common stem (stem2) followed by suffixes.
+                    if part2.startswith(stem2) and len(part2) > len(stem2):
+                        suffix_cluster = part2[len(stem2):] # e.g., "kan" from "mainkan"
+                        # Attempt to strip all parts of the cluster as suffixes
+                        remaining_in_cluster, identified_suffixes = self._strip_suffixes(suffix_cluster, is_processing_suffix_cluster=True)
+                        if not remaining_in_cluster and identified_suffixes: # Entire cluster was valid suffixes
+                            # Base for stripping is part1 (could be PX like "bermain" or X like "main")
+                            return part1, "ulg", identified_suffixes 
+                    
+                    # Case 3: X-Xsuffix where X is complex (e.g., "rumah-rumahanlah" - though this might be caught by Case 2 if stemmer(rumah)==rumah)
+                    # This specifically handles when part2 = part1 + suffix_cluster, and part1 is not necessarily the simple stem.
+                    # This was the previous "Sub-pattern 2c".
+                    # Example: part1="rumahan", part2="rumahanlah", stem1="rumah", stem2="rumah" (if stemmer was perfect)
+                    # More realistically: part1="rumah", part2="rumahanlah". stem1="rumah", stem2="rumah".
+                    # This overlaps with Case 2 if part1 == stem1. Case 2 is preferred if part1 is simple stem.
+                    if part1 == stem1: # If part1 is already the base stem (X-Xsuffix)
+                        # This path is now covered by Case 2 logic if part2.startswith(stem1/stem2)
+                        pass # Covered by Case 2 if part1 is the stem.
+                    elif part2.startswith(part1) and len(part2) > len(part1): # part1 is complex (PX), part2 = PX + suffix_cluster
+                        # This case is less common for reduplication suffixes. Usually suffixes attach to the base or the result of PX.
+                        # For "rumah-rumahanlah", part1="rumah", stem1="rumah". Case 2 handles it.
+                        # Consider "bermain-bermainnya". part1="bermain", part2="bermainnya". stem1="main", stem2="main".
+                        # Case 2: part2 ("bermainnya") does not start with stem2 ("main").
+                        # This new Case 3: part2 ("bermainnya") starts with part1 ("bermain"). suffix_cluster="nya".
+                        # This would return ("bermain", "ulg", ["nya"])
+                        suffix_cluster_on_part2 = part2[len(part1):] 
+                        remaining_stem_from_cluster, identified_suffixes = self._strip_suffixes(suffix_cluster_on_part2, is_processing_suffix_cluster=True)
+                        if not remaining_stem_from_cluster and identified_suffixes:
+                            return part1, "ulg", identified_suffixes
+
+                    # Fallback for stem1==stem2 if none of the more specific suffix patterns matched
+                    # (e.g., "pukul-memukul" where part1="pukul", part2="memukul", stem1="pukul", stem2="pukul")
+                    # In this case, part1 is the base, and part2 is a complex variation. No direct_redup_suffixes from part2.
+                    return part1, "ulg", []
+
+
+        # Fallback: If no specific hyphenated reduplication pattern matched above.
+        # This ensures that if word was not split or conditions not met, it's returned as is.
         return word, "", []
 
 
-    def _strip_suffixes(self, word: str) -> tuple[str, list[str]]:
+    def _strip_suffixes(self, word: str, is_processing_suffix_cluster: bool = False) -> tuple[str, list[str]]:
         current_word = str(word)
         stripped_suffixes_in_stripping_order = []
+
+        min_len_deriv = 0 if is_processing_suffix_cluster else self.MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING
+        min_len_possessive = 0 if is_processing_suffix_cluster else self.MIN_STEM_LENGTH_FOR_POSSESSIVE
+        min_len_particle = 0 if is_processing_suffix_cluster else self.MIN_STEM_LENGTH_FOR_PARTICLE
+        # General minimum, allow empty stem if processing suffix cluster
+        general_min_stem_len = 0 if is_processing_suffix_cluster else 2 
         
         # Urutan prioritas pelepasan sufiks (dari luar ke dalam)
         # 1. Partikel: -lah, -kah, -pun
@@ -263,19 +327,17 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                         stem_candidate = current_word[:-len(sfx)]
                         
                         # Validasi panjang stem minimal
-                        if len(stem_candidate) < 2:
+                        if len(stem_candidate) < general_min_stem_len: # Use general_min_stem_len
+                            # However, if we are processing a suffix cluster, an empty stem_candidate is acceptable
+                            # if the original 'word' arg to _strip_suffixes was not empty itself.
+                            if not (is_processing_suffix_cluster and word): # allow empty stem if processing non-empty cluster
+                                continue
+                        
+                        if sfx in suffix_types[2] and len(stem_candidate) < min_len_deriv:
                             continue
-                            
-                        # Untuk sufiks derivatif, cek panjang minimal
-                        if sfx in suffix_types[2] and len(stem_candidate) < self.MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING:
+                        if sfx in suffix_types[1] and len(stem_candidate) < min_len_possessive:
                             continue
-                            
-                        # Untuk sufiks posesif, cek panjang minimal
-                        if sfx in suffix_types[1] and len(stem_candidate) < self.MIN_STEM_LENGTH_FOR_POSSESSIVE:
-                            continue
-                            
-                        # Untuk sufiks partikel, cek panjang minimal
-                        if sfx in suffix_types[0] and len(stem_candidate) < self.MIN_STEM_LENGTH_FOR_PARTICLE:
+                        if sfx in suffix_types[0] and len(stem_candidate) < min_len_particle:
                             continue
                         
                         # Kasus khusus untuk kata seperti "sekolah" yang bukan "se~kolah"
@@ -285,7 +347,11 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                         # Conservative check: If the current word is not a KD, only strip if the resulting stem is a KD.
                         # Or, if the current word IS a KD, then stripping is generally safer (e.g. "makanan" -> "makan")
                         # This helps prevent "katadenganspas~i" from "katadenganspasi"
-                        if not self.dictionary.is_kata_dasar(current_word) and \
+                        # This check should be less strict if we are stripping from a known suffix cluster like "anlah"
+                        # For "anlah", current_word is "anlah", stem_candidate is "an". Neither are KDs.
+                        # We rely on the fact that if _strip_suffixes("anlah") -> ("", ["an", "lah"]), then it's valid.
+                        if not is_processing_suffix_cluster and \
+                           not self.dictionary.is_kata_dasar(current_word) and \
                            not self.dictionary.is_kata_dasar(stem_candidate) and \
                            sfx in suffix_types[2]: # Be extra careful with derivational suffixes
                             continue
@@ -369,14 +435,36 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                                     continue
                             
                             temp_potential_root = None
-                            reconstruct_dict = allomorph_rule.get("reconstruct_root_initial")
+                            char_to_prepend_val = allomorph_rule.get("reconstruct_root_initial")
                             if elision_for_this_rule:
-                                if reconstruct_dict:
-                                    key_to_prepend = list(reconstruct_dict.keys())[0]
-                                    temp_potential_root = key_to_prepend + remainder
-                                else:
+                                if char_to_prepend_val:
+                                    actual_char = ""
+                                    if isinstance(char_to_prepend_val, dict):
+                                        # Assuming the first key of the dict is the char to use for reconstruction
+                                        if char_to_prepend_val: # Ensure dict is not empty
+                                            actual_char = list(char_to_prepend_val.keys())[0]
+                                    elif isinstance(char_to_prepend_val, str):
+                                        actual_char = char_to_prepend_val
+                                    
+                                    if actual_char:
+                                        # If remainder already starts with the actual_char (e.g., "pertaruhkan" and "p"),
+                                        # it implies that for this layer of prefixation, the initial consonant of the
+                                        # existing stem was NOT elided (e.g., meN- + pertaruhkan -> mempertaruhkan, not memertaruhkan).
+                                        # So, the temp_potential_root is the remainder itself.
+                                        # Otherwise, (e.g., meN- + tulis -> menulis; remainder="ulis", actual_char="t"),
+                                        # the elided character must be prepended.
+                                        if remainder.startswith(actual_char):
+                                            temp_potential_root = remainder
+                                        else:
+                                            temp_potential_root = actual_char + remainder
+                                    else:
+                                        # char_to_prepend_val was not a recognized type or actual_char ended up empty
+                                        temp_potential_root = remainder
+                                else: 
+                                    # No reconstruct_root_initial specified for this elision type (e.g. meN- + vowel)
                                     temp_potential_root = remainder
-                            else:
+                            else: 
+                                # No elision involved with this allomorph (e.g. di-, ke-, se-, or non-eliding 'ber-', 'per-' variants)
                                 temp_potential_root = remainder
                             
                             # DEBUG PRINT for ber- and per-
