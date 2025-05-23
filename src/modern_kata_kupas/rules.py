@@ -141,6 +141,74 @@ class MorphologicalRules:
         """
         return self.rules.get("suffixes", [])
 
+    def is_prefix(self, affix_form: str) -> bool:
+        """Checks if affix_form is a known canonical prefix form."""
+        for rule_group in self.get_prefix_rules():
+            # Check canonical prefix if defined in rule_group (complex prefixes)
+            if "canonical" in rule_group and rule_group["canonical"] == affix_form:
+                return True
+            # Check simple prefix form if defined (simple prefixes like di-, ke-)
+            if "form" in rule_group and rule_group["form"] == affix_form:
+                return True
+        return False
+
+    def is_suffix(self, affix_form: str) -> bool:
+        """
+        Checks if affix_form is a known canonical suffix form.
+        Assumes suffixes in rules are stored with leading hyphen if that's their canonical form.
+        e.g. {"form": "-kan"}
+        """
+        suffixes_data = self.get_suffix_rules() # This might be a list or a dict
+        if isinstance(suffixes_data, dict): # Handles {"derivational": [...], "particle": [...]}
+            for suffix_type_list in suffixes_data.values():
+                for suffix_rule in suffix_type_list:
+                    if suffix_rule.get("form") == affix_form:
+                        return True
+        elif isinstance(suffixes_data, list): # Handles [{"form": "-kan"}, ...]
+            for suffix_rule in suffixes_data:
+                if suffix_rule.get("form") == affix_form:
+                    return True
+        return False
+
+    def get_suffix_type(self, suffix_form: str) -> str | None:
+        """
+        Returns the type of the suffix ("derivational", "particle", "possessive").
+        Assumes a richer structure for suffixes in rules, e.g.:
+        "suffixes": {
+            "derivational": [{"form": "-kan"}, ...],
+            "particle": [{"form": "-lah"}, ...],
+            "possessive": [{"form": "-ku"}, ...]
+        }
+        Returns None if not found or if rules are not structured this way.
+        """
+        suffixes_data = self.rules.get("suffixes", {})
+        if not isinstance(suffixes_data, dict):
+            # If suffixes are a flat list, we cannot determine type from here
+            # without hardcoding or changing rule structure.
+            return None 
+            
+        for suffix_type, suffix_list in suffixes_data.items():
+            if not isinstance(suffix_list, list): continue # Skip if malformed
+            for suffix_rule in suffix_list:
+                if suffix_rule.get("form") == suffix_form:
+                    return suffix_type
+        return None
+
+    def get_rule_details(self, prefix_form: str) -> dict | None:
+        """
+        Retrieves the full rule dictionary for a given canonical prefix form.
+        """
+        for rule_group in self.get_prefix_rules():
+            # Check canonical form (e.g., "meN-", "ber-")
+            if rule_group.get("canonical") == prefix_form:
+                return rule_group
+            # Check simple form (e.g., "di-", "ke-")
+            # This is useful if simple prefixes are also passed through here,
+            # though _apply_forward_morphophonemics might primarily deal with canonicals.
+            if rule_group.get("form") == prefix_form:
+                return rule_group
+        return None
+
     # Metode lain untuk mendapatkan tipe aturan spesifik (infiks, fonologis, dll.)
 
 # Contoh penggunaan (bisa dihapus atau dikomentari nanti)

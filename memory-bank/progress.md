@@ -26,4 +26,7 @@ This file will track the progress of the ModernKataKupas project.
 **Objective:** Implement robust handling for various reduplication types and the word reconstruction functionality.
 
 - [x] Step 3.1: Implement Full Reduplication Logic (Dwilingga)
+- [x] Step 3.2: Implement Dwilingga Salin Suara Logic
+- [x] Step 3.3: Implement Dwipurwa Logic
+- [x] Step 3.4: Word Reconstruction Functionality
 - [ ] ... (other steps)

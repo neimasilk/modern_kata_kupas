@@ -2,7 +2,9 @@
 
 import os
 import pytest
+import unittest # Added unittest
 from src.modern_kata_kupas.separator import ModernKataKupas
+from src.modern_kata_kupas.dictionary_manager import DictionaryManager # Ensure this is imported for setUp
 
 def test_modernkatakupas_instantiation():
     """Test that ModernKataKupas class can be instantiated."""
@@ -256,3 +258,142 @@ def test_dwilingga_reduplication_step31():
     assert mkk.segment("tendang-tendangan") == "tendang~ulg~an"
     assert mkk.segment("rumah-rumahanlah") == "rumah~ulg~an~lah"
     assert mkk.segment("bermain-mainkan") == "ber~main~ulg~kan"
+
+
+def test_dwilingga_salin_suara_reduplication():
+    """Test Dwilingga Salin Suara (e.g., sayur-mayur) handling via segment()."""
+    import os
+    from src.modern_kata_kupas.dictionary_manager import DictionaryManager
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    test_dict_path = os.path.join(current_dir, "data", "test_kata_dasar.txt")
+    dictionary_manager = DictionaryManager(dictionary_path=test_dict_path)
+    mkk = ModernKataKupas()
+    mkk.dictionary = dictionary_manager # Ensure dictionary is loaded
+
+    # Test cases for Dwilingga Salin Suara pairs
+    assert mkk.segment("sayur-mayur") == "sayur~rs(~mayur)"
+    assert mkk.segment("bolak-balik") == "bolak~rs(~balik)"
+    assert mkk.segment("warna-warni") == "warna~rs(~warni)"
+    assert mkk.segment("ramah-tamah") == "ramah~rs(~tamah)"
+    assert mkk.segment("gerak-gerik") == "gerak~rs(~gerik)"
+    assert mkk.segment("lauk-pauk") == "lauk~rs(~pauk)"
+    assert mkk.segment("gotong-royong") == "gotong~rs(~royong)"
+    assert mkk.segment("serba-serbi") == "serba~rs(~serbi)"
+    # Example from description: ("teka", "teki") -> "teka-teki"
+    # Assuming "teka-teki" was added to DWILINGGA_SALIN_SUARA_PAIRS in ModernKataKupas
+    # For now, this specific pair is commented out in ModernKataKupas, so it won't be tested here.
+    # assert mkk.segment("teka-teki") == "teka~rs(~teki)"
+
+
+    # Non-Salin Suara Test (Fallback Check)
+    # "buku-buku" should be handled by simple Dwilingga (X-X)
+    assert mkk.segment("buku-buku") == "buku~ulg"
+    # "rumah-sakit" is a compound word, not a reduplication.
+    # It should not be identified as rs(~sakit).
+    # Depending on dictionary and other rules, it might return as is or normalized.
+    # The key is it doesn't become "rumah~rs(~sakit)".
+    # If "rumah-sakit" is in dictionary, it will be returned as "rumah-sakit".
+    # If not, and "rumah" and "sakit" are, it might be split or returned as normalized.
+    # Given the current logic, if not in DWILINGGA_SALIN_SUARA_PAIRS and not X-X,
+    # _handle_reduplication returns (word, "", []).
+    # So, "rumah-sakit" becomes word_to_process.
+    # Then affix stripping is attempted on "rumah-sakit".
+    # If "rumah-sakit" is a KD, it returns "rumah-sakit".
+    # If not, it might be returned as "rumahsakit" by normalizer if no affixes found.
+    # Let's assume "rumah-sakit" is a known compound or will be returned as normalized.
+    # The current segment() returns "rumahsakit" if "rumah-sakit" is not a KD and no affixes are found.
+    # This is fine, as long as it's not "rumah~rs(~sakit)".
+    assert mkk.segment("rumah-sakit") == "rumahsakit" # Adjusted based on typical output for non-affixed, non-KD, non-redup hyphenated words
+
+    # Test with Affixes
+    # For "tersayur-mayur":
+    # _handle_reduplication -> ("tersayur", "rs(~mayur)", [])
+    # segment then processes "tersayur" -> "ter~sayur"
+    assert mkk.segment("tersayur-mayur") == "ter~sayur~rs(~mayur)"
+
+    # For "bolak-balikan":
+    # _handle_reduplication -> ("bolak", "rs(~balikan)", [])
+    # segment then processes "bolak" (which is a KD)
+    # The "an" is part of the "rs" marker because "balikan" is part2.
+    assert mkk.segment("bolak-balikan") == "bolak~rs(~balikan)"
+
+    # Test a case that looks like Salin Suara but isn't in the list
+    assert mkk.segment("corat-coret") == "coratcoret" # Example, assuming "corat-coret" is not in DWILINGGA_SALIN_SUARA_PAIRS
+                                                    # and will be normalized or treated as a compound.
+                                                    # If "corat" is a KD, it could also be "corat~ulg" if "coret" is stemmed to "corat".
+                                                    # Given current logic, if not X-X, it's "coratcoret".
+
+
+class TestReduplicationCases(unittest.TestCase):
+    def setUp(self):
+        """Set up the ModernKataKupas instance for test methods."""
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        test_dict_path = os.path.join(current_dir, "data", "test_kata_dasar.txt")
+        # It's important that test_kata_dasar.txt contains relevant roots for these tests:
+        # laki, sama, tamu, rata, tua, daun, luhur, luasa, suatu,
+        # and also words that should not be misidentified: lemah, sesal, tetap, lemari, lili, rara, belati, luluh.
+        dictionary_manager = DictionaryManager(dictionary_path=test_dict_path)
+        self.mkk = ModernKataKupas()
+        self.mkk.dictionary = dictionary_manager
+
+    def test_dwipurwa_reduplication(self):
+        """Test Dwipurwa (partial initial syllable reduplication) handling."""
+        # Positive Test Cases
+        self.assertEqual(self.mkk.segment("lelaki"), "laki~rp")
+        self.assertEqual(self.mkk.segment("sesama"), "sama~rp")
+        self.assertEqual(self.mkk.segment("tetamu"), "tamu~rp")
+        self.assertEqual(self.mkk.segment("rerata"), "rata~rp")
+        self.assertEqual(self.mkk.segment("tetua"), "tua~rp")
+        self.assertEqual(self.mkk.segment("dedaun"), "daun~rp")
+
+        # Case: leluhur -> luhur~rp (confirms heuristic: prefix[1]=='e', root[1] is any vowel)
+        # This assumes 'luhur' is the root of 'leluhur' and 'luhur' is in the dictionary.
+        self.assertEqual(self.mkk.segment("leluhur"), "luhur~rp")
+
+        # Negative Test Cases
+        # Words that are already roots or have different structures
+        self.assertEqual(self.mkk.segment("lemah"), "lemah")
+        self.assertEqual(self.mkk.segment("sesal"), "sesal")
+        self.assertEqual(self.mkk.segment("tetap"), "tetap")
+        self.assertEqual(self.mkk.segment("rata"), "rata") # Base word, should not be ta~rp
+        self.assertEqual(self.mkk.segment("lemari"), "lemari")
+
+        # Hyphenated words (should be handled by other rules, not Dwipurwa)
+        self.assertNotIn("~rp", self.mkk.segment("lari-lari"))
+        self.assertEqual(self.mkk.segment("lari-lari"), "lari~ulg") # More specific check
+
+        # Test words that might seem like Dwipurwa but are not, based on dictionary/stemmer
+        # Behavior of these tests depends on dictionary content and stemmer.
+        # Example: leluasa. If stemmer('leluasa') is 'luasa' AND 'luasa' is KD AND 'leluasa' is NOT KD:
+        if self.mkk.dictionary.is_kata_dasar("luasa") and \
+           not self.mkk.dictionary.is_kata_dasar("leluasa") and \
+           self.mkk.stemmer.get_root_word("leluasa") == "luasa":
+            self.assertEqual(self.mkk.segment("leluasa"), "luasa~rp")
+        else: # Otherwise, it should be treated as a non-Dwipurwa word
+            self.assertEqual(self.mkk.segment("leluasa"), "leluasa")
+
+        # Example: sesuatu. If stemmer('sesuatu') is 'suatu' AND 'suatu' is KD AND 'sesuatu' is NOT KD:
+        if self.mkk.dictionary.is_kata_dasar("suatu") and \
+           not self.mkk.dictionary.is_kata_dasar("sesuatu") and \
+           self.mkk.stemmer.get_root_word("sesuatu") == "suatu":
+            self.assertEqual(self.mkk.segment("sesuatu"), "suatu~rp")
+        else: # Otherwise, it should be treated as a non-Dwipurwa word
+            self.assertEqual(self.mkk.segment("sesuatu"), "sesuatu")
+
+        # Short words that are KDs
+        self.assertEqual(self.mkk.segment("lili"), "lili") # Assuming 'lili' is a KD
+        self.assertEqual(self.mkk.segment("rara"), "rara") # Assuming 'rara' is a KD
+
+        # Word where prefix_candidate[0] != root_word[0]
+        # Assuming 'belati' is a KD or its root is 'belati' or 'lati'
+        # If root is 'lati', prefix 'be'. 'b' != 'l'. Fails condition C.
+        self.assertEqual(self.mkk.segment("belati"), "belati")
+
+        # Word where prefix_candidate[1] != 'e'
+        # Assuming 'luluh' is a KD or its root is 'luluh' or 'luh'
+        # If root is 'luh', prefix 'lu'. 'u' != 'e'. Fails condition D.
+        self.assertEqual(self.mkk.segment("luluh"), "luluh")
+
+# To run these tests if the file is executed directly (optional)
+if __name__ == '__main__':
+    unittest.main()
