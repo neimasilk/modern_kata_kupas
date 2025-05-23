@@ -29,4 +29,10 @@ This file will track the progress of the ModernKataKupas project.
 - [x] Step 3.2: Implement Dwilingga Salin Suara Logic
 - [x] Step 3.3: Implement Dwipurwa Logic
 - [x] Step 3.4: Word Reconstruction Functionality
+
+## Phase 4: Handling Loanwords and Irregularities
+
+**Objective:** Enhance the segmenter to correctly handle loanwords with Indonesian affixes and other irregular forms.
+
+- [~] Step 4.1: Loanword Affixation Handling (DictionaryManager updated for loanword list; separator.py integration and tests pending)
 - [ ] ... (other steps)

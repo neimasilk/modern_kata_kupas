@@ -202,26 +202,26 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                                     chosen_final_stem == normalized_word)
 
         if not result_str: 
-            print(f"DEBUG: segment({word}): Returning (empty result_str) normalized_word: '{normalized_word}'")
+            print(f"DEBUG_SEGMENT_RETURN: EMPTY result_str! Returning normalized_word: '{normalized_word}' for input '{word}'")
             return normalized_word
             
         if is_effectively_unchanged:
-            print(f"DEBUG: segment({word}): Returning (is_effectively_unchanged) normalized_word: '{normalized_word}'")
+            print(f"DEBUG_SEGMENT_RETURN: IS_EFFECTIVELY_UNCHANGED! Returning normalized_word: '{normalized_word}' for input '{word}'")
             return normalized_word
 
         # If the result string is identical to normalized_word, but the word is NOT a KD, 
         # it implies no segmentation was found or was truly effective.
         if result_str == normalized_word and not self.dictionary.is_kata_dasar(normalized_word):
-             print(f"DEBUG: segment({word}): Returning (result_str == normalized_word and not KD) normalized_word: '{normalized_word}'")
+             print(f"DEBUG_SEGMENT_RETURN: RESULT_IS_NORMALIZED_AND_NOT_KD! Returning normalized_word: '{normalized_word}' for input '{word}'")
              return normalized_word
         
         # Additional check: if the process resulted in a stem that is not a KD, and no affixes were found,
         # then it's likely an unsegmentable word.
         if not self.dictionary.is_kata_dasar(chosen_final_stem) and not chosen_prefixes and not assembled_suffixes and not redup_marker:
-            print(f"DEBUG: segment({word}): Returning (final_stem not KD and no affixes/redup) normalized_word: '{normalized_word}'")
+            print(f"DEBUG_SEGMENT_RETURN: FINAL_STEM_NOT_KD_AND_NO_AFFIXES! Returning normalized_word: '{normalized_word}' for input '{word}'")
             return normalized_word
 
-        print(f"DEBUG: segment({word}): Returning final result_str: '{result_str}'")
+        print(f"DEBUG: segment({word}): Returning final result_str: '{result_str}'") # Keep this one too
         return result_str
 
     def _handle_reduplication(self, word: str) -> tuple[str, str, list[str]]:
@@ -259,7 +259,7 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
             # Check for Dwilingga Salin Suara (e.g., "bolak-balik")
             for base, variant in self.DWILINGGA_SALIN_SUARA_PAIRS:
                 if part1 == base and part2 == variant:
-                    return base, f"rs({variant})", []
+                    return base, f"rs(~{variant})", []
 
             # Sub-pattern 2a: Simple X-X (e.g., "rumah-rumah", "main-main")
             if part1 == part2:
@@ -411,11 +411,13 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                         # This check should be less strict if we are stripping from a known suffix cluster like "anlah"
                         # For "anlah", current_word is "anlah", stem_candidate is "an". Neither are KDs.
                         # We rely on the fact that if _strip_suffixes("anlah") -> ("", ["an", "lah"]), then it's valid.
-                        if not is_processing_suffix_cluster and \
-                           not self.dictionary.is_kata_dasar(current_word) and \
-                           not self.dictionary.is_kata_dasar(stem_candidate) and \
-                           sfx in suffix_types[2]: # Be extra careful with derivational suffixes
-                            continue
+                        #
+                        # The following conservative check was preventing confix stripping like peN-...-an
+                        # if not is_processing_suffix_cluster and \
+                        #    not self.dictionary.is_kata_dasar(current_word) and \
+                        #    not self.dictionary.is_kata_dasar(stem_candidate) and \
+                        #    sfx in suffix_types[2]: # Be extra careful with derivational suffixes
+                        #     continue
                         
                         # Tambahkan sufiks ke daftar dan perbarui kata saat ini
                         current_word = stem_candidate
@@ -458,26 +460,37 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         all_stripped_prefixes = [] # Accumulates all stripped prefixes in order
         
         prefix_rules_all = self.rules.get_prefix_rules()
+        loop_count = 0 # Max iterations to prevent infinite loops
 
         while True: # Outer loop to handle multiple layers of prefixes
+            loop_count += 1
+            if loop_count > 5: # Safety break for too many prefix layers
+                print(f"DEBUG_STRIP_PREFIXES: Exceeded max loop count for {original_word_for_prefix_stripping}")
+                break
+
+            # Step 1: Log state at the beginning of a while loop iteration
+            if original_word_for_prefix_stripping == "mempertaruh": # Focus on the problematic case
+                print(f"DEBUG_ITER_START: original_input='{original_word_for_prefix_stripping}', current_word='{current_word}', all_stripped_prefixes={all_stripped_prefixes}, iteration={loop_count}")
+
             successfully_stripped_one_prefix_this_iteration = False
             
             # Inner loop: Iterate through all prefix rules for the current_word
             for rule_group in prefix_rules_all:
                 canonical_prefix = rule_group.get("canonical")
                 
+                # Step 2: Log which rule is being tested
+                if original_word_for_prefix_stripping == "mempertaruh":
+                    print(f"DEBUG_RULE_TEST: Testing rule {canonical_prefix} on '{current_word}'")
+
                 potential_root_after_this_rule = None # Reset for this rule_group
                 
                 if "allomorphs" in rule_group:
-                    first_non_kd_allomorph_root = None # Store the first non-KD root from this group
-                    # potential_root_after_this_rule is already None from outside the allomorph loop
+                    first_non_kd_allomorph_root = None 
                     for allomorph_rule in rule_group["allomorphs"]:
                         surface_form = allomorph_rule.get("surface")
-
                         if current_word.startswith(surface_form):
                             remainder = current_word[len(surface_form):]
-                            if not remainder:
-                                continue
+                            if not remainder: continue
 
                             elision_for_this_rule = allomorph_rule.get("elision")
                             applicable_allomorph = True
@@ -533,6 +546,10 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                                 print(f"DEBUG _strip_prefixes: current_word='{current_word}', rule_group='{canonical_prefix}', allomorph_surface='{surface_form}', remainder='{remainder}', temp_potential_root='{temp_potential_root}', is_kd(temp_potential_root)={self.dictionary.is_kata_dasar(temp_potential_root if temp_potential_root else '')}")
 
                             if temp_potential_root is not None:
+                                # General debug for "pertaruh" -> "taruh" under "per-" rule
+                                if current_word == "pertaruh" and rule_group.get("canonical") == "per" and temp_potential_root == "taruh":
+                                    print(f"DEBUG_STRIP_PREFIXES_ALLOMORPH_GENERAL: current_word='{current_word}', temp_potential_root='{temp_potential_root}', is_kd(temp_potential_root)={self.dictionary.is_kata_dasar(temp_potential_root if temp_potential_root else '')}")
+
                                 if self.dictionary.is_kata_dasar(temp_potential_root):
                                     potential_root_after_this_rule = temp_potential_root
                                     # DEBUG PRINT
@@ -543,6 +560,8 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                     
                     if potential_root_after_this_rule is None: # No KD was found from any allomorph
                         potential_root_after_this_rule = first_non_kd_allomorph_root # Use the first non-KD attempt
+                    
+                    # DEBUG PRINT for "pertaruh" specifically when "per-" rule is processed
                     # DEBUG PRINT
                     if canonical_prefix in ["ber", "per"]:
                         print(f"DEBUG _strip_prefixes: After allomorph loop for '{canonical_prefix}'. potential_root_after_this_rule='{potential_root_after_this_rule}'")
@@ -555,13 +574,25 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                         if potential_remainder:
                             potential_root_after_this_rule = potential_remainder
                 
+                # ---- START OF NEW DEBUG ----
+                if original_word_for_prefix_stripping == "mempertaruh" and current_word == "pertaruh" and canonical_prefix == "per":
+                    print(f"DEBUG_BEFORE_CRITICAL_IF: For 'per-' rule on 'pertaruh', potential_root_after_this_rule is '{potential_root_after_this_rule}' (type: {type(potential_root_after_this_rule)})")
+                # ---- END OF NEW DEBUG ----
+
                 # If a prefix (complex or simple) was successfully processed for this rule_group
                 if potential_root_after_this_rule:
                     all_stripped_prefixes.append(canonical_prefix)
                     current_word = potential_root_after_this_rule
                     successfully_stripped_one_prefix_this_iteration = True
+                    
+                    # Custom DEBUG for "mempertaruhkan" / "pertaruh"
+                    if original_word_for_prefix_stripping == "mempertaruh" and canonical_prefix == "per" and current_word == "taruh":
+                        print(f"DEBUG_PER_STRIP: original_input='{original_word_for_prefix_stripping}', rule='{canonical_prefix}', current_word set to '{current_word}', all_stripped_prefixes now {all_stripped_prefixes}")
+                    elif original_word_for_prefix_stripping == "mempertaruh" and canonical_prefix == "meN" and current_word == "pertaruh":
+                        print(f"DEBUG_MEN_STRIP: original_input='{original_word_for_prefix_stripping}', rule='{canonical_prefix}', current_word set to '{current_word}', all_stripped_prefixes now {all_stripped_prefixes}")
+
                     # DEBUG PRINT
-                    if canonical_prefix in ["ber", "per"]:
+                    if canonical_prefix in ["ber", "per"]: # This will also print for the "per" in "mempertaruhkan"
                          print(f"DEBUG _strip_prefixes: Rule group '{canonical_prefix}' processed. current_word='{current_word}', all_stripped_prefixes={all_stripped_prefixes}")
 
                     # If the new current_word is a KD, this is a valid segmentation point.
@@ -583,7 +614,9 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                 break # Break from the outer while True loop (no more layers of prefixes)
         
         # DEBUG PRINT
-        if original_word_for_prefix_stripping in ["perbuat", "perjuangan", "bermain"]:
+        if original_word_for_prefix_stripping == "mempertaruh":
+            print(f"DEBUG _strip_prefixes: FINAL RETURN for 'mempertaruh'. current_word='{current_word}', all_stripped_prefixes={all_stripped_prefixes}")
+        elif original_word_for_prefix_stripping in ["perbuat", "perjuangan", "bermain"]: # Keep existing debug
             print(f"DEBUG _strip_prefixes: Final return for '{original_word_for_prefix_stripping}'. current_word='{current_word}', all_stripped_prefixes={all_stripped_prefixes}")
         return current_word, all_stripped_prefixes
 
