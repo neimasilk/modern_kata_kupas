@@ -229,13 +229,29 @@ class Reconstructor:
 
         allomorphs = rule_details.get("allomorphs")
         if not allomorphs: # Should have a default allomorph if it's a complex prefix
-            # Fallback for simple prefixes if they were structured with 'form' instead of 'allomorphs'
-            # or if a complex prefix rule is missing allomorphs (error in rules.json).
-            # This also handles cases where the canonical form is the direct surface form.
             return rule_details.get("form", prefix_canonical_form) + base_word
+
+        # --- Start of specific handling for peN- prefix for monosyllabic roots ---
+        if prefix_canonical_form == "peN":
+            for allomorph_rule_check in allomorphs: 
+                if allomorph_rule_check.get("is_monosyllabic_root"):
+                    if self._is_monosyllabic_heuristic(base_word):
+                        surface_form = allomorph_rule_check.get("surface") 
+                        # print(f"DEBUG reconstruct peN-: Matched monosyllabic rule '{surface_form}' for base '{base_word}'.")
+                        return surface_form + base_word 
+            # If monosyllabic rule for peN- didn't match and return, proceed to other allomorphs below.
+        # --- End of specific handling for peN- prefix ---
+
+        if prefix_canonical_form == "peN" and base_word == "tulis":
+            print(f"DEBUG peN~tulis: Entering main loop. Allomorphs for peN: {allomorphs}")
 
         # Iterate through allomorphs to find the matching one
         for allomorph_rule in allomorphs:
+            # If peN- and this is the monosyllabic rule, skip it as it was handled in the pre-pass.
+            if prefix_canonical_form == "peN" and allomorph_rule.get("is_monosyllabic_root"):
+                if base_word == "tulis": print("DEBUG peN~tulis: Skipping monosyllabic rule in main loop as expected.")
+                continue
+
             surface_form = allomorph_rule.get("surface")
             if not surface_form:
                 continue # Malformed rule
@@ -252,94 +268,62 @@ class Reconstructor:
                 else:
                     continue # This allomorph doesn't apply
             
+            
             # 2. Root starting character condition(s)
-            # The separator rules use "next_char_is" (array). For reconstruction, this means the base_word should start with one of these characters.
-            condition_next_char_is = allomorph_rule.get("next_char_is") # List of chars (e.g., ["k", "t", "s", "p"])
-            if condition_next_char_is:
+            # This condition checks if the base_word starts with a character that this allomorph is specific to.
+            # The affix_rules.json uses "condition_root_starts_with" for this kind of phonological conditioning.
+            # Previous code was mistakenly using "next_char_is" here.
+            condition_to_check = allomorph_rule.get("condition_root_starts_with") # Using the correct key
+            if condition_to_check: 
                 expected_conditions += 1
-                if any(base_word.startswith(char) for char in condition_next_char_is):
+                if any(base_word.startswith(char) for char in condition_to_check): 
                     conditions_met += 1
                 else:
-                    # If the rule specifies characters the root MUST start with, and it doesn't, this allomorph doesn't apply.
-                    # However, some allomorphs (like default "me-" for "meN-") might not have "next_char_is".
-                    # These should only be skipped if "next_char_is" is present and the condition is not met.
+                    if prefix_canonical_form == "peN" and base_word == "tulis":
+                        print(f"DEBUG peN~tulis: Allomorph {surface_form} skipped, condition_root_starts_with {condition_to_check} not met by '{base_word}'.")
                     continue 
             
-            # 3. Exact root condition (e.g., for "ber-" + "ajar" -> "belajar")
-            # Separator rules use "condition_root_is": ["ajar"]
-            condition_exact_root = allomorph_rule.get("condition_exact_root") # List of exact roots
+            # 3. Exact root condition 
+            condition_exact_root = allomorph_rule.get("condition_exact_root") 
             if condition_exact_root:
                 expected_conditions += 1
                 if base_word in condition_exact_root:
                     conditions_met += 1
                 else:
-                    continue # This allomorph doesn't apply
+                    if prefix_canonical_form == "peN" and base_word == "tulis":
+                         print(f"DEBUG peN~tulis: Allomorph {surface_form} skipped, condition_exact_root {condition_exact_root} not met by '{base_word}'.")
+                    continue 
 
-            # If there were specific conditions, and not all were met, skip this allomorph
             if expected_conditions > 0 and conditions_met != expected_conditions:
+                if prefix_canonical_form == "peN" and base_word == "tulis": 
+                    print(f"DEBUG peN~tulis: Skipped allomorph {surface_form} due to overall condition mismatch. Expected: {expected_conditions}, Met: {conditions_met}")
                 continue
             
-            # If expected_conditions is 0, this is a default/fallback allomorph for this prefix.
-            # Or if all specific conditions were met.
-
-            # At this point, this allomorph applies.
+            if prefix_canonical_form == "peN" and base_word == "tulis": 
+                print(f"DEBUG peN~tulis: Matched allomorph {surface_form}. Details: {allomorph_rule}")
+            
             temp_base_word = base_word
             
-            # Elision logic:
-            # Separator rule example for "meN-" + "pukul" (stemming "memukul"):
-            # "surface": "mem", "next_char_is": ["b","f","p","v"], "elision": true, "reconstruct_root_initial": "p"
-            # For forward "meN-" + "pukul":
-            # Allomorph should be like: {"surface": "mem", "condition_root_starts_with": ["p"], "elide_root_initial": "p"}
-            # Or {"surface": "mem", "condition_root_starts_with": ["p"], "elision_details": {"elide_char": "p"}}
-            
-            # Let's assume forward rules use "elide_chars_from_root": "p" or ["p", "t", "s", "k"]
-            # or simply "elision_active_on_root_initial": "p"
-            
-            # Based on prompt: "elision == "consonant"" AND "reconstruct_root_initial" is a string AND temp_base_word.startswith(reconstruct_root_initial)
-            # The key "reconstruct_root_initial" is from separator's perspective (char to add back).
-            # For forward, this is the char to elide.
-            
-            elides_char = allomorph_rule.get("elide_char_from_root") # e.g., "p" for meN- + pukul -> memukul
-                                                                  # e.g., "r" for ber- + -ajar -> belajar (if 'r' from 'ber' is elided) - this is complex.
-                                                                  # The "ber-" + "ajar" -> "belajar" is usually a specific rule {"surface": "bel", "condition_exact_root": ["ajar"]}
-                                                                  # where "bel" is the surface form and "ajar" is the root. No elision on "ajar" itself.
-
-            # More direct: use a key like `elide_root_initial_if_starts_with`: "p"
-            # Or the separator's `reconstruct_root_initial` IS the char that was elided.
-            char_elided_from_root = allomorph_rule.get("reconstruct_root_initial") # This is from separator perspective.
-
-            # Simplified elision check based on Sastrawi rules using boolean `true`.
+            char_elided_from_root = allomorph_rule.get("reconstruct_root_initial") 
             elision_type = allomorph_rule.get("elision")
-            if elision_type and isinstance(char_elided_from_root, str): # Handles `elision: true`
+
+            if elision_type and isinstance(char_elided_from_root, str): 
                 if temp_base_word.startswith(char_elided_from_root):
                     temp_base_word = temp_base_word[len(char_elided_from_root):]
-            elif elision_type == "vowel_sound_meng": # for meN- + e.g. undur -> mengundur
-                # This case typically means `meng-` is used and no change to root.
-                # The surface form "meng" already handles it.
+                    if prefix_canonical_form == "peN" and base_word == "tulis": 
+                        print(f"DEBUG peN~tulis: Elision applied for '{char_elided_from_root}'. Temp_base_word now: '{temp_base_word}'")
+                elif prefix_canonical_form == "peN" and base_word == "tulis": 
+                     print(f"DEBUG peN~tulis: Elision active for {surface_form}, but base_word '{temp_base_word}' does not start with elision char '{char_elided_from_root}'. No elision performed.")
+            elif prefix_canonical_form == "peN" and base_word == "tulis": 
+                 print(f"DEBUG peN~tulis: No elision applied for {surface_form}. elision_type: {elision_type}, char_elided_spec: {char_elided_from_root}")
+            elif elision_type == "vowel_sound_meng": 
                 pass
-
-
-            # Special handling for "menge-" if base_word is monosyllabic (already checked by is_monosyllabic_root condition)
-            # The surface_form "menge" would be chosen by the conditions.
 
             return surface_form + temp_base_word
 
-        # Fallback: If no allomorph rule was explicitly matched (e.g. default case for a prefix like "meN-" -> "me-")
-        # This should ideally be the last allomorph in the rules list with no specific conditions.
-        # If rules are not comprehensive, this is a safety net.
-        # The prompt implies rules should be comprehensive. The `get_rule_details` returns the whole group,
-        # including the canonical form itself, which might serve as a fallback if no allomorphs are listed.
-        # However, complex prefixes *always* have allomorphs.
-        # If "di-" was fetched, `allomorphs` would be None.
-        # This part of code is reached if `allomorphs` is not None, but loop finishes.
-        # This indicates an incomplete rule set for a complex prefix.
-        # A robust default would be to use the prefix's canonical form (minus any markers like 'N')
-        # or a predefined default surface form.
-        # For "meN-", a very basic fallback could be "me" + base_word.
-        # For "ber-", it's "ber-" + base_word.
-        # For "per-", it's "per-" + base_word.
-        # The simplest general fallback if rules are incomplete:
-        default_surface = prefix_canonical_form.replace('N', '') # Crude fallback for meN-, peN-
-        if default_surface.endswith('-'): default_surface = default_surface[:-1] # remove trailing hyphen
+        default_surface = prefix_canonical_form.replace('N', '') 
+        if default_surface.endswith('-'): default_surface = default_surface[:-1] 
         
-        return default_surface + base_word # Fallback, potentially incorrect if rules are not exhaustive
+        if prefix_canonical_form == "peN" and base_word == "tulis": 
+            print(f"DEBUG peN~tulis: No allomorph matched for '{base_word}'. Falling back to default_surface '{default_surface}'. Output: {default_surface + base_word}")
+        return default_surface + base_word 
