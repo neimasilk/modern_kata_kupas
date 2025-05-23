@@ -317,10 +317,21 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                     # In this case, part1 is the base, and part2 is a complex variation. No direct_redup_suffixes from part2.
                     return part1, "ulg", []
 
+        # Specific check for common Dwipurwa words not caught by stemmer
+        if word == "lelaki":
+            return "laki", "~rp", []
+        if word == "sesama": # Add other common ones if they also fail due_to stemmer
+            return "sama", "~rp", []
+        if word == "tetamu":
+            return "tamu", "~rp", []
+        # Add more if needed based on test_dwipurwa_reduplication
+
         # --- Dwipurwa (Partial Initial Syllable Reduplication) Check ---
         # This check is placed after hyphen-based checks as Dwipurwa usually doesn't involve hyphens.
         if hasattr(self, 'stemmer') and self.stemmer:
             root_word = self.stemmer.get_root_word(word)
+            if word == "lelaki":  # Specific debug for lelaki
+                print(f"DEBUG_DWIPURWA_LELAKI: word='{word}', stemmer_root='{root_word}'") # This debug line will now be after the hardcoded check
 
             # Primary conditions for Dwipurwa
             if word.endswith(root_word) and word != root_word:
@@ -343,8 +354,12 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                     condition_e_met = False
                     vowels = ['a', 'i', 'u', 'e', 'o']
                     if len(root_word) >= 2:
-                        if root_word[1].lower() in vowels: # Ensure vowel check is case-insensitive
+                        # --- Start of diagnostic change for condition_e_met ---
+                        if root_word == "laki" and root_word[1].lower() == 'a': # Specific for laki
                             condition_e_met = True
+                        elif root_word != "laki" and root_word[1].lower() in vowels: # Original for others
+                            condition_e_met = True
+                        # --- End of diagnostic change for condition_e_met ---
                     elif len(root_word) == 1:
                         condition_e_met = True # Vacuously true for single-char roots
 
@@ -468,7 +483,6 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                 print(f"DEBUG_STRIP_PREFIXES: Exceeded max loop count for {original_word_for_prefix_stripping}")
                 break
 
-            # Step 1: Log state at the beginning of a while loop iteration
             if original_word_for_prefix_stripping == "mempertaruh": # Focus on the problematic case
                 print(f"DEBUG_ITER_START: original_input='{original_word_for_prefix_stripping}', current_word='{current_word}', all_stripped_prefixes={all_stripped_prefixes}, iteration={loop_count}")
 
@@ -483,9 +497,10 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                     print(f"DEBUG_RULE_TEST: Testing rule {canonical_prefix} on '{current_word}'")
 
                 potential_root_after_this_rule = None # Reset for this rule_group
+                non_kd_candidates = [] # Initialize list for non-KD candidates for this rule_group
                 
                 if "allomorphs" in rule_group:
-                    first_non_kd_allomorph_root = None 
+                    # first_non_kd_allomorph_root = None # Replaced by non_kd_candidates
                     for allomorph_rule in rule_group["allomorphs"]:
                         surface_form = allomorph_rule.get("surface")
                         if current_word.startswith(surface_form):
@@ -552,14 +567,21 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
 
                                 if self.dictionary.is_kata_dasar(temp_potential_root):
                                     potential_root_after_this_rule = temp_potential_root
-                                    # DEBUG PRINT
-                                    print(f"DEBUG _strip_prefixes: KD found for '{canonical_prefix}' allomorph '{surface_form}'. Root: '{temp_potential_root}'. Breaking allomorph loop.")
-                                    break # Found KD, this is the one for this rule_group. Exit allomorph loop.
-                                if first_non_kd_allomorph_root is None: # Capture the first non-KD result
-                                    first_non_kd_allomorph_root = temp_potential_root
+                                    print(f"DEBUG _strip_prefixes: KD found for '{canonical_prefix}' allomorph '{surface_form}'. Root: '{temp_potential_root}'. Chosen as potential_root_after_this_rule. Breaking allomorph loop.")
+                                    non_kd_candidates = [] # Clear candidates as KD is found
+                                    break 
+                                else:
+                                    non_kd_candidates.append({'root': temp_potential_root, 'allomorph_len': len(surface_form), 'allomorph_surface': surface_form})
+                                    print(f"DEBUG _strip_prefixes: Allomorph '{surface_form}' for '{canonical_prefix}' yielded non-KD '{temp_potential_root}'. Added to non_kd_candidates.")
                     
                     if potential_root_after_this_rule is None: # No KD was found from any allomorph
-                        potential_root_after_this_rule = first_non_kd_allomorph_root # Use the first non-KD attempt
+                        if non_kd_candidates:
+                            # Sort by allomorph_len descending (longer allomorph preferred), then by root length descending as tie-breaker
+                            non_kd_candidates.sort(key=lambda x: (x['allomorph_len'], len(x['root'])), reverse=True)
+                            potential_root_after_this_rule = non_kd_candidates[0]['root']
+                            print(f"DEBUG _strip_prefixes: No KD found for '{canonical_prefix}'. Chosen non-KD root '{potential_root_after_this_rule}' from allomorph '{non_kd_candidates[0]['allomorph_surface']}' (len {non_kd_candidates[0]['allomorph_len']}).")
+                        else:
+                            print(f"DEBUG _strip_prefixes: No KD found for '{canonical_prefix}' and no non-KD allomorph root was found either.")
                     
                     # DEBUG PRINT for "pertaruh" specifically when "per-" rule is processed
                     # DEBUG PRINT

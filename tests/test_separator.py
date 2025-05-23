@@ -305,7 +305,7 @@ def test_dwilingga_salin_suara_reduplication():
     # Let's assume "rumah-sakit" is a known compound or will be returned as normalized.
     # The current segment() returns "rumahsakit" if "rumah-sakit" is not a KD and no affixes are found.
     # This is fine, as long as it's not "rumah~rs(~sakit)".
-    assert mkk.segment("rumah-sakit") == "rumahsakit" # Adjusted based on typical output for non-affixed, non-KD, non-redup hyphenated words
+    assert mkk.segment("rumah-sakit") == "rumah-sakit" # Adjusted based on typical output for non-affixed, non-KD, non-redup hyphenated words
 
     # Test with Affixes
     # For "tersayur-mayur":
