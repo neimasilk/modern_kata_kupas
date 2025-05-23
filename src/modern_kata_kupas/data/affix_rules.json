@@ -19,144 +19,38 @@
       "canonical": "meN",
       "type": "prefix_derivational_complex",
       "allomorphs": [
-        {
-          "surface": "mem",
-          "next_char_is": ["b", "f", "v"],
-          "reconstruct_root_initial": null,
-          "elision": false
-        },
-        {
-          "surface": "mem",
-          "next_char_is": ["p"],
-          "reconstruct_root_initial": {"p": "p"},
-          "elision": true
-        },
-        {
-          "surface": "men",
-          "next_char_is": ["d", "c", "j", "z"],
-          "reconstruct_root_initial": null,
-          "elision": false
-        },
-        {
-          "surface": "men",
-          "next_char_is": ["t"],
-          "reconstruct_root_initial": {"t": "t"},
-          "elision": true
-        },
-        {
-          "surface": "meny",
-          "next_char_is": ["s"],
-          "reconstruct_root_initial": {"s": "s"},
-          "elision": true
-        },
-        {
-          "surface": "meng",
-          "next_char_is": ["g", "h", "q", "a", "i", "u", "e", "o"],
-          "reconstruct_root_initial": null,
-          "elision": false
-        },
-        {
-          "surface": "meng",
-          "next_char_is": ["k"],
-          "reconstruct_root_initial": {"k": "k"},
-          "elision": true
-        },
-        {
-          "surface": "me",
-          "next_char_is": ["l", "m", "n", "r", "w", "y", "ng", "ny"],
-          "reconstruct_root_initial": null,
-          "elision": false
-        },
-        {
-          "surface": "menge",
-          "is_monosyllabic_root": true,
-          "reconstruct_root_initial": null,
-          "elision": false
-        }
+        { "surface": "me", "next_char_is": ["l","m","n","r","w","y","ng","ny"], "reconstruct_root_initial": null, "elision": false },
+        { "surface": "menge", "is_monosyllabic_root": true, "reconstruct_root_initial": null, "elision": false },
+        { "surface": "mem", "next_char_is": ["p"], "reconstruct_root_initial": "p", "elision": true },
+        { "surface": "men", "next_char_is": ["t"], "reconstruct_root_initial": "t", "elision": true },
+        { "surface": "meny", "next_char_is": ["s"], "reconstruct_root_initial": "s", "elision": true },
+        { "surface": "meng", "next_char_is": ["k"], "reconstruct_root_initial": "k", "elision": true },
+        { "surface": "mem", "next_char_is": ["b","f","v"], "reconstruct_root_initial": null, "elision": false },
+        { "surface": "men", "next_char_is": ["d","c","j","z"], "reconstruct_root_initial": null, "elision": false },
+        { "surface": "meng", "next_char_is": ["g","h","q","a","i","u","e","o"], "reconstruct_root_initial": null, "elision": false }
       ]
     },
     {
       "canonical": "per",
       "type": "prefix_derivational_complex",
       "allomorphs": [
-        {
-          "surface": "pel",
-          "next_char_is": ["a"],
-          "reconstruct_root_initial": null,
-          "elision": false
-        },
-        {
-          "surface": "pe",
-          "next_char_is": ["t"],
-          "reconstruct_root_initial": null,
-          "elision": false
-        },
-        {
-          "surface": "per",
-          "next_char_is": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "u", "v", "w", "x", "y", "z", "ng", "ny", "t"],
-          "reconstruct_root_initial": null,
-          "elision": false
-        }
+        { "surface": "pel", "condition_exact_root": ["ajar"], "reconstruct_root_initial": null, "elision": false },
+        { "surface": "per", "reconstruct_root_initial": null, "elision": false }
       ]
     },
     {
       "canonical": "peN",
       "type": "prefix_derivational_complex",
       "allomorphs": [
-        {
-          "surface": "pem",
-          "next_char_is": ["b", "f", "v"],
-          "reconstruct_root_initial": null,
-          "elision": false
-        },
-        {
-          "surface": "pem",
-          "next_char_is": ["p"],
-          "reconstruct_root_initial": {"p": "p"},
-          "elision": true
-        },
-        {
-          "surface": "pen",
-          "next_char_is": ["d", "c", "j", "z"],
-          "reconstruct_root_initial": null,
-          "elision": false
-        },
-        {
-          "surface": "pen",
-          "next_char_is": ["t"],
-          "reconstruct_root_initial": {"t": "t"},
-          "elision": true
-        },
-        {
-          "surface": "peny",
-          "next_char_is": ["s"],
-          "reconstruct_root_initial": {"s": "s"},
-          "elision": true
-        },
-        {
-          "surface": "peng",
-          "next_char_is": ["g", "h", "q", "a", "i", "u", "e", "o"],
-          "reconstruct_root_initial": null,
-          "elision": false
-        },
-        {
-          "surface": "peng",
-          "next_char_is": ["k"],
-          "reconstruct_root_initial": {"k": "k"},
-          "elision": true
-        },
-        {
-          "surface": "pe",
-          "next_char_is": ["l", "m", "n", "r", "w", "y", "ng", "ny"],
-          "reconstruct_root_initial": null,
-          "elision": false
-        },
-        {
-          "surface": "penge",
-          "is_monosyllabic_root": true,
-          "reconstruct_root_initial": null,
-          "elision": false
-        }
+        { "surface": "pe", "next_char_is": ["l","m","n","r","w","y","ng","ny"], "reconstruct_root_initial": null, "elision": false },
+        { "surface": "penge", "is_monosyllabic_root": true, "reconstruct_root_initial": null, "elision": false },
+        { "surface": "pem", "next_char_is": ["p"], "reconstruct_root_initial": "p", "elision": true },
+        { "surface": "pen", "next_char_is": ["t"], "reconstruct_root_initial": "t", "elision": true },
+        { "surface": "peny", "next_char_is": ["s"], "reconstruct_root_initial": "s", "elision": true },
+        { "surface": "peng", "next_char_is": ["k"], "reconstruct_root_initial": "k", "elision": true },
+        { "surface": "pem", "next_char_is": ["b","f","v"], "reconstruct_root_initial": null, "elision": false },
+        { "surface": "pen", "next_char_is": ["d","c","j","z"], "reconstruct_root_initial": null, "elision": false },
+        { "surface": "peng", "next_char_is": ["g","h","q","a","i","u","e","o"], "reconstruct_root_initial": null, "elision": false }
       ]
     },
     {
@@ -208,5 +102,16 @@
       ]
     }
   ],
-  "suffixes": []
+  "suffixes": [
+    {"form": "an", "canonical": "an", "type": "suffix_derivational"},
+    {"form": "kan", "canonical": "kan", "type": "suffix_derivational"},
+    {"form": "i", "canonical": "i", "type": "suffix_derivational"},
+    {"form": "lah", "canonical": "lah", "type": "particle"},
+    {"form": "kah", "canonical": "kah", "type": "particle"},
+    {"form": "tah", "canonical": "tah", "type": "particle"},
+    {"form": "pun", "canonical": "pun", "type": "particle"},
+    {"form": "ku", "canonical": "ku", "type": "possessive"},
+    {"form": "mu", "canonical": "mu", "type": "possessive"},
+    {"form": "nya", "canonical": "nya", "type": "possessive"}
+  ]
 }
