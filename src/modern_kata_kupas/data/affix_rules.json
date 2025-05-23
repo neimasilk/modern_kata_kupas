@@ -93,7 +93,7 @@
         },
         {
           "surface": "per",
-          "next_char_is": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "u", "v", "w", "x", "y", "z", "ng", "ny"],
+          "next_char_is": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "u", "v", "w", "x", "y", "z", "ng", "ny", "t"],
           "reconstruct_root_initial": null,
           "elision": false
         }
