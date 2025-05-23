@@ -9,6 +9,7 @@ from .dictionary_manager import DictionaryManager
 from .rules import MorphologicalRules
 from .stemmer_interface import IndonesianStemmer
 from .utils.alignment import align
+from .reconstructor import Reconstructor # Added import
 
 MIN_STEM_LENGTH_FOR_POSSESSIVE = 3 # Panjang minimal kata dasar untuk pemisahan sufiks posesif
 
@@ -16,6 +17,17 @@ class ModernKataKupas:
     """
     Kelas utama untuk proses pemisahan kata berimbuhan.
     """
+    DWILINGGA_SALIN_SUARA_PAIRS = [
+        ("sayur", "mayur"),
+        ("bolak", "balik"),
+        ("warna", "warni"),
+        ("ramah", "tamah"),
+        ("gerak", "gerik"),
+        ("lauk", "pauk"),
+        ("gotong", "royong"),
+        ("serba", "serbi"),
+        # ("teka", "teki"), # Assuming input "teka-teki"
+    ]
     MIN_STEM_LENGTH_FOR_POSSESSIVE = 3 # Define minimum stem length for possessive stripping
     MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING = 4 # Define minimum stem length for derivational suffix stripping
     MIN_STEM_LENGTH_FOR_PARTICLE = 3 # Define minimum stem length for particle stripping
@@ -53,6 +65,9 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                     self.rules = MorphologicalRules(rules_path=default_rules_path_rel)
                 else: # TODO: Add logging here
                     self.rules = MorphologicalRules()
+        
+        # Initialize Reconstructor
+        self.reconstructor = Reconstructor(rules=self.rules, dictionary_manager=self.dictionary)
 
     def segment(self, word: str) -> str:
         """
@@ -233,6 +248,11 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
             if not part1 or not part2: # Should not happen if word contains a hyphen
                 return word, "", []
 
+            # Check for Dwilingga Salin Suara (e.g., "bolak-balik")
+            for base, variant in self.DWILINGGA_SALIN_SUARA_PAIRS:
+                if part1 == base and part2 == variant:
+                    return base, f"rs(~{variant})", []
+
             # Sub-pattern 2a: Simple X-X (e.g., "rumah-rumah", "main-main")
             if part1 == part2:
                 return part1, "ulg", []
@@ -289,8 +309,41 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                     # In this case, part1 is the base, and part2 is a complex variation. No direct_redup_suffixes from part2.
                     return part1, "ulg", []
 
+        # --- Dwipurwa (Partial Initial Syllable Reduplication) Check ---
+        # This check is placed after hyphen-based checks as Dwipurwa usually doesn't involve hyphens.
+        if hasattr(self, 'stemmer') and self.stemmer:
+            root_word = self.stemmer.get_root_word(word)
 
-        # Fallback: If no specific hyphenated reduplication pattern matched above.
+            # Primary conditions for Dwipurwa
+            if word.endswith(root_word) and word != root_word:
+                prefix_candidate = word[:-len(root_word)]
+
+                # Heuristic Conditions for Dwipurwa (e.g., lelaki -> laki, sesama -> sama)
+                # A: len(prefix_candidate) == 2
+                # B: len(root_word) >= 1
+                # C: prefix_candidate[0] == root_word[0]
+                # D: prefix_candidate[1] == 'e'
+                # E: if len(root_word) >= 2, root_word[1] is a vowel; if len(root_word) == 1, met.
+                
+                condition_a = (len(prefix_candidate) == 2)
+                condition_b = (len(root_word) >= 1)
+
+                if condition_a and condition_b: # Proceed only if A and B are met
+                    condition_c = (prefix_candidate[0] == root_word[0])
+                    condition_d = (prefix_candidate[1] == 'e')
+
+                    condition_e_met = False
+                    vowels = ['a', 'i', 'u', 'e', 'o']
+                    if len(root_word) >= 2:
+                        if root_word[1].lower() in vowels: # Ensure vowel check is case-insensitive
+                            condition_e_met = True
+                    elif len(root_word) == 1:
+                        condition_e_met = True # Vacuously true for single-char roots
+
+                    if condition_c and condition_d and condition_e_met:
+                        return root_word, "~rp", []
+
+        # Fallback: If no specific hyphenated or Dwipurwa pattern matched above.
         # This ensures that if word was not split or conditions not met, it's returned as is.
         return word, "", []
 
@@ -542,3 +595,11 @@ if __name__ == '__main__':
         # print(f"Segmenting 'makanan': {mkk.segment('makanan')}") # This will work with the current stub
     except Exception as e:
         print(f"Error instantiating ModernKataKupas: {e}")
+
+    def reconstruct(self, segmented_word: str) -> str:
+        """
+        Rekonstruksi kata dari bentuk tersegmentasi.
+        Delegates to the Reconstructor class.
+        """
+        # self.reconstructor is guaranteed by __init__
+        return self.reconstructor.reconstruct(segmented_word)
