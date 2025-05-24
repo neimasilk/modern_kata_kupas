@@ -126,66 +126,38 @@ class TestWordReconstruction(unittest.TestCase):
         # base_form="mobil", redup_marker="ulg", direct_redup_suffixes=["an"]
         # The `segment()` method assembles this as "mobil~ulg~an".
         # `parse_segmented_string`: root="mobil", redup_marker="ulg", suffixes_derivational=["an"]
-        # `reconstruct` order: root="mobil" -> deriv="mobilan" -> redup="mobilan-mobilan".
-        # This seems to be a discrepancy or area needing refinement in how "direct_redup_suffixes"
-        # are handled if they should apply *after* the base is reduplicated.
-        # For now, testing current behavior:
-        # If "an" is derivational, it's applied before redup: mobil -> mobilan -> mobilan-mobilan.
-        # If the parser categorized "an" differently for "mobil~ulg~an" (e.g. as a particle for some reason,
-        # or if we had a "suffix_on_redup" category), it would apply after.
-        # Given current `parse_segmented_string` and `reconstruct` order:
-        self.assertEqual(self.mkk.reconstruct("mobil~ulg~an"), "mobilan-mobilan") # Based on current logic: (mobil+an)-ulg
-                                                                                  # Expected "mobil-mobilan" needs "an" applied *after* "ulg".
-                                                                                  # This test highlights that "an" in "mobil~ulg~an" should perhaps not be "derivational"
-                                                                                  # if "mobil-mobilan" is the target.
-                                                                                  # If "an" is parsed as particle/possessive, it would work.
-                                                                                  # Let's assume for this test the target is "mobil-mobilan"
-                                                                                  # which means "an" must be applied *after* "ulg".
-                                                                                  # This implies "an" from "mobil~ulg~an" should be a particle/possessive type
-                                                                                  # or a new category. If it's parsed as derivational, current logic is (base+deriv)+redup.
-                                                                                  # The `_handle_reduplication` in separator.py has `direct_redup_suffixes`.
-                                                                                  # `segment()` appends these *after* the `redup_marker`.
-                                                                                  # So, `parse_segmented_string` should correctly categorize them.
-                                                                                  # If `parse_segmented_string` puts `an` from `mobil~ulg~an` into `suffixes_derivational`,
-                                                                                  # then `mobilan-mobilan` is the correct output of current code.
-                                                                                  # If `parse_segmented_string` puts it into `suffixes_particle` (unlikely), then `mobil-mobilannya`.
-                                                                                  # The `direct_redup_suffixes` from separator are just appended to the final list of parts.
-                                                                                  # `parse_segmented_string` then classifies them.
-                                                                                  # If "an" is derivational, it's "mobilan-mobilan".
-                                                                                  # For "mobil-mobilan" to be the output, "an" should be treated as a suffix applied to the already reduplicated "mobil-mobil".
-                                                                                  # This needs the reconstructor to handle it: root -> redup -> suffix.
-                                                                                  # Let's assume the task implies "an" is applied to the reduplicated form.
-                                                                                  # The current order is: root -> deriv -> redup -> poss/part.
-                                                                                  # So, if "an" is derivational: (mobil+an)+ulg = mobilan-mobilan.
-                                                                                  # If "an" is particle/possessive: (mobil+ulg)+an = mobil-mobilan.
-                                                                                  # The `rules.py` `get_suffix_type("-an")` will return "derivational".
-                                                                                  # So the output *will* be "mobilan-mobilan".
-                                                                                  # The example "anak~ulg~nya" -> "anak-anaknya" works because "nya" is possessive.
+        # With the new logic, "an" after "ulg" should be handled by "suffixes_after_reduplication"
+        # mobil~ulg~an:
+        # parse: root="mobil", redup_marker="ulg", suffixes_after_reduplication=["an"]
+        # reconstruct: current_form="mobil"
+        # deriv (standard): none
+        # redup: _apply_reduplication_reconstruction("mobil", "ulg", None) -> "mobil-mobil"
+        # suffixes_after_redup: current_form = "mobil-mobil" + "an" -> "mobil-mobilan"
+        # poss/part: none
+        # prefixes: none
+        # Result: "mobil-mobilan"
+        self.assertEqual(self.mkk.reconstruct("mobil~ulg~an"), "mobil-mobilan")
+        self.assertEqual(self.mkk.reconstruct("rumah~ulg~an"), "rumah-rumahan")
+        # Assuming "i" is a derivational suffix, it will be categorized as suffixes_after_reduplication
+        self.assertEqual(self.mkk.reconstruct("motor~ulg~i"), "motor-motori") 
 
         self.assertEqual(self.mkk.reconstruct("laki~rp"), "lelaki")
-        # tua~rp~ku -> root="tua", redup_marker="rp", suffixes_possessive=["ku"]
-        # Order: root="tua" -> deriv (none) -> redup ("tetua") -> poss ("tetuaku")
-        self.assertEqual(self.mkk.reconstruct("tua~rp~ku"), "tetuaku")
+        self.assertEqual(self.mkk.reconstruct("tua~rp~ku"), "tetuaku") # "ku" is possessive, applies after redup
         self.assertEqual(self.mkk.reconstruct("sayur~rs(~mayur)"), "sayur-mayur")
         
         # bolak~rs(~balik)~an
-        # parse: root="bolak", redup_marker="rs", redup_variant="~balik", suffixes_derivational=["an"]
+        # parse: root="bolak", redup_marker="rs", redup_variant="~balik", suffixes_after_reduplication=["an"]
         # reconstruct: current_form="bolak"
-        # deriv: current_form="bolakan"
-        # redup: _apply_reduplication_reconstruction("bolakan", "rs", "~balik") -> "bolakan-balik"
+        # deriv (standard): none
+        # redup: _apply_reduplication_reconstruction("bolak", "rs", "~balik") -> "bolak-balik"
+        # suffixes_after_redup: current_form = "bolak-balik" + "an" -> "bolak-balikan"
         # poss/part: none
-        # Result: "bolakan-balik"
-        # Expected: "bolak-balikan" (implies "an" is suffix on "bolak-balik")
-        # This again highlights the order of operations and suffix classification.
-        # If "an" is derivational, it applies to "bolak" first.
-        # For "bolak-balikan", "an" must be applied to "bolak-balik".
-        # This requires "an" to be treated as a particle/possessive in this context, or a new rule.
-        # Given current code, it will be "bolakan-balik".
-        self.assertEqual(self.mkk.reconstruct("bolak~rs(~balik)~an"), "bolakan-balik")
-
+        # prefixes: none
+        # Result: "bolak-balikan"
+        self.assertEqual(self.mkk.reconstruct("bolak~rs(~balik)~an"), "bolak-balikan")
 
     def test_layered_affixes(self):
-        self.assertEqual(self.mkk.reconstruct("ke~adil~an"), "keadilan")
+        self.assertEqual(self.mkk.reconstruct("ke~adil~an"), "keadilan") # "an" is standard derivational here
         self.assertEqual(self.mkk.reconstruct("peN~bangun~an"), "pembangunan")
         # meN~per~juang~kan
         # parse: root="juang", prefixes=["meN-", "per-"], suffixes_derivational=["kan"]
@@ -201,15 +173,14 @@ class TestWordReconstruction(unittest.TestCase):
 
     def test_idempotency_segment_reconstruct(self):
         words_to_test = [
-            "makanan", "memperjuangkannya", "buku-bukunya", "lelaki", 
-            "sayur-mayur", "dibacakan", "keadilan", "pembangunan", 
-            "terpercaya", "menulis", "menyapu", "mengambil", 
-            "pengeboman", "pelajar"
-            # "mobil-mobilan", # current logic produces mobilan-mobilan
-            # "bolak-balikan"  # current logic produces bolakan-balik
+            "makanan", "memperjuangkannya", "buku-bukunya", "lelaki",
+            "sayur-mayur", "dibacakan", "keadilan", "pembangunan",
+            "terpercaya", "menulis", "menyapu", "mengambil",
+            "pengeboman", "pelajar",
+            "mobil-mobilan", # Should now work with the new logic
+            "bolak-balikan", # Should now work with the new logic
+            "rumah-rumahan"  # Added for completeness
         ]
-        # Add words that are known to have issues with current reconstructor logic if necessary
-        # For example, if mobil~ulg~an -> mobilan-mobilan is not desired.
         
         for word in words_to_test:
             with self.subTest(word=word):

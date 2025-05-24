@@ -1,11 +1,16 @@
 import json
 import os
+import importlib.resources # Added import
 from typing import List, Dict, Any, Tuple, Optional, Union # Pastikan Optional atau Union diimpor
 
-# Konstanta untuk path file, bisa disesuaikan jika struktur direktori berbeda
-# Diasumsikan file ini berada di src/modern_kata_kupas/
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-AFFIX_RULES_PATH = os.path.join(BASE_DIR, "data", "affix_rules.json")
+# Konstanta untuk path file default menggunakan importlib.resources
+DEFAULT_RULES_PACKAGE_PATH = "modern_kata_kupas.data"
+DEFAULT_RULES_FILENAME = "affix_rules.json"
+
+# Definisikan RuleError di sini jika belum ada global
+class RuleError(Exception):
+    """Custom exception for errors during rule loading or processing."""
+    pass
 
 class Rule:
     """
@@ -62,140 +67,109 @@ class MorphologicalRules:
                                    (kecuali jika file eksplisit tidak ditemukan, maka FileNotFoundError).
         """
         self.rules_file_path_arg = rules_file_path # Simpan argumen asli untuk referensi
-        resolved_path = rules_file_path or AFFIX_RULES_PATH
-
+        
         # Inisialisasi default ke aturan kosong
         self.all_rules: Dict[str, Any] = {"prefixes": [], "suffixes": []}
         self.prefix_rules: Dict[str, List[Dict[str, Any]]] = {}
         self.suffix_rules: Dict[str, List[Dict[str, Any]]] = {}
-        self.infix_rules: Dict[str, List[Dict[str, Any]]] = {} # Jika ada aturan infiks
+        self.infix_rules: Dict[str, List[Dict[str, Any]]] = {}
 
-        # Path yang akan digunakan oleh _load_rules
-        self.rules_file_path = resolved_path
+        self.is_default_load = not bool(rules_file_path) # True jika path tidak diberikan
 
-        if rules_file_path:  # Path file aturan diberikan secara eksplisit
-            if not os.path.exists(rules_file_path):
-                raise FileNotFoundError(f"File aturan yang ditentukan secara eksplisit tidak ditemukan: {rules_file_path}")
-            # File eksplisit ada, coba muat
-            try:
-                self._load_rules()
-            except RuleError as e:
-                # Jika file eksplisit ada tetapi kosong atau formatnya salah,
-                # _load_rules seharusnya sudah menangani kasus file kosong dengan benar.
-                # Jika RuleError muncul di sini, berarti file tidak kosong tapi formatnya salah.
-                # Untuk konsistensi dengan bagaimana _load_rules menangani file kosong (menjadi aturan kosong),
-                # kita bisa memilih untuk membiarkan aturan tetap kosong atau memunculkan error.
-                # Saat ini, jika _load_rules memunculkan RuleError (misalnya, JSON tidak valid), kita biarkan error itu muncul.
-                # Test mengharapkan aturan kosong jika file *kosong* secara eksplisit diberikan.
-                # _load_rules yang dimodifikasi akan memastikan self.all_rules kosong jika file-nya kosong.
-                # Jika file tidak kosong tapi JSON-nya salah, RuleError akan dimunculkan oleh _load_rules.
-                raise # Biarkan RuleError (mis. dari JSONDecodeError yang dibungkus) muncul
-            # FileNotFoundError dari _load_rules (misalnya karena race condition setelah os.path.exists) akan muncul juga.
-
-        else:  # Tidak ada path file aturan eksplisit, gunakan default
-            if os.path.exists(resolved_path): # File default ada
-                try:
-                    self._load_rules()
-                except RuleError as e:
-                    # File default ada tapi formatnya salah (dan tidak kosong).
-                    # Bisa pilih untuk memunculkan error atau lanjut dengan aturan kosong + warning.
-                    # Untuk sekarang, kita buat lebih permisif untuk file default yang rusak: log warning, gunakan aturan kosong.
-                    print(f"PERINGATAN: File aturan default {resolved_path} ada tetapi rusak atau tidak dapat diurai. Menggunakan aturan kosong. Detail: {e}")
-                    # Aturan sudah diinisialisasi kosong, jadi tidak perlu tindakan lebih lanjut.
-            # else: File default (AFFIX_RULES_PATH) tidak ada.
-            #       Lanjutkan dengan aturan kosong yang sudah diinisialisasi. Tidak ada error/warning.
-
-    def _load_rules(self) -> None:
-        """
-        Memuat aturan morfologi dari file JSON.
-        Mengelompokkan aturan berdasarkan tipe (prefix, suffix, infix).
-        Jika file kosong, akan menginisialisasi aturan sebagai kosong.
-        """
         try:
-            with open(self.rules_file_path, 'r', encoding='utf-8') as f:
-                file_content = f.read()
-                if not file_content.strip(): # Periksa apakah file kosong atau hanya berisi spasi putih
-                    # Jika file kosong, pastikan semua struktur aturan direset ke kondisi kosong
-                    self.all_rules = {"prefixes": [], "suffixes": []}
-                    self.prefix_rules = {}
-                    self.suffix_rules = {}
-                    self.infix_rules = {} # Pastikan ini juga direset jika digunakan
-                    return # Berhasil "memuat" aturan kosong dari file kosong
+            if self.is_default_load:
+                # Muat dari paket menggunakan importlib.resources
+                print(f"MorphologicalRules: Loading default rules from package: {DEFAULT_RULES_PACKAGE_PATH}/{DEFAULT_RULES_FILENAME}")
+                file_content = importlib.resources.read_text(
+                    DEFAULT_RULES_PACKAGE_PATH,
+                    DEFAULT_RULES_FILENAME,
+                    encoding='utf-8'
+                )
+                self._parse_rules_from_content(file_content, f"package:{DEFAULT_RULES_PACKAGE_PATH}/{DEFAULT_RULES_FILENAME}")
+            else:
+                # Muat dari file path yang diberikan
+                print(f"MorphologicalRules: Loading rules from explicit path: {rules_file_path}")
+                if not os.path.exists(rules_file_path):
+                    raise FileNotFoundError(f"File aturan yang ditentukan secara eksplisit tidak ditemukan: {rules_file_path}")
+                with open(rules_file_path, 'r', encoding='utf-8') as f:
+                    file_content = f.read()
+                self._parse_rules_from_content(file_content, rules_file_path)
 
-                # File tidak kosong, coba parse JSON
-                loaded_json = json.loads(file_content)
-            
-            # Reset/Inisialisasi ulang dictionary aturan sebelum memuat dari JSON yang berhasil diparsing
-            # Ini penting jika _load_rules dipanggil lagi atau untuk kejelasan state.
-            self.all_rules = loaded_json
+        except FileNotFoundError as e:
+            # Jika file default dari paket tidak ditemukan (seharusnya tidak terjadi jika setup benar)
+            # atau file eksplisit tidak ditemukan.
+            if self.is_default_load:
+                 print(f"PERINGATAN: File aturan default dari paket tidak ditemukan. Menggunakan aturan kosong. Error: {e}")
+            else: # File eksplisit tidak ditemukan, ini adalah error.
+                raise
+        except json.JSONDecodeError as e:
+            source_description = f"paket {DEFAULT_RULES_PACKAGE_PATH}/{DEFAULT_RULES_FILENAME}" if self.is_default_load else rules_file_path
+            # Jika file (default atau eksplisit) ada tapi JSON-nya salah.
+            # Untuk file default yang rusak, kita bisa memilih untuk warning + aturan kosong.
+            # Untuk file eksplisit yang rusak, kita harus raise error.
+            if self.is_default_load:
+                print(f"PERINGATAN: File aturan default dari {source_description} rusak atau tidak dapat diurai. Menggunakan aturan kosong. Detail: {e}")
+            else:
+                raise RuleError(f"Format JSON tidak valid dalam file: {rules_file_path}. Detail: {e}") from e
+        except Exception as e: # Menangkap error lain
+            source_description = f"paket {DEFAULT_RULES_PACKAGE_PATH}/{DEFAULT_RULES_FILENAME}" if self.is_default_load else rules_file_path
+            if self.is_default_load:
+                print(f"PERINGATAN: Error tak terduga saat memuat aturan default dari {source_description}. Menggunakan aturan kosong. Detail: {e}")
+            else:
+                raise RuleError(f"Error saat memuat atau memproses aturan dari {rules_file_path}: {str(e)}") from e
+
+
+    def _parse_rules_from_content(self, file_content: str, source_description: str):
+        """
+        Mem-parse konten string aturan (JSON) dan menginisialisasi struktur aturan.
+        Dipanggil setelah file content dibaca baik dari paket atau file path.
+        """
+        if not file_content.strip(): # Periksa apakah file kosong atau hanya berisi spasi putih
+            print(f"MorphologicalRules: Konten aturan dari '{source_description}' kosong. Menggunakan aturan kosong.")
+            self.all_rules = {"prefixes": [], "suffixes": []} # Sudah diinisialisasi, tapi untuk kejelasan
             self.prefix_rules = {}
             self.suffix_rules = {}
-            self.infix_rules = {} # Pastikan ini juga direset jika digunakan
+            self.infix_rules = {}
+            return
 
-            # Proses suffix rules
-            processed_suffix_rules = {}
-            raw_suffixes = self.all_rules.get("suffixes", [])
-            if isinstance(raw_suffixes, list):
-                for rule in raw_suffixes:
+        loaded_json = json.loads(file_content) # Bisa memunculkan JSONDecodeError
+        
+        self.all_rules = loaded_json
+        self.prefix_rules = {}
+        self.suffix_rules = {}
+        self.infix_rules = {}
+
+        # Proses suffix rules
+        # processed_suffix_rules = {} # This was a temporary variable, directly use self.suffix_rules
+        raw_suffixes = self.all_rules.get("suffixes", [])
+        if isinstance(raw_suffixes, list):
+            for rule in raw_suffixes:
                     key = rule.get("form")
                     if key:
-                        if key not in processed_suffix_rules:
-                            processed_suffix_rules[key] = []
-                        processed_suffix_rules[key].append(rule)
-            elif isinstance(raw_suffixes, dict): # Asumsi format lama jika berupa dict
-                processed_suffix_rules = raw_suffixes
-            self.suffix_rules = processed_suffix_rules
+                        if key not in self.suffix_rules: # Menggunakan self.suffix_rules langsung
+                            self.suffix_rules[key] = []
+                        self.suffix_rules[key].append(rule)
+        elif isinstance(raw_suffixes, dict): # Asumsi format lama jika berupa dict (Corrected Indentation)
+            self.suffix_rules = raw_suffixes # Harus dipastikan formatnya sesuai
 
-            # Proses prefix rules
-            processed_prefix_rules = {}
-            raw_prefixes = self.all_rules.get("prefixes", [])
-            if isinstance(raw_prefixes, list):
-                for rule in raw_prefixes:
-                    # Use canonical form as the key for self.prefix_rules.
-                    # This simplifies lookup later.
-                    key = rule.get("canonical") 
-                    if not key: # Fallback if "canonical" is somehow missing, though it shouldn't be for prefixes.
-                        key = rule.get("form") or rule.get("surface")
-
-                    if key:
-                        # Each key should map to a list containing ONE rule dictionary for that canonical/form.
-                        # If affix_rules.json has multiple entries for the exact same canonical form (undesirable),
-                        # this would overwrite. Assuming unique canonical forms for top-level prefix rules.
-                        # The value should be the rule dict itself, not a list containing it, if keys are canonical.
-                        # Or, if we expect multiple distinct rule objects for the *same* canonical form (e.g. meN defined twice),
-                        # then a list is needed. Assuming one definition per canonical prefix.
-                        # For consistency with how Reconstructor expects to find the rule (one dict per canonical form):
-                        # self.prefix_rules[key] = rule # Store the rule dict directly.
-                        
-                        # Re-evaluation: The Reconstructor looks for a list of rule dicts.
-                        # _apply_forward_morphophonemics now iterates .items() and then uses rule_list_for_form[0]
-                        # The original _load_rules created a list: processed_prefix_rules[key].append(rule)
-                        # Let's stick to storing a list of rules, even if it's usually a list with one item
-                        # when keyed by canonical form.
-                        if key not in processed_prefix_rules:
-                            processed_prefix_rules[key] = []
-                        processed_prefix_rules[key].append(rule)
-            elif isinstance(raw_prefixes, dict): # Asumsi format lama jika berupa dict
-                # This path for old format might need adjustment if keys are not canonical.
-                # For now, assume it is also keyed by canonical form if it's a dict.
-                processed_prefix_rules = raw_prefixes
-            self.prefix_rules = processed_prefix_rules
+        # Proses prefix rules
+        # processed_prefix_rules = {} # This was a temporary variable, directly use self.prefix_rules
+        raw_prefixes = self.all_rules.get("prefixes", [])
+        if isinstance(raw_prefixes, list):
+            for rule in raw_prefixes:
+                key = rule.get("canonical")
+                if not key:
+                    key = rule.get("form") or rule.get("surface")
+                if key:
+                    if key not in self.prefix_rules: # Menggunakan self.prefix_rules langsung
+                        self.prefix_rules[key] = []
+                    self.prefix_rules[key].append(rule)
+        elif isinstance(raw_prefixes, dict): # Corrected Indentation
+            self.prefix_rules = raw_prefixes # Harus dipastikan formatnya sesuai
             
-            # Anda bisa menambahkan pemuatan untuk infiks jika ada
+        # Anda bisa menambahkan pemuatan untuk infiks jika ada
             # raw_infixes = self.all_rules.get("infixes", [])
             # ... (proses serupa untuk infiks) ...
-
-        except FileNotFoundError:
-            # Biarkan __init__ yang memutuskan bagaimana menangani ini berdasarkan apakah path default atau eksplisit
-            raise
-        except json.JSONDecodeError as e:
-            # File tidak kosong, tetapi bukan JSON yang valid.
-            # Definisikan RuleError jika belum ada, atau gunakan Exception bawaan.
-            # class RuleError(Exception): pass (perlu didefinisikan di level modul)
-            raise RuleError(f"Format JSON tidak valid dalam file: {self.rules_file_path}. Detail: {e}")
-        except Exception as e: # Menangkap error lain yang mungkin terjadi saat pemrosesan aturan
-            # Lebih baik lebih spesifik jika memungkinkan, tapi ini sebagai fallback.
-            raise RuleError(f"Error saat memuat atau memproses aturan dari {self.rules_file_path}: {str(e)}")
 
     def get_matching_suffix_rules(self, word: str) -> List[Dict[str, Any]]:
         """
@@ -391,29 +365,53 @@ class MorphologicalRules:
 
 # Contoh penggunaan (opsional, untuk pengujian cepat)
 if __name__ == '__main__':
-    # Pastikan file affix_rules.json ada di src/modern_kata_kupas/data/affix_rules.json
-    # atau sesuaikan path di bawah ini.
+    # Pastikan file affix_rules.json ada di modern_kata_kupas/data/affix_rules.json
     # Untuk menjalankan dari root direktori proyek: python -m src.modern_kata_kupas.rules
     
-    # Membuat path yang benar jika dijalankan dari root proyek
-    project_root = os.path.dirname(os.path.dirname(BASE_DIR)) # Naik dua level dari src/modern_kata_kupas
-    test_rules_file = os.path.join(project_root, "src", "modern_kata_kupas", "data", "affix_rules.json")
+    # Default loading (dari paket)
+    print("Menguji pemuatan aturan default dari paket...")
+    try:
+        rules_manager_default = MorphologicalRules()
+        print(f"Berhasil memuat {len(rules_manager_default.get_all_prefix_forms())} bentuk prefiks (default).")
+        print(f"Tipe sufiks '-lah' (default): {rules_manager_default.get_suffix_type('-lah')}")
+    except Exception as e:
+        print(f"Error saat memuat aturan default: {e}")
 
-    if not os.path.exists(test_rules_file):
-        print(f"File aturan tidak ditemukan untuk pengujian: {test_rules_file}")
-        # Jika dijalankan langsung dari direktori src/modern_kata_kupas/
-        # maka AFFIX_RULES_PATH seharusnya sudah benar.
-        # Coba gunakan AFFIX_RULES_PATH jika test_rules_file tidak ada
-        if os.path.exists(AFFIX_RULES_PATH):
-            test_rules_file = AFFIX_RULES_PATH
-        else:
-            print("Tidak dapat menemukan file aturan untuk pengujian.")
-            exit()
-            
-    print(f"Menggunakan file aturan: {test_rules_file}")
-    rules_manager = MorphologicalRules(rules_file_path=test_rules_file)
+    # Membuat file aturan dummy untuk pengujian pemuatan dari path eksplisit
+    dummy_rules_content = {
+        "prefixes": [
+            {"form": "tes-", "canonical": "tes-", "type": "test_prefix_type", "allomorphs": []}
+        ],
+        "suffixes": [
+            {"form": "-tes", "type": "test_suffix_type", "conditions": []}
+        ]
+    }
+    dummy_rules_path = "dummy_test_rules.json"
+    with open(dummy_rules_path, 'w', encoding='utf-8') as f:
+        json.dump(dummy_rules_content, f)
 
-    # Test get_suffix_type
+    print(f"\nMenguji pemuatan aturan dari path eksplisit: {dummy_rules_path}")
+    try:
+        rules_manager_explicit = MorphologicalRules(rules_file_path=dummy_rules_path)
+        print(f"Berhasil memuat {len(rules_manager_explicit.get_all_prefix_forms())} bentuk prefiks (eksplisit).")
+        print(f"Tipe sufiks '-tes' (eksplisit): {rules_manager_explicit.get_suffix_type('-tes')}")
+    except Exception as e:
+        print(f"Error saat memuat aturan dari path eksplisit: {e}")
+    finally:
+        if os.path.exists(dummy_rules_path):
+            os.remove(dummy_rules_path) # Bersihkan file dummy
+
+    # Contoh penggunaan lain tetap di sini jika diperlukan,
+    # misalnya untuk menguji get_suffix_type dengan aturan default jika berhasil dimuat
+    if 'rules_manager_default' in locals() and rules_manager_default:
+        rules_manager = rules_manager_default # Gunakan aturan default untuk sisa tes
+    elif 'rules_manager_explicit' in locals() and rules_manager_explicit:
+        rules_manager = rules_manager_explicit # Fallback ke aturan eksplisit jika default gagal
+    else:
+        print("\nTidak ada manajer aturan yang berhasil diinisialisasi untuk tes lebih lanjut.")
+        exit()
+        
+    print("\nMelanjutkan dengan tes get_suffix_type (menggunakan manajer yang berhasil dimuat):")
     print(f"Tipe sufiks '-lah': {rules_manager.get_suffix_type('-lah')}")
     print(f"Tipe sufiks '-an': {rules_manager.get_suffix_type('-an')}")
     print(f"Tipe sufiks '-i': {rules_manager.get_suffix_type('-i')}")

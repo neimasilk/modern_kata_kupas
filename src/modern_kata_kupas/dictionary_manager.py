@@ -5,6 +5,7 @@ from .exceptions import (
     DictionaryFileNotFoundError,
     DictionaryLoadingError
 )
+from modern_kata_kupas.normalizer import TextNormalizer # Added import
 
 class DictionaryManager:
     """
@@ -13,7 +14,7 @@ class DictionaryManager:
     Attributes:
         kata_dasar_set: Set yang berisi kata-kata dasar yang telah dinormalisasi.
     """
-    DEFAULT_DICT_PACKAGE_PATH = "src.modern_kata_kupas.data" # Corrected path
+    DEFAULT_DICT_PACKAGE_PATH = "modern_kata_kupas.data" # Corrected path as per task
     DEFAULT_DICT_FILENAME = "kata_dasar.txt"
     DEFAULT_LOANWORD_FILENAME = "loanwords.txt"
 
@@ -33,6 +34,7 @@ class DictionaryManager:
         """
         self.kata_dasar_set: Set[str] = set()
         self.loanwords_set: Set[str] = set() # Renamed from self.loanwords to self.loanwords_set
+        self.normalizer = TextNormalizer() # Instantiate TextNormalizer
 
         if dictionary_path:
             self._load_from_file_path(dictionary_path, is_loanword_list=False)
@@ -44,18 +46,14 @@ class DictionaryManager:
         else:
             self._load_default_loanword_list()
 
-    def _normalize_word(self, word: str) -> str:
-        """Normalizes a word by stripping whitespace and converting to lowercase."""
-        if not isinstance(word, str):
-            return "" 
-        return word.strip().lower()
+    # _normalize_word method removed, will use self.normalizer.normalize_word()
         
     def add_word(self, word: str, is_loanword: bool = False):
         """
         Adds a new word to the appropriate set (kata_dasar_set or loanwords_set)
         after normalizing it. Skips empty words after normalization.
         """
-        normalized_word = self._normalize_word(word)
+        normalized_word = self.normalizer.normalize_word(word) # Use TextNormalizer
         if normalized_word:
             if is_loanword:
                 self.loanwords_set.add(normalized_word)
@@ -87,7 +85,7 @@ class DictionaryManager:
         """
         target_set = self.loanwords_set if is_loanword_list else self.kata_dasar_set
         for line in word_iterable:
-            normalized_word = self._normalize_word(line)
+            normalized_word = self.normalizer.normalize_word(line) # Use TextNormalizer
             if normalized_word: 
                 target_set.add(normalized_word)
                 
@@ -101,7 +99,7 @@ class DictionaryManager:
         Returns:
             bool: True jika kata ada dalam kamus (case-insensitive), False jika tidak.
         """
-        normalized_kata = self._normalize_word(kata)
+        normalized_kata = self.normalizer.normalize_word(kata) # Use TextNormalizer
         is_present = normalized_kata in self.kata_dasar_set
         # print(f"DictionaryManager: Checking KD '{kata}' (normalized: '{normalized_kata}'), found: {is_present}") 
         return is_present
@@ -116,7 +114,7 @@ class DictionaryManager:
         Returns:
             bool: True jika kata ada dalam daftar (case-insensitive), False jika tidak.
         """
-        normalized_word = self._normalize_word(word)
+        normalized_word = self.normalizer.normalize_word(word) # Use TextNormalizer
         is_present = normalized_word in self.loanwords_set
         # print(f"DictionaryManager: Checking Loanword '{word}' (normalized: '{normalized_word}'), found: {is_present}")
         return is_present

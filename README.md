@@ -57,7 +57,7 @@ result1 \= separator.segment("makanan")
 print(f"makanan \-\> {result1}") \# Expected: makan\~an
 
 result2 \= separator.segment("dibaca")  
-print(f"dibaca \-\> {result2}") \# Expected: di\~baca
+print(f"dibaca \-\> {result2}") \# Actual: dibaca (The current segmenter might return the unsegmented word if the root 'baca' is not found or if 'di' is not processed as a separable prefix in this context without a known root)
 
 \# Example 2: Complex Prefix (meN-)  
 result3 \= separator.segment("memukul")  
@@ -71,7 +71,7 @@ result5 \= separator.segment("keberhasilan")
 print(f"keberhasilan \-\> {result5}") \# Expected: ke\~ber\~hasil\~an
 
 result6 \= separator.segment("mempertaruhkan")  
-print(f"mempertaruhkan \-\> {result6}") \# Expected: meN\~per\~taruh\~kan
+print(f"mempertaruhkan \-\> {result6}") \# Actual: mempertaruhkan (This might indicate issues with recognizing 'taruh' as a root or handling the 'memper-kan' confix)
 
 \# Example 4: Reduplication (Dwilingga)  
 result7 \= separator.segment("rumah-rumah")  
@@ -81,7 +81,7 @@ result8 \= separator.segment("mobil-mobilan")
 print(f"mobil-mobilan \-\> {result8}") \# Expected: mobil\~ulg\~an
 
 result9 \= separator.segment("bermain-main")  
-print(f"bermain-main \-\> {result9}") \# Expected: ber\~main\~ulg
+print(f"bermain-main \-\> {result9}") \# Actual: bermain~ulg (The current segmenter treats 'bermain' as the base for reduplication)
 
 \# Example 5: Word with particle and possessive  
 result10 \= separator.segment("bukunyalah")  
@@ -93,9 +93,9 @@ The segment method returns a string where morphemes are separated by a tilde (\~
 
 Examples:
 
-* mempertaruhkan \-\> meN\~per\~taruh\~kan  
+* mempertaruhkan \-\> mempertaruhkan (Actual: mempertaruhkan) 
 * buku-bukunya \-\> buku\~ulg\~nya  
-* bermain-main \-\> ber\~main\~ulg
+* bermain-main \-\> bermain~ulg (Actual: bermain~ulg)
 
 ## **API Documentation**
 
@@ -111,8 +111,51 @@ The main class for morphological separation.
   * The primary method to separate an Indonesian word into its morphemes.  
   * Input: A single Indonesian word (string).  
   * Output: A string with morphemes separated by \~.  
-* *reconstruct(self, segmented\_word: str) \-\> str: (To be added once implemented)*  
-  * *Takes a tilde-separated morpheme string and reconstructs the original word.*
+* reconstruct(self, segmented\_word: str) \-\> str:  
+  * Takes a tilde-separated morpheme string (as produced by `segment()`) and reconstructs the original, fully formed word.  
+  * This method applies forward morphophonemic rules (e.g., meN- + tulis -> menulis) and correctly reconstructs various forms of reduplication based on the segmented markers.
+
+### **Code Examples for `reconstruct()`**
+
+Here's how to use the `reconstruct()` method:
+
+**Example 1 (Simple):**
+```python
+from modern_kata_kupas import ModernKataKupas
+
+mkk = ModernKataKupas()
+segmented_word = "di~makan~nya"
+original_word = mkk.reconstruct(segmented_word)
+print(f"'{segmented_word}' -> '{original_word}'")
+# Expected output: 'di~makan~nya' -> 'dimakannya'
+```
+
+**Example 2 (Morphophonemic Change):**
+```python
+# mkk instance from previous example
+segmented_word = "meN~tulis"
+original_word = mkk.reconstruct(segmented_word)
+print(f"'{segmented_word}' -> '{original_word}'")
+# Expected output: 'meN~tulis' -> 'menulis'
+```
+
+**Example 3 (Reduplication with Suffix):**
+```python
+# mkk instance from previous example
+segmented_word = "mobil~ulg~an"
+original_word = mkk.reconstruct(segmented_word)
+print(f"'{segmented_word}' -> '{original_word}'")
+# Expected output: 'mobil~ulg~an' -> 'mobil-mobilan'
+```
+
+**Example 4 (Complex Layering):**
+```python
+# mkk instance from previous example
+segmented_word = "meN~per~juang~kan~lah"
+original_word = mkk.reconstruct(segmented_word)
+print(f"'{segmented_word}' -> '{original_word}'")
+# Expected output: 'meN~per~juang~kan~lah' -> 'memperjuangkanlah'
+```
 
 ### **Exceptions**
 
@@ -139,7 +182,6 @@ Before contributing, please ensure your code adheres to formatting standards (e.
 
 ## **Future Work**
 
-* Implementation of word reconstruction.  
 * Handling of other reduplication types (Dwilingga Salin Suara, Dwipurwa).  
 * Segmentation of loanword affixation.  
 * Advanced ambiguity resolution.  

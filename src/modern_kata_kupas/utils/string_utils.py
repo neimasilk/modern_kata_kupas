@@ -3,20 +3,8 @@
 String utility functions for ModernKataKupas.
 """
 
-def normalize_word(word: str) -> str:
-    """
-    Menormalisasi kata ke format standar (misalnya, huruf kecil).
-
-    Args:
-        word (str): Kata yang akan dinormalisasi.
-
-    Returns:
-        str: Kata yang sudah dinormalisasi.
-    """
-    if not isinstance(word, str):
-        print(f"Peringatan: Input untuk normalisasi bukan string: {type(word)}")
-        return str(word).lower()
-    return word.lower()
+# normalize_word has been removed from this file.
+# Please use TextNormalizer from modern_kata_kupas.normalizer
 
 def is_vowel(char: str) -> bool:
     """
@@ -30,7 +18,8 @@ def is_vowel(char: str) -> bool:
     """
     if not isinstance(char, str) or len(char) != 1:
         return False
-    return normalize_word(char) in 'aiueo'
+    # return normalize_word(char) in 'aiueo' # Original line
+    return char.lower() in 'aiueo' # Use simple lower() for this internal utility
 
 def is_consonant(char: str) -> bool:
     """
@@ -42,5 +31,6 @@ def is_consonant(char: str) -> bool:
     Returns:
         bool: True jika konsonan, False jika tidak.
     """
-    normalized_char = normalize_word(char)
+    # normalized_char = normalize_word(char) # Original line
+    normalized_char = char.lower() # Use simple lower() for this internal utility
     return len(normalized_char) == 1 and 'a' <= normalized_char <= 'z' and not is_vowel(normalized_char)

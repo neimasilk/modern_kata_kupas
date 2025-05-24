@@ -13,15 +13,11 @@ def test_dictionary_manager_initialization():
     assert manager.get_kata_dasar_count() == 0
     assert isinstance(manager.kata_dasar_set, set)
 
-def test_normalize_word():
-    """Tests the _normalize_word method."""
-    manager = DictionaryManager() # Perlu instance untuk memanggil metode (meski bisa statis)
-    assert manager._normalize_word("  Kata Contoh  ") == "kata contoh"
-    assert manager._normalize_word("SEMUA BESAR") == "semua besar"
-    assert manager._normalize_word("sudahkecil") == "sudahkecil"
-    assert manager._normalize_word("") == ""
-    assert manager._normalize_word("   ") == ""
-    assert manager._normalize_word(123) == "" # Test non-string input
+# test_normalize_word() has been removed as DictionaryManager now uses TextNormalizer,
+# which has its own dedicated tests in test_normalizer.py.
+# The normalization within DictionaryManager will be implicitly tested 
+# by other tests that add or check words (e.g., test_load_words_from_iterable, 
+# test_load_from_valid_external_path, test_load_default_packaged_dictionary_successfully).
 
 def test_load_words_from_iterable():
     """Tests the _load_words_from_iterable method."""

@@ -5,11 +5,13 @@ from .exceptions import (
     DictionaryFileNotFoundError,
     DictionaryLoadingError
 )
+from .separator import ModernKataKupas # Added import
 
 __all__ = [
     'DictionaryManager',
     'DictionaryError',
     'DictionaryFileNotFoundError',
     'DictionaryLoadingError',
+    'ModernKataKupas', # Added to __all__
     # Tambahkan nama publik lain dari package Anda di sini
 ]

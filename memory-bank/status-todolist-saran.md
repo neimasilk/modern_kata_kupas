@@ -1,8 +1,21 @@
-Selamat! Proyek "ModernKataKupas" Anda telah mencapai kemajuan signifikan dengan semua tes berhasil lolos setelah menyelesaikan Fase 0, 1, 2, 3, dan Langkah 4.1 (Penanganan Afiksasi Kata Serapan). Ini adalah pencapaian yang luar biasa.
+## **Pembaruan Status Terbaru: Penyelesaian "Baby Steps"**
+
+Proyek "ModernKataKupas" telah berhasil menyelesaikan serangkaian "Baby Steps" yang bertujuan untuk mematangkan basis kode dan mempersiapkan langkah pengembangan berikutnya. Pencapaian utama dari Baby Steps ini meliputi:
+
+1.  **Koreksi Logika Rekonstruktor (Baby Step 1):** Logika `Reconstructor` telah diperbaiki untuk menangani bentuk tereduplikasi yang mengandung sufiks dengan benar (misalnya, memastikan "mobil~ulg~an" direkonstruksi menjadi "mobil-mobilan").
+2.  **Konsolidasi Normalisasi & Perbaikan Path Data (Baby Step 2):** Fungsi normalisasi kata telah dikonsolidasikan ke dalam `TextNormalizer`, dan path pemuatan data untuk kamus serta aturan afiks telah diperbaiki menggunakan `importlib.resources` untuk portabilitas yang lebih baik.
+3.  **Pembaruan Awal `README.md` (Baby Step 3):** Dokumentasi untuk metode `reconstruct()` telah ditambahkan ke `README.md` beserta contoh penggunaannya. Verifikasi awal contoh `segment()` juga dilakukan, dengan beberapa catatan untuk penyesuaian lebih lanjut.
+4.  **Perencanaan Penanganan Ambiguitas Dasar (Baby Step 4):** Rencana tekstual yang detail telah dibuat untuk menangani ambiguitas dasar, dengan fokus pada pemanfaatan mekanisme "pencocokan kata dasar terpanjang yang valid" dan "preseden aturan yang telah ditentukan."
+
+**Status Tes Saat Ini:** Semua tes `pytest` yang ada (70 tes) berhasil dijalankan (`passed`), menandakan stabilitas kode setelah implementasi Baby Steps.
+
+---
+
+Selamat! Proyek "ModernKataKupas" Anda telah mencapai kemajuan signifikan dengan semua tes berhasil lolos setelah menyelesaikan Fase 0, 1, 2, 3, Langkah 4.1 (Penanganan Afiksasi Kata Serapan), dan Baby Steps 1-4. Ini adalah pencapaian yang luar biasa.
 
 Berikut adalah ulasan kode, langkah selanjutnya, dan beberapa saran perbaikan:
 
-## Status Saat Ini & Ulasan Kode
+## Status Saat Ini & Ulasan Kode (Post-Baby Steps)
 
 Anda telah berhasil mengimplementasikan sebagian besar fungsionalitas inti:
 
@@ -28,18 +41,21 @@ Anda telah berhasil mengimplementasikan sebagian besar fungsionalitas inti:
 
 Berdasarkan `ModernKataKupas_ImplementationPlan_v1.md` dan `progress.md`, berikut adalah langkah-langkah berikutnya dalam Fase 4:
 
-1.  **Langkah 4.2: Penanganan Ambiguitas Dasar**
-    * Implementasikan heuristik dasar untuk menangani ambiguitas segmentasi, seperti memilih pencocokan kata dasar terpanjang yang valid atau menggunakan preseden aturan yang telah ditentukan (PRD FR1.8, Riset Bab 3.4).
-    * Saat ini, `separator.py` sudah memiliki logika pemilihan antara strategi S1 dan S2, serta preferensi untuk prefiks terpanjang. Langkah ini mungkin melibatkan formalisasi atau penambahan heuristik lain jika diperlukan.
+1.  **Langkah 4.2: Implementasi Penanganan Ambiguitas Dasar & Pengujian**
+    * Berdasarkan rencana dari Baby Step 4, pendekatan untuk V1.0 adalah memanfaatkan dan mendokumentasikan mekanisme yang ada:
+        *   **"Pencocokan kata dasar terpanjang yang valid"**: Terutama diimplementasikan dalam logika pemilihan antara hasil strategi S1 dan S2 di `ModernKataKupas.segment()`.
+        *   **"Preseden aturan yang telah ditentukan"**: Secara implisit ada dalam urutan pemrosesan aturan afiks (misalnya, urutan evaluasi prefiks berdasarkan panjangnya, urutan kategori sufiks yang dilepas secara hardcoded di `_strip_suffixes`, dan urutan aturan dalam `affix_rules.json` jika ada beberapa aturan yang bisa menghasilkan *surface form* prefiks yang sama).
+    * **Tindakan Langsung**: Implementasikan *test case* yang telah diidentifikasi dalam rencana Baby Step 4 (misalnya, untuk "beruang", "mengetahui", "bukunyalah") untuk memvalidasi bahwa perilaku sistem saat ini sejalan dengan heuristik V1.0 yang didokumentasikan. Lakukan penyesuaian kode minor jika tes mengungkap deviasi dari perilaku yang diharapkan untuk heuristik ini.
 
-2.  **Langkah 4.3: Pengujian Komprehensif dan Kasus Tepi**
+2.  **Langkah 4.3: Pengujian Komprehensif dan Kasus Tepi Lanjutan**
     * Perluas *test suite* `pytest` untuk mencakup lebih banyak kasus kompleks, kasus tepi (misalnya, *string* kosong setelah normalisasi, kata non-Indonesia, kata yang sangat panjang), dan contoh-contoh problematik dari literatur linguistik.
     * Upayakan cakupan tes yang tinggi (misalnya, >90%).
+    * **Tindak Lanjut Temuan Baby Step 3**: Tinjau kembali kasus-kasus `segment()` yang outputnya berbeda dari ekspektasi awal di `README.md` (misalnya, "dibaca", "mempertaruhkan", "bermain-main"). Putuskan apakah perilaku saat ini akan diterima dan didokumentasikan sebagai final untuk V1.0, atau apakah kasus ini menjadi target perbaikan dalam langkah pengujian komprehensif ini.
 
-3.  **Langkah 4.4: Finalisasi API dan Dokumentasi**
+3.  **Langkah 4.4: Finalisasi API dan Dokumentasi Lengkap**
     * Finalisasi API publik dari kelas `ModernKataKupas`.
     * Tulis *docstrings* yang komprehensif untuk semua kelas dan metode publik.
-    * Perbarui `README.md` dengan instruksi instalasi, contoh penggunaan yang lengkap (termasuk rekonstruksi), dan gambaran umum algoritma yang akurat. Metode `reconstruct` perlu didokumentasikan di README karena sudah diimplementasikan.
+    * Lakukan review menyeluruh dan pembaruan komprehensif pada `README.md` (yang telah diinisiasi di Baby Step 3) untuk instruksi instalasi, contoh penggunaan yang lengkap, dan gambaran umum algoritma yang akurat.
     * Pertimbangkan untuk membuat dokumentasi HTML menggunakan Sphinx.
 
 4.  **Langkah 4.5: Pengemasan untuk Distribusi**
@@ -54,28 +70,32 @@ Berdasarkan `ModernKataKupas_ImplementationPlan_v1.md` dan `progress.md`, beriku
 ---
 ## Saran Perbaikan dan Area yang Perlu Diperhatikan
 
-1.  **Logika Rekonstruksi untuk Sufiks pada Bentuk Tereduplikasi**:
+1.  **Logika Rekonstruksi untuk Sufiks pada Bentuk Tereduplikasi**: **[RESOLVED by Baby Step 1]**
     * Tes di `test_reconstructor.py` untuk "mobil-mobilan" (diharapkan `mobil-mobilan`, saat ini mungkin `mobilan-mobilan`) mengindikasikan area ini.
     * **Masalah**: `Reconstructor` saat ini menerapkan sufiks derivasional (seperti "-an") *sebelum* proses reduplikasi. Jika "-an" seharusnya diterapkan pada bentuk "mobil-mobil" (hasil dari `mobil~ulg`), urutan saat ini akan menghasilkan `(mobil+an)~ulg`.
     * **Rekomendasi**:
         * Ubah `Reconstructor.parse_segmented_string()`: Ketika mem-parsing segmen seperti `X~ulg~Ysuffix` (misal, `mobil~ulg~an`), jika `Ysuffix` adalah tipe yang seharusnya diterapkan *setelah* reduplikasi (seperti "-an" dalam konteks ini), kategorikan `Ysuffix` secara berbeda (misalnya, `suffixes_on_redup`).
         * Ubah `Reconstructor.reconstruct()`: Terapkan `suffixes_on_redup` ini *setelah* `_apply_reduplication_reconstruction()` dipanggil. Ini akan memastikan urutan `root -> redup -> suffix_on_redup`.
+    * **Status**: Logika ini telah diperbaiki dalam Baby Step 1. `Reconstructor` kini memiliki kategori `suffixes_after_reduplication` dan urutan aplikasi yang benar.
 
 2.  **Penggunaan Utilitas Penyelarasan String (`utils/alignment.py`)**:
     * Rencana implementasi (Langkah 0.5, 2.1) dan draf paper (Bab 3.3.4) menyebutkan penggunaan Needleman-Wunsch untuk identifikasi kandidat afiks. Namun, implementasi saat ini di `separator.py` tampaknya tidak secara langsung memanggil fungsi `align()`.
     * **Klarifikasi**: Perjelas peran utilitas ini. Jika memang penting untuk identifikasi afiks atau penanganan morfofonemik yang lebih akurat (seperti yang direncanakan), integrasikan ke dalam logika `_strip_prefixes_detailed` atau `_strip_suffixes`. Jika logika saat ini (menggunakan `startswith`, `endswith`, `reverse_morphophonemics`) sudah memadai, perbarui dokumen desain. PRD FR3.3 juga menyebutkannya.
+    * **Status**: Tetap relevan untuk dipertimbangkan.
 
-3.  **Konsolidasi Fungsi Normalisasi**:
+3.  **Konsolidasi Fungsi Normalisasi**: **[RESOLVED by Baby Step 2]**
     * `utils/string_utils.py` memiliki `normalize_word()` (hanya *lowercase*).
     * `normalizer.py` memiliki `TextNormalizer.normalize_word()` (*lowercase* dan strip tanda baca akhir).
     * Sebaiknya konsolidasikan ini untuk menghindari duplikasi dan kebingungan. Versi di `TextNormalizer` lebih sesuai dengan PRD FR1.3.
+    * **Status**: Fungsi normalisasi telah dikonsolidasikan ke `TextNormalizer` dalam Baby Step 2. `TextNormalizer.normalize_word()` juga telah ditingkatkan untuk menyertakan `.strip()` dan penanganan non-string yang lebih baik.
 
-4.  **Path *Default* Kamus di `DictionaryManager` dan `Separator`**:
+4.  **Path *Default* Kamus di `DictionaryManager` dan `Separator`**: **[RESOLVED by Baby Step 2]**
     * Path seperti `src.modern_kata_kupas.data` yang digunakan dengan `importlib.resources` mungkin kurang portabel setelah instalasi paket. Standar umumnya adalah menggunakan path relatif terhadap paket, misalnya `modern_kata_kupas.data`.
     * Tinjau cara pemuatan sumber daya paket untuk `kata_dasar.txt`, `loanwords.txt`, dan `affix_rules.json` agar lebih robust saat paket diinstal dan digunakan sebagai pustaka pihak ketiga. `setup.py` mendeklarasikan `package_dir={'': 'src'}`, jadi `modern_kata_kupas.data` seharusnya menjadi path yang benar untuk `importlib.resources`.
+    * **Status**: Path pemuatan data telah diperbaiki di `DictionaryManager` dan `MorphologicalRules` untuk menggunakan `modern_kata_kupas.data` dengan `importlib.resources` dalam Baby Step 2.
 
 5.  **Dokumentasi `README.md` dan `architecture.md`**:
-    * Perbarui API `reconstruct` di `README.md`.
+    * Perbarui API `reconstruct` di `README.md`. (Sudah dilakukan di Baby Step 3, namun perlu review komprehensif di Langkah 4.4).
     * Pastikan semua contoh penggunaan di `README.md` sesuai dengan perilaku kode saat ini.
     * Lengkapi `architecture.md` untuk mencerminkan fungsionalitas yang telah diimplementasikan secara penuh, sesuai Langkah 4.6.
 
