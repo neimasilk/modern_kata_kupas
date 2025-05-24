@@ -109,6 +109,7 @@
     * Create `tests/utils/test_alignment.py`.  
     * Test with simple known alignments (e.g., "apple", "apply").  
     * Test with cases involving insertions, deletions, and substitutions.
+    * Note: While this utility is implemented, the V1.0 core segmentation logic in `Separator.py` does not directly call it. Its use is deferred for future exploration.
 
 ## **Phase 1: Core Segmentation Logic \- Base Forms and Simple Affixes**
 
@@ -205,7 +206,7 @@
   * **Action:**  
     1. Enhance `_strip_prefixes()` and create/use `_apply_morphophonemic_segmentation_rules()`.  
     2. Implement rules for `meN-` and `peN-` based on the `aturan_afiks` (JSON/YAML), considering allomorphs (`mem-`, `men-`, `meny-`, `meng-`, `menge-`) and elision of root initial consonants (`p, t, k, s`).  
-    3. Use the `root_word` (from stemmer) and string alignment to guide the identification of the canonical prefix and the original root form.  
+    3. The identification relies on dictionary lookups and the application of morphophonemic rules defined in `affix_rules.json`.  
   * **Test/Validation:**  
     * Test extensively:  
       * `membaca` \-\> `meN~baca`  

@@ -101,7 +101,7 @@ ModernKataKupas aims to address these issues by providing a linguistically infor
 
 * **FR3.1 Root Word Dictionary:** The system shall use an external, easily updatable root word dictionary file (e.g., text file).  
 * **FR3.2 Affix Rule Repository:** Morphological rules (affix definitions, allomorphs, conditions, morphophonemic changes) shall be stored in an external, structured, human-readable format (e.g., JSON or YAML) for maintainability and extensibility.  
-* **FR3.3 String Alignment:** The system will use an implementation of the Needleman-Wunsch algorithm for aligning word forms with their roots to guide affix identification.
+* **FR3.3 String Alignment:** For V1.0, a heuristic approach based on direct rule application and dictionary lookups was found to be sufficient for common cases. String alignment (e.g., Needleman-Wunsch) was initially considered and a utility for it exists (`utils/alignment.py`), but it is not actively used in the core V1.0 segmentation logic. String alignment will be explored in future versions for handling more complex or ambiguous scenarios.
 
 ## **5\. Non-Functional Requirements**
 

@@ -3,23 +3,30 @@ from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 
 class IndonesianStemmer:
     """
-    Kelas wrapper untuk PySastrawi Stemmer.
+    A wrapper class for the PySastrawi Indonesian language stemmer.
+
+    This class provides a consistent interface to the underlying Sastrawi stemmer,
+    encapsulating its initialization and usage. It is used to obtain the root
+    form of Indonesian words.
+
+    Attributes:
+        _stemmer: An instance of the Sastrawi stemmer.
     """
     def __init__(self):
         """
-        Inisialisasi stemmer PySastrawi.
+        Initializes the IndonesianStemmer by creating an instance of the Sastrawi stemmer.
         """
         factory = StemmerFactory()
         self._stemmer = factory.create_stemmer()
 
     def get_root_word(self, word: str) -> str:
         """
-        Mendapatkan kata dasar dari sebuah kata menggunakan PySastrawi.
+        Gets the root form of an Indonesian word using the PySastrawi stemmer.
 
         Args:
-            word: Kata yang akan di-stem.
+            word (str): The word to be stemmed.
 
         Returns:
-            str: Kata dasar dari kata input.
+            str: The stemmed (root) form of the input word.
         """
         return self._stemmer.stem(word)

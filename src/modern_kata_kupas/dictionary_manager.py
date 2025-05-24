@@ -1,5 +1,6 @@
 # src/modern_kata_kupas/dictionary_manager.py
 import os
+import logging # Added import
 from typing import Set, Optional, Iterable
 from .exceptions import (
     DictionaryFileNotFoundError,
@@ -9,10 +10,18 @@ from modern_kata_kupas.normalizer import TextNormalizer # Added import
 
 class DictionaryManager:
     """
-    Kelas untuk mengelola kamus kata dasar bahasa Indonesia.
-    
+    Manages Indonesian root word dictionaries and loanword lists.
+
+    This class is responsible for loading, storing, and providing access to sets of
+    normalized root words (`kata_dasar`) and loanwords. It handles loading from
+    default packaged files or custom external files. All words are normalized
+    (e.g., lowercased) before storage and lookup.
+
     Attributes:
-        kata_dasar_set: Set yang berisi kata-kata dasar yang telah dinormalisasi.
+        kata_dasar_set (Set[str]): A set of normalized Indonesian root words.
+        loanwords_set (Set[str]): A set of normalized loanwords.
+        normalizer (TextNormalizer): An instance of TextNormalizer used for
+                                     normalizing words before adding or checking.
     """
     DEFAULT_DICT_PACKAGE_PATH = "modern_kata_kupas.data" # Corrected path as per task
     DEFAULT_DICT_FILENAME = "kata_dasar.txt"
@@ -20,17 +29,23 @@ class DictionaryManager:
 
     def __init__(self, dictionary_path: Optional[str] = None, loanword_list_path: Optional[str] = None):
         """
-        Inisialisasi DictionaryManager dan memuat kamus kata dasar serta daftar kata serapan.
-        
+        Initializes the DictionaryManager and loads root words and loanwords.
+
+        If paths are not provided, it attempts to load default lists packaged
+        with the library. Words are normalized before being added to the sets.
+
         Args:
-            dictionary_path: Path opsional ke file kamus eksternal.
-                Jika tidak disediakan, akan mencoba memuat kamus default.
-            loanword_list_path: Path opsional ke file daftar kata serapan eksternal.
-                Jika tidak disediakan, akan mencoba memuat daftar default.
+            dictionary_path (Optional[str]): Path to an external root word dictionary file.
+                If None, the default packaged dictionary is loaded. Defaults to None.
+            loanword_list_path (Optional[str]): Path to an external loanword list file.
+                If None, the default packaged loanword list is loaded. Defaults to None.
                 
         Raises:
-            DictionaryFileNotFoundError: Jika file kamus atau kata serapan tidak ditemukan.
-            DictionaryLoadingError: Jika terjadi kesalahan saat memuat file.
+            DictionaryFileNotFoundError: If a specified `dictionary_path` or
+                                         `loanword_list_path` is not found.
+            DictionaryLoadingError: If there's an error during the loading or parsing
+                                    of dictionary or loanword files (e.g., IO errors,
+                                    module not found for default packaged files).
         """
         self.kata_dasar_set: Set[str] = set()
         self.loanwords_set: Set[str] = set() # Renamed from self.loanwords to self.loanwords_set
@@ -50,8 +65,16 @@ class DictionaryManager:
         
     def add_word(self, word: str, is_loanword: bool = False):
         """
-        Adds a new word to the appropriate set (kata_dasar_set or loanwords_set)
-        after normalizing it. Skips empty words after normalization.
+        Adds a new word to the appropriate dictionary set after normalization.
+
+        The word is normalized (e.g., lowercased) before being added. If the
+        normalized word is empty, it is not added.
+
+        Args:
+            word (str): The word to add.
+            is_loanword (bool): If True, adds the word to the loanwords set.
+                                Otherwise, adds to the root words (`kata_dasar`) set.
+                                Defaults to False.
         """
         normalized_word = self.normalizer.normalize_word(word) # Use TextNormalizer
         if normalized_word:
@@ -62,19 +85,19 @@ class DictionaryManager:
 
     def get_kata_dasar_count(self) -> int:
         """
-        Mengembalikan jumlah kata dasar dalam kamus.
+        Gets the current number of unique root words in the dictionary.
         
         Returns:
-            int: Jumlah kata dasar yang telah dimuat.
+            int: The total count of loaded and normalized root words.
         """
         return len(self.kata_dasar_set)
 
     def get_loanword_count(self) -> int:
         """
-        Mengembalikan jumlah kata serapan dalam daftar.
+        Gets the current number of unique loanwords in the list.
         
         Returns:
-            int: Jumlah kata serapan yang telah dimuat.
+            int: The total count of loaded and normalized loanwords.
         """
         return len(self.loanwords_set)
         
@@ -91,32 +114,38 @@ class DictionaryManager:
                 
     def is_kata_dasar(self, kata: str) -> bool:
         """
-        Memeriksa apakah suatu kata ada dalam kamus yang telah dimuat.
+        Checks if a given word is present in the loaded root word dictionary.
+
+        The word is normalized before checking. The check is case-insensitive
+        due to normalization.
         
         Args:
-            kata: Kata yang akan diperiksa.
+            kata (str): The word to check.
             
         Returns:
-            bool: True jika kata ada dalam kamus (case-insensitive), False jika tidak.
+            bool: True if the normalized word exists in the root word set,
+                  False otherwise.
         """
         normalized_kata = self.normalizer.normalize_word(kata) # Use TextNormalizer
         is_present = normalized_kata in self.kata_dasar_set
-        # print(f"DictionaryManager: Checking KD '{kata}' (normalized: '{normalized_kata}'), found: {is_present}") 
         return is_present
 
     def is_loanword(self, word: str) -> bool:
         """
-        Memeriksa apakah suatu kata ada dalam daftar kata serapan.
+        Checks if a given word is present in the loaded loanword list.
+
+        The word is normalized before checking. The check is case-insensitive
+        due to normalization.
         
         Args:
-            word: Kata yang akan diperiksa.
+            word (str): The word to check.
             
         Returns:
-            bool: True jika kata ada dalam daftar (case-insensitive), False jika tidak.
+            bool: True if the normalized word exists in the loanword set,
+                  False otherwise.
         """
         normalized_word = self.normalizer.normalize_word(word) # Use TextNormalizer
         is_present = normalized_word in self.loanwords_set
-        # print(f"DictionaryManager: Checking Loanword '{word}' (normalized: '{normalized_word}'), found: {is_present}")
         return is_present
         
     def _load_default_packaged_dictionary(self):
@@ -155,14 +184,14 @@ class DictionaryManager:
                 encoding='utf-8'
             )
             self._load_words_from_iterable(file_content.splitlines(), is_loanword_list=True)
-            print(f"DictionaryManager: Successfully loaded {len(self.loanwords_set)} loanwords from default list.")
+            logging.info(f"DictionaryManager: Successfully loaded {len(self.loanwords_set)} loanwords from default list.")
         except FileNotFoundError:
             # This is not a critical error if the default loanword file doesn't exist,
             # as it's an optional feature. The loanwords_set will remain empty.
-            print(f"DictionaryManager: Default loanword file '{self.DEFAULT_LOANWORD_FILENAME}' not found. Loanword feature will be limited.")
+            logging.warning(f"DictionaryManager: Default loanword file '{self.DEFAULT_LOANWORD_FILENAME}' not found. Loanword feature will be limited.")
         except Exception as e:
             # Log other errors but don't raise, to allow main dictionary to still work.
-            print(f"DictionaryManager: Error loading default loanword list: {e}")
+            logging.error(f"DictionaryManager: Error loading default loanword list: {e}", exc_info=True)
             
     def _load_from_file_path(self, file_path: str, is_loanword_list: bool = False):
         """Loads dictionary or loanword list from a given file path."""
@@ -173,7 +202,9 @@ class DictionaryManager:
             with open(file_path, 'r', encoding='utf-8') as f:
                 self._load_words_from_iterable(f, is_loanword_list=is_loanword_list)
             if is_loanword_list:
-                 print(f"DictionaryManager: Successfully loaded {len(self.loanwords_set)} loanwords from '{file_path}'.")
+                 logging.info(f"DictionaryManager: Successfully loaded {len(self.loanwords_set)} loanwords from '{file_path}'.")
+            else: # For regular dictionary
+                 logging.info(f"DictionaryManager: Successfully loaded {len(self.kata_dasar_set)} kata dasar from '{file_path}'.")
         except IOError as e:
             entity_type = "loanword list" if is_loanword_list else "dictionary"
             raise DictionaryLoadingError(f"Error reading {entity_type} file {file_path}: {e}") from e

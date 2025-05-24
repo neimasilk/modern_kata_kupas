@@ -3,20 +3,33 @@
 Modul utilitas untuk penyelarasan string menggunakan algoritma Needleman-Wunsch.
 """
 
-def align(seq1: str, seq2: str, match_score=1, mismatch_penalty=-1, gap_penalty=-1) -> tuple[str, str, str]:
+def align(seq1: str, seq2: str, match_score: int = 1, mismatch_penalty: int = -1, gap_penalty: int = -1) -> tuple[str, str, str]:
     """
-    Menyelaraskan dua sekuens menggunakan algoritma Needleman-Wunsch.
+    Performs global sequence alignment on two strings using the Needleman-Wunsch algorithm.
+
+    This function calculates the optimal alignment between two sequences,
+    considering scores for matches, mismatches, and gaps.
     
     Args:
-        seq1: Sekuens pertama
-        seq2: Sekuens kedua
-        match_score: Skor untuk kecocokan karakter
-        mismatch_penalty: Penalty untuk ketidakcocokan
-        gap_penalty: Penalty untuk celah (gap)
+        seq1 (str): The first sequence (string) to align.
+        seq2 (str): The second sequence (string) to align.
+        match_score (int, optional): The score awarded for matching characters.
+                                     Defaults to 1.
+        mismatch_penalty (int, optional): The penalty for mismatching characters.
+                                          Should be a negative value for penalty.
+                                          Defaults to -1.
+        gap_penalty (int, optional): The penalty for introducing a gap.
+                                     Should be a negative value for penalty.
+                                     Defaults to -1.
         
     Returns:
-        Tuple berisi (seq1_aligned, seq2_aligned, alignment_string)
-        alignment_string menunjukkan kecocokan ('|'), ketidakcocokan ('.'), atau celah (' ')
+        tuple[str, str, str]: A tuple containing:
+            - seq1_aligned (str): The first sequence, padded with '-' for gaps.
+            - seq2_aligned (str): The second sequence, padded with '-' for gaps.
+            - alignment_string (str): A string indicating the alignment quality:
+                - '|' for a match between characters in seq1_aligned and seq2_aligned.
+                - '.' for a mismatch.
+                - ' ' for a gap (character aligned with '-').
     """
     # Inisialisasi matriks
     n, m = len(seq1), len(seq2)

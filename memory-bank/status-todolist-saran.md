@@ -5,7 +5,8 @@
 * Penyelesaian Fase 0, 1, 2, dan 3 dari Rencana Implementasi.
 * Implementasi Langkah 4.1: Penanganan Afiksasi Kata Serapan.
 * Penyelesaian "Baby Steps" yang sebelumnya diidentifikasi (Koreksi Rekonstruktor, Konsolidasi Normalisasi & Path Data, Pembaruan Awal README, Perencanaan Ambiguitas Dasar).
-* Semua tes `pytest` yang ada (sekitar 70 tes, berdasarkan analisis file tes) berhasil dijalankan, menunjukkan stabilitas fungsionalitas yang telah diimplementasikan.
+* Penyelesaian semua 'Baby Steps' (1-7) yang diidentifikasi per 26 Mei 2025, termasuk pembaruan dokumentasi alignment, pembersihan kode, penyempurnaan docstring, verifikasi README, perencanaan ekspansi kamus, dan penambahan tes ambiguitas dasar.
+* Semua tes `pytest` yang ada (72 tes) berhasil dijalankan, menunjukkan stabilitas fungsionalitas yang telah diimplementasikan.
 
 **Status Implementasi Fungsionalitas Inti:**
 
@@ -59,22 +60,58 @@ Berdasarkan `ModernKataKupas_ImplementationPlan_v1.md` dan `progress.md`:
 
 ## Saran Perbaikan dan "Baby Steps" To-Do List Berikutnya
 
-1.  **[PENTING] Integrasi atau Keputusan Mengenai Utilitas Penyelarasan String (`utils.alignment.py`):**
-    * **Masalah:** `align()` tidak digunakan dalam logika segmentasi inti, menyimpang dari rencana desain awal.
-    * **Baby Step 1:**
-        * **Evaluasi Kebutuhan:** Diskusikan dan putuskan apakah integrasi `align()` masih diperlukan untuk V1.0 demi meningkatkan akurasi pada kasus kompleks, atau apakah pendekatan saat ini (tanpa alignment eksplisit) sudah memadai.
-        * **Tindakan (jika integrasi dipilih):** Rencanakan bagaimana `align()` akan diintegrasikan ke dalam `_strip_prefixes_detailed` dan/atau `_strip_suffixes` untuk memandu identifikasi kandidat afiks dan validasi. Buat tes khusus untuk kasus yang mungkin gagal tanpa alignment.
-        * **Tindakan (jika tidak diintegrasi):** Perbarui dokumen desain (`ImplementationPlan_v1.md`, `PRD_v1.md`, `paper-draft.md`, `architecture.md`) untuk mencerminkan bahwa alignment eksplisit tidak digunakan dalam proses pemisahan afiks inti, dan jelaskan justifikasinya (misalnya, kompleksitas vs. manfaat untuk V1.0).
+Semua "Baby Steps" yang sebelumnya teridentifikasi (1-6) telah berhasil diselesaikan atau digantikan oleh pekerjaan yang lebih detail dalam sesi perencanaan dan implementasi ini. Fokus selanjutnya adalah menyelesaikan Fase 4 dari rencana implementasi.
 
-2.  **Refinement Kode dan Dokumentasi:**
-    * **Baby Step 2:** Hapus semua `print()` statement yang digunakan untuk debugging dari kode produksi (`separator.py`, `reconstructor.py`). Ganti dengan logging jika diperlukan untuk diagnosis di masa depan.
-    * **Baby Step 3:** Lakukan peninjauan dan penyempurnaan *docstrings* di semua modul utama (`separator.py`, `reconstructor.py`, `rules.py`, `dictionary_manager.py`). Pastikan parameter, nilai kembalian, dan logika utama dijelaskan dengan baik.
-    * **Baby Step 4:** Jalankan skrip `verify_segment_examples.py`. Jika ada ketidaksesuaian antara output aktual dan ekspektasi di `README.md`, perbarui `README.md` agar konsisten dengan perilaku kode V1.0 final.
+1.  **[SARAN MASA DEPAN] Perencanaan Perluasan Kamus (`kata_dasar.txt`, `loanwords.txt`)**
+    *   **Tujuan:** Meningkatkan cakupan dan akurasi segmentasi `modern_kata_kupas` dengan kamus kata dasar dan kata serapan yang lebih komprehensif dan mutakhir.
+    *   **Sumber Potensial:**
+        *   `kata_dasar.txt`:
+            *   Kamus Besar Bahasa Indonesia (KBBI): Versi terbaru sebagai sumber utama.
+            *   Korpus Kontemporer: Ekstraksi daftar frekuensi kata dari korpus besar Bahasa Indonesia (misalnya, OSCAR, Common Crawl yang sudah dibersihkan) dan validasi sebagai kata dasar.
+            *   Sumber Linguistik Lain: Daftar kata dari penelitian linguistik, alat NLP Bahasa Indonesia lain, atau basis data leksikal publik.
+            *   Masukan Pengguna: Kata-kata yang diidentifikasi oleh pengguna sebagai hilang atau salah ditangani.
+        *   `loanwords.txt`:
+            *   Daftar Kata Serapan Ada: Kompilasi dari daftar publik (studi linguistik, Wikipedia, sumber edukasi).
+            *   Domain Teknis: Terminologi dari bidang teknis spesifik (IT, medis, teknik, dll.).
+            *   Media Sosial & Berita: Analisis teks dari media sosial, artikel berita, dan forum untuk mengidentifikasi kata serapan yang sering digunakan (terutama Bahasa Inggris).
+            *   Kamus Kata Serapan: Kamus khusus yang fokus pada kata serapan dalam Bahasa Indonesia, jika tersedia.
+    *   **Pertimbangan Proses:**
+        *   **Format Konsisten:** Pertahankan format saat ini (teks, satu kata per baris, encoding UTF-8).
+        *   **Pembersihan & Normalisasi Data:**
+            *   Duplikasi: Penghapusan duplikat yang robust.
+            *   Pengurangan Noise: Filter untuk kesalahan, typo, nama diri (kecuali dimaksudkan), dan kata non-Indonesia (untuk `kata_dasar.txt`).
+            *   Normalisasi: Semua kandidat kata dinormalisasi (misalnya, huruf kecil, strip tanda baca dasar) menggunakan `TextNormalizer` library sebelum ditambah atau dicek.
+        *   **Strategi Validasi:**
+            *   Referensi Silang: Validasi kata dasar baru dengan mengecek keberadaannya di berbagai sumber (misalnya, KBBI dan korpus frekuensi tinggi).
+            *   Analisis Frekuensi: Gunakan frekuensi kata dari korpus untuk prioritas dan identifikasi kandidat frekuensi rendah yang berpotensi salah.
+            *   Tinjauan Manual: Untuk kasus ambigu, kata yang bisa jadi bentuk berimbuhan, atau kata serapan dengan ejaan yang bervariasi.
+            *   Cek Stemmer (untuk `kata_dasar.txt`): Pastikan kata yang ditambahkan adalah bentuk dasar sejati.
+            *   Cek Afiks (untuk `kata_dasar.txt`): Kata dasar potensial seharusnya tidak dapat disegmentasi menjadi akar + afiks yang diketahui, kecuali jika itu memang akar sejati yang bentuknya kebetulan sama.
+        *   **Potensi Otomatisasi:** Kembangkan skrip Python untuk:
+            *   Parsing berbagai format input.
+            *   Melakukan filtering awal.
+            *   Cek duplikasi terhadap file kamus yang ada.
+            *   Menerapkan normalisasi.
+            *   Menghasilkan daftar kandidat untuk tinjauan.
+        *   **Prioritas Penambahan:**
+            *   Frekuensi: Prioritaskan kata frekuensi tinggi dari korpus kontemporer dan kata serapan yang umum digunakan.
+            *   Cakupan KBBI: Upayakan cakupan komprehensif entri KBBI untuk `kata_dasar.txt`.
+            *   Kebutuhan Domain: Untuk `loanwords.txt`, prioritaskan istilah yang relevan dengan domain aplikasi NLP tertentu.
+            *   Pengurangan Kesalahan: Prioritaskan kata-kata yang ketiadaannya diketahui menyebabkan kesalahan segmentasi umum.
+    *   **Integrasi ke Paket `modern_kata_kupas`:**
+        *   Versioning File Data: Pertimbangkan sistem versioning sederhana untuk file kamus (misalnya, header komentar dengan versi dan tanggal).
+        *   Proses Pembaruan: Tinjau dan gabungkan kata-kata baru secara berkala. Pembaruan file kamus default akan menjadi bagian dari rilis library baru. Dokumentasikan cara pengguna menggunakan file kamus kustom.
+        *   Pengujian: Setelah pembaruan kamus, jalankan kembali semua tes relevan untuk memastikan penambahan meningkatkan performa.
 
-3.  **Pengembangan Kamus:**
-    * **Baby Step 5:** Buat rencana atau skrip awal untuk memperluas `kata_dasar.txt` dan `loanwords.txt` (misalnya, dari sumber KBBI atau korpus) sebagai bagian dari persiapan menuju rilis yang lebih matang, meskipun implementasi penuhnya mungkin di luar V1.0. Ini terkait dengan PRD FR3.1.
+**Prioritas Berikutnya (Melanjutkan Fase 4):**
 
-4.  **Penyelesaian Langkah 4.2 (Ambiguitas):**
-    * **Baby Step 6:** Buat beberapa *test case* spesifik di `test_separator.py` untuk kata-kata ambigu yang disebutkan (misalnya, "beruang", "mengetahui") dan dokumentasikan bagaimana sistem saat ini memilih satu interpretasi berdasarkan heuristik yang ada. Ini akan menjadi bagian dari validasi untuk Langkah 4.2.
-
-Dengan menyelesaikan "Baby Steps" ini, Anda akan berada dalam posisi yang lebih kuat untuk melanjutkan sisa Fase 4 dan menyiapkan ModernKataKupas untuk rilis. Kerja yang sangat bagus sejauh ini!
+1.  **Implementasi Penuh Langkah 4.2: Penanganan Ambiguitas Dasar & Pengujian (Target V1.0)**
+    *   Tindakan: Validasi dan dokumentasi formal mekanisme penanganan ambiguitas yang ada (pencocokan kata dasar terpanjang, preseden aturan). Perbarui dokumentasi (`README.md` atau `architecture.md`). (Sebagian telah dimulai di Baby Step 6, perlu finalisasi).
+2.  **Lanjutkan Langkah 4.3: Pengujian Komprehensif dan Kasus Tepi Lanjutan**
+    *   Tindakan: Perluas *test suite* `pytest` (kasus kompleks, kasus tepi, contoh problematik). Upayakan cakupan tes >90%. Tinjau kembali kasus `segment()` yang outputnya sempat berbeda.
+3.  **Lanjutkan Langkah 4.4: Finalisasi API dan Dokumentasi Lengkap**
+    *   Tindakan: Finalisasi API publik `ModernKataKupas`. Lengkapi *docstrings*. Review dan pembaruan komprehensif `README.md`. Pertimbangkan dokumentasi HTML (Sphinx).
+4.  **Lanjutkan Langkah 4.5: Pengemasan untuk Distribusi**
+    *   Tindakan: Finalisasi `setup.py`. Buat distribusi sumber dan *wheel*. Uji instalasi.
+5.  **Lanjutkan Langkah 4.6: Perbarui `architecture.md`**
+    *   Tindakan: Dokumentasikan arsitektur final, tujuan modul, struktur data, dan interaksi kelas. (Sebagian telah diperbarui di Baby Step 1 dan 6, perlu finalisasi).

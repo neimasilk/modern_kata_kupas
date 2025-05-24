@@ -4,6 +4,7 @@ Modul untuk memisahkan kata berimbuhan menjadi kata dasar dan afiksnya.
 """
 import re
 import os
+import logging
 
 from .normalizer import TextNormalizer
 from .dictionary_manager import DictionaryManager
@@ -16,7 +17,12 @@ MIN_STEM_LENGTH_FOR_POSSESSIVE = 3 # Panjang minimal kata dasar untuk pemisahan 
 
 class ModernKataKupas:
     """
-    Kelas utama untuk proses pemisahan kata berimbuhan.
+    Orchestrates the segmentation of Indonesian words into their constituent morphemes.
+
+    This class integrates various components like a normalizer, dictionary manager,
+    morphological rule engine, and stemmer to perform word segmentation.
+    It handles various morphological phenomena including prefixes, suffixes,
+    reduplication, and loanword affixation.
     """
     DWILINGGA_SALIN_SUARA_PAIRS = [
         ("sayur", "mayur"),
@@ -34,13 +40,19 @@ class ModernKataKupas:
     MIN_STEM_LENGTH_FOR_PARTICLE = 3 # Define minimum stem length for particle stripping
     def __init__(self, dictionary_path: str = None, rules_file_path: str = None):
         """
-Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
+        Initializes the ModernKataKupas separator with necessary components.
+
+        This involves setting up the text normalizer, dictionary manager (for root words
+        and loanwords), morphological rules engine, and the underlying Indonesian stemmer.
+        It also initializes the Reconstructor for word reconstruction capabilities.
 
         Args:
-            dictionary_path (str, optional): Path ke file kamus khusus.
-                                            Jika None, kamus default akan dimuat.
-            rules_file_path (str, optional): Path ke file aturan khusus.
-                                           Jika None, file aturan default akan dimuat.
+            dictionary_path (str, optional): Path to a custom root word dictionary file.
+                                             If None, the default packaged dictionary is loaded.
+                                             Defaults to None.
+            rules_file_path (str, optional): Path to a custom morphological rules JSON file.
+                                             If None, the default packaged rules file is loaded.
+                                             Defaults to None.
         """
         import importlib
         
@@ -59,37 +71,72 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
             try:
                 with importlib.resources.path(DEFAULT_DATA_PACKAGE_PATH, DEFAULT_RULES_FILENAME) as default_rules_path:
                     self.rules = MorphologicalRules(rules_file_path=str(default_rules_path))
-                    print(f"INFO: Loaded rules via importlib: {str(default_rules_path)}") # Diagnostic
-            except (FileNotFoundError, TypeError, ModuleNotFoundError) as e: 
+                    logging.info(f"Loaded rules via importlib: {str(default_rules_path)}")
+            except (FileNotFoundError, TypeError, ModuleNotFoundError) as e:
+                logging.warning(f"Failed to load rules via importlib.resources: {e}. Trying os.path fallback.")
                 base_dir = os.path.dirname(os.path.abspath(__file__))
                 default_rules_path_rel = os.path.join(base_dir, "data", DEFAULT_RULES_FILENAME)
                 if os.path.exists(default_rules_path_rel):
                     self.rules = MorphologicalRules(rules_file_path=default_rules_path_rel)
-                    print(f"INFO: Loaded rules via os.path: {default_rules_path_rel}") # Diagnostic
-                else: 
-                    print(f"WARNING: Default rules file not found via importlib or os.path ({default_rules_path_rel}). Attempting final fallback.") # Diagnostic
+                    logging.info(f"Loaded rules via os.path: {default_rules_path_rel}")
+                else:
+                    logging.warning(f"Default rules file not found via importlib or os.path ('{default_rules_path_rel}'). Attempting final fallback to MorphologicalRules default.")
                     self.rules = MorphologicalRules() # This will use AFFIX_RULES_PATH from rules.py
                     # Check if the final fallback loaded anything
                     if not self.rules.prefix_rules and not self.rules.suffix_rules:
-                        print("WARNING: Final fallback for rule loading resulted in empty rules.")
+                        logging.warning("Final fallback for rule loading resulted in empty rules.")
                     else:
-                        print(f"INFO: Rules loaded via MorphologicalRules default constructor (rules.py AFFIX_RULES_PATH: {self.rules.rules_file_path}).")
+                        logging.info(f"Rules loaded via MorphologicalRules default constructor (rules.py AFFIX_RULES_PATH: {self.rules.rules_file_path}).")
         
         # Initialize Reconstructor
         self.reconstructor = Reconstructor(rules=self.rules, dictionary_manager=self.dictionary)
 
     def reconstruct(self, segmented_word: str) -> str:
         """
-        Rekonstruksi kata dari bentuk tersegmentasi.
-        Delegates to the Reconstructor class.
+        Reconstructs an original word from its segmented morpheme string.
+
+        This method delegates the reconstruction task to the `Reconstructor` class,
+        which uses the loaded morphological rules to combine morphemes and apply
+        necessary morphophonemic changes.
+
+        Args:
+            segmented_word (str): A string of morphemes separated by tildes (~),
+                                  e.g., "meN~tulis", "buku~ulg~nya".
+
+        Returns:
+            str: The reconstructed original word. If the input is empty or cannot be
+                 meaningfully reconstructed, the behavior might depend on the
+                 Reconstructor's implementation (e.g., returning an empty string or
+                 the input itself).
         """
         # self.reconstructor is guaranteed by __init__
         return self.reconstructor.reconstruct(segmented_word)
 
     def segment(self, word: str) -> str:
         """
-        Memisahkan kata berimbuhan menjadi kata dasar dan afiksnya,
-        termasuk menangani reduplikasi.
+        Segments an Indonesian word into its constituent morphemes.
+
+        The process involves:
+        1. Normalizing the input word (lowercase, basic punctuation stripping).
+        2. Checking if the word is already a root word.
+        3. Handling various forms of reduplication (full, partial, phonetic change).
+        4. Applying affix stripping strategies (prefixes then suffixes, and vice-versa)
+           to identify the root and affixes.
+        5. Attempting loanword affixation handling if standard segmentation fails to find
+           a known root word.
+        6. Assembling the final segmented string with morphemes separated by tildes (~).
+
+        If a word cannot be segmented or is already a root word, it is returned
+        in its normalized form.
+
+        Args:
+            word (str): The Indonesian word to be segmented.
+
+        Returns:
+            str: A string representing the segmented morphemes separated by tildes (~).
+                 For example, "mempermainkan" might become "meN~per~main~kan".
+                 Unsegmentable words or root words are returned as is (normalized).
+                 Returns an empty string if the input word normalizes to an empty string.
         """
         # 1. Normalisasi kata
         normalized_word = self.normalizer.normalize_word(word)
@@ -104,24 +151,23 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         #    word_to_process is the base part (e.g., "mobil" from "mobil-mobilan", "main" from "bermain-main")
         #    direct_redup_suffixes are those like "-an" in "X-Xan" (e.g. "mobil-mobilan" -> direct_redup_suffixes = ["an"])
         word_to_process, redup_marker, direct_redup_suffixes = self._handle_reduplication(normalized_word)
-        if word == "bermain-main": # DEBUG for bermain-main specifically
-            print(f"DEBUG: segment({word}): after _handle_reduplication: word_to_process='{word_to_process}', redup_marker='{redup_marker}'")
+        logging.debug(f"segment({word}): after _handle_reduplication: word_to_process='{word_to_process}', redup_marker='{redup_marker}', direct_redup_suffixes='{direct_redup_suffixes}'")
         initial_suffixes = [] # Initialize initial_suffixes, its role is re-evaluated
 
         # 4. Affix Stripping Strategies on word_to_process
         # Strategy 1: Prefixes then Suffixes on word_to_process
-        print(f"DEBUG: S1 calling _strip_prefixes with word_to_process: '{word_to_process}' (orig_word='{word}')")
+        logging.debug(f"S1 calling _strip_prefixes with word_to_process: '{word_to_process}' (orig_word='{word}')")
         stem_after_prefixes_s1, prefixes_s1 = self._strip_prefixes(word_to_process)
         final_stem_s1, suffixes_s1_from_base = self._strip_suffixes(stem_after_prefixes_s1)
         is_s1_valid_root = self.dictionary.is_kata_dasar(final_stem_s1)
-        print(f"DEBUG: segment({word}): S1 result: final_stem='{final_stem_s1}', prefixes={prefixes_s1}, suffixes={suffixes_s1_from_base}, is_valid={is_s1_valid_root}")
+        logging.debug(f"segment({word}): S1 result: final_stem='{final_stem_s1}', prefixes={prefixes_s1}, suffixes={suffixes_s1_from_base}, is_valid={is_s1_valid_root}")
 
         # Strategy 2: Suffixes then Prefixes on word_to_process
         stem_after_suffixes_s2, suffixes_s2_from_base = self._strip_suffixes(word_to_process)
-        print(f"DEBUG: S2 calling _strip_prefixes with stem_after_suffixes_s2: '{stem_after_suffixes_s2}' (orig_word='{word}')")
+        logging.debug(f"S2 calling _strip_prefixes with stem_after_suffixes_s2: '{stem_after_suffixes_s2}' (orig_word='{word}')")
         final_stem_s2, prefixes_s2 = self._strip_prefixes(stem_after_suffixes_s2)
         is_s2_valid_root = self.dictionary.is_kata_dasar(final_stem_s2)
-        print(f"DEBUG: segment({word}): S2 result: final_stem='{final_stem_s2}', prefixes={prefixes_s2}, suffixes={suffixes_s2_from_base}, is_valid={is_s2_valid_root}")
+        logging.debug(f"segment({word}): S2 result: final_stem='{final_stem_s2}', prefixes={prefixes_s2}, suffixes={suffixes_s2_from_base}, is_valid={is_s2_valid_root}")
         
         # 6. Determine Best Result from strategies
         chosen_final_stem = None
@@ -165,12 +211,12 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         # However, the logic above ensures chosen_final_stem is at least word_to_process.
         
         # Debug prints for chosen components
-        print(f"DEBUG: segment({word}): Chosen final_stem: '{chosen_final_stem}'")
-        print(f"DEBUG: segment({word}): Chosen prefixes: {chosen_prefixes}")
-        print(f"DEBUG: segment({word}): Chosen main_suffixes: {chosen_main_suffixes}")
-        print(f"DEBUG: segment({word}): Redup_marker: '{redup_marker}'")
-        print(f"DEBUG: segment({word}): Direct_redup_suffixes: {direct_redup_suffixes}")
-        print(f"DEBUG: segment({word}): Initial_suffixes: {initial_suffixes}")
+        logging.debug(f"segment({word}): Chosen final_stem: '{chosen_final_stem}'")
+        logging.debug(f"segment({word}): Chosen prefixes: {chosen_prefixes}")
+        logging.debug(f"segment({word}): Chosen main_suffixes: {chosen_main_suffixes}")
+        logging.debug(f"segment({word}): Redup_marker: '{redup_marker}'")
+        logging.debug(f"segment({word}): Direct_redup_suffixes: {direct_redup_suffixes}")
+        logging.debug(f"segment({word}): Initial_suffixes: {initial_suffixes}") # This is currently always []
 
         # 7. Assemble Final Result
         # Suffixes are assembled in a specific order:
@@ -197,11 +243,11 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         if assembled_suffixes:
              final_parts.extend(assembled_suffixes)
         
-        print(f"DEBUG: segment({word}): final_parts before join: {final_parts}")
+        logging.debug(f"segment({word}): final_parts before join: {final_parts}")
             
         valid_parts = [part for part in final_parts if part] 
         result_str = '~'.join(valid_parts)
-        print(f"DEBUG: segment({word}): result_str: '{result_str}'")
+        logging.debug(f"segment({word}): result_str: '{result_str}'")
 
         # 8. Return Logic
         # Condition 1: No effective segmentation occurred
@@ -220,31 +266,31 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
             loanword_segmentation = self._handle_loanword_affixation(normalized_word)
             if loanword_segmentation:
                 # If loanword handling provides a valid segmentation, use it.
-                print(f"DEBUG: segment({word}): Using loanword segmentation: '{loanword_segmentation}'")
+                logging.debug(f"segment({word}): Using loanword segmentation: '{loanword_segmentation}'")
                 return loanword_segmentation
 
         # 9. Return Logic (original return logic adjusted)
-        if not result_str: 
-            print(f"DEBUG_SEGMENT_RETURN: EMPTY result_str! Returning normalized_word: '{normalized_word}' for input '{word}'")
+        if not result_str:
+            logging.debug(f"segment({word}): EMPTY result_str! Returning normalized_word: '{normalized_word}'")
             return normalized_word
             
         if is_effectively_unchanged:
-            print(f"DEBUG_SEGMENT_RETURN: IS_EFFECTIVELY_UNCHANGED! Returning normalized_word: '{normalized_word}' for input '{word}'")
+            logging.debug(f"segment({word}): IS_EFFECTIVELY_UNCHANGED! Returning normalized_word: '{normalized_word}'")
             return normalized_word
 
         # If the result string is identical to normalized_word, but the word is NOT a KD, 
         # it implies no segmentation was found or was truly effective.
         if result_str == normalized_word and not self.dictionary.is_kata_dasar(normalized_word):
-             print(f"DEBUG_SEGMENT_RETURN: RESULT_IS_NORMALIZED_AND_NOT_KD! Returning normalized_word: '{normalized_word}' for input '{word}'")
+             logging.debug(f"segment({word}): RESULT_IS_NORMALIZED_AND_NOT_KD! Returning normalized_word: '{normalized_word}'")
              return normalized_word
         
         # Additional check: if the process resulted in a stem that is not a KD, and no affixes were found,
         # then it's likely an unsegmentable word.
         if not self.dictionary.is_kata_dasar(chosen_final_stem) and not chosen_prefixes and not assembled_suffixes and not redup_marker:
-            print(f"DEBUG_SEGMENT_RETURN: FINAL_STEM_NOT_KD_AND_NO_AFFIXES! Returning normalized_word: '{normalized_word}' for input '{word}'")
+            logging.debug(f"segment({word}): FINAL_STEM_NOT_KD_AND_NO_AFFIXES! Returning normalized_word: '{normalized_word}'")
             return normalized_word
 
-        print(f"DEBUG: segment({word}): Returning final result_str: '{result_str}'") # Keep this one too
+        logging.debug(f"segment({word}): Returning final result_str: '{result_str}'")
         return result_str
 
     def _handle_loanword_affixation(self, word: str) -> str:
@@ -450,8 +496,7 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         # This check is placed after hyphen-based checks as Dwipurwa usually doesn't involve hyphens.
         if hasattr(self, 'stemmer') and self.stemmer:
             root_word = self.stemmer.get_root_word(word)
-            if word == "lelaki":  # Specific debug for lelaki
-                print(f"DEBUG_DWIPURWA_LELAKI: word='{word}', stemmer_root='{root_word}'") # This debug line will now be after the hardcoded check
+            logging.debug(f"_handle_reduplication({word}): Dwipurwa check - word='{word}', stemmer_root='{root_word}'")
 
             # Primary conditions for Dwipurwa
             prefix_candidate = ""
@@ -632,24 +677,25 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                 # Option 1: If stem_candidate is directly a KD
                 if self.dictionary.is_kata_dasar(stem_candidate):
                     new_prefixes = accumulated_prefixes + [canonical_prefix]
-                    print(f"DEBUG_STRIP_PREFIX_DETAILED: '{prefix_form}' stripped, '{stem_candidate}' is KD. Finalizing here.")
+                    logging.debug(f"_strip_prefixes_detailed: '{prefix_form}' stripped from '{word_to_strip}', '{stem_candidate}' is KD. Finalizing.")
                     return stem_candidate, new_prefixes
 
                 # Option 2: If reversing morphophonemics on stem_candidate yields a KD
                 potential_original_stem = self.rules.reverse_morphophonemics(prefix_form, canonical_prefix, stem_candidate)
                 if potential_original_stem != stem_candidate and self.dictionary.is_kata_dasar(potential_original_stem):
                     new_prefixes = accumulated_prefixes + [canonical_prefix]
-                    print(f"DEBUG_STRIP_PREFIX_DETAILED: '{prefix_form}' (canon: {canonical_prefix}) stripped, reverse_morpho to '{potential_original_stem}' is KD. Finalizing here.")
+                    logging.debug(f"_strip_prefixes_detailed: '{prefix_form}' (canon: {canonical_prefix}) stripped from '{word_to_strip}', reverse_morpho to '{potential_original_stem}' (KD). Finalizing.")
                     return potential_original_stem, new_prefixes
 
                 # Option 3: Recursively strip from stem_candidate (the surface form after stripping prefix_form)
                 # This handles layered prefixes (e.g., di-per-oleh, mem-per-mainkan)
+                logging.debug(f"_strip_prefixes_detailed: '{prefix_form}' stripped from '{word_to_strip}', stem_candidate '{stem_candidate}' is not KD. Recursing.")
                 further_stripped_stem, deeper_prefixes = self._strip_prefixes_detailed(stem_candidate, []) 
                 
                 # If the recursive call found a KD OR found more prefixes, then this path is valid.
                 if self.dictionary.is_kata_dasar(further_stripped_stem) or deeper_prefixes:
                     current_prefixes = accumulated_prefixes + [canonical_prefix] + deeper_prefixes
-                    print(f"DEBUG_STRIP_PREFIX_DETAILED: '{prefix_form}' stripped, recur_stem='{further_stripped_stem}', deeper_prefixes={deeper_prefixes}")
+                    logging.debug(f"_strip_prefixes_detailed: Recursive call from '{stem_candidate}' yielded KD '{further_stripped_stem}' or deeper_prefixes {deeper_prefixes}. Prefixes so far: {current_prefixes}")
                     return further_stripped_stem, current_prefixes
                 
                 # Option 4: (NEW FALLBACK FOR CONFIDENCE) If no KD was found via options 1, 2, or 3,
@@ -670,11 +716,11 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                 # In this case, we accept the current prefix strip and return the non-KD stem.
                 # This allows the S1 strategy in segment() to try suffix stripping later.
                 new_prefixes = accumulated_prefixes + [canonical_prefix]
-                print(f"DEBUG_STRIP_PREFIX_DETAILED: '{prefix_form}' stripped, stem '{stem_candidate}' is not KD, but accepting prefix.")
+                logging.debug(f"_strip_prefixes_detailed: '{prefix_form}' stripped from '{word_to_strip}', stem_candidate '{stem_candidate}' is not KD, but accepting prefix strip. Prefixes: {new_prefixes}")
                 return stem_candidate, new_prefixes
 
         # If no prefix could be stripped at all from word_to_strip
-        print(f"DEBUG_STRIP_PREFIX_DETAILED: No prefix stripped from '{word_to_strip}' or no valid stem found after stripping.")
+        logging.debug(f"_strip_prefixes_detailed: No prefix stripped from '{word_to_strip}' or no valid stem found after stripping. Returning as is.")
         return word_to_strip, accumulated_prefixes
 
     def _apply_morphophonemic_segmentation_rules(self, word: str) -> str:
