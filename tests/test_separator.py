@@ -376,4 +376,116 @@ class TestReduplicationCases(unittest.TestCase):
         self.assertEqual(self.mkk.reconstruct("ke~ber~hasil~an"), "keberhasilan")
         self.assertEqual(self.mkk.reconstruct("di~ke~samping~kan"), "dikesampingkan")
 
+
+class TestLoanwordAffixation(unittest.TestCase):
+    def setUp(self):
+        """Set up ModernKataKupas with a DictionaryManager that includes test loanwords."""
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        # Assuming test_kata_dasar.txt exists, if not, tests might fail or need a dummy file.
+        # For loanword tests, kata_dasar content is less critical than loanwords_set.
+        test_dict_path = os.path.join(current_dir, "data", "test_kata_dasar.txt")
+
+        # Check if test_dict_path exists, create a dummy if not, to prevent DictionaryManager error
+        # This is a workaround if the file is truly missing in the test environment.
+        # A better solution would be for the test environment to guarantee this file.
+        if not os.path.exists(test_dict_path):
+            os.makedirs(os.path.dirname(test_dict_path), exist_ok=True)
+            with open(test_dict_path, 'w', encoding='utf-8') as f:
+                f.write("tes\n") # Dummy kata dasar
+
+        self.dictionary_manager = DictionaryManager(dictionary_path=test_dict_path)
+        
+        # Add required loanwords for testing
+        loanwords_to_add = [
+            "download", "update", "backup", "scan", "kompilasi", 
+            "posting", "follow", "chatting", "computer"
+        ]
+        for lw in loanwords_to_add:
+            self.dictionary_manager.add_word(lw, is_loanword=True)
+            # print(f"DEBUG: Added loanword '{lw}', is_loanword now: {self.dictionary_manager.is_loanword(lw)}")
+
+        self.mkk = ModernKataKupas()
+        self.mkk.dictionary = self.dictionary_manager
+        # print(f"DEBUG: Loanwords in DM: {self.dictionary_manager.loanwords_set}")
+
+
+    def test_segment_loanwords_with_affixes(self):
+        """Test segmentation of loanwords with various Indonesian affixes."""
+        test_cases = {
+            # Provided examples
+            "di-download": "di~download",
+            "meng-update": "meN~update",
+            "mem-backup": "meN~backup", # Should map mem- to meN~
+            "di-scan-nya": "di~scan~nya",
+            "mengkompilasi": "meN~kompilasi", # meN- + kompilasi
+            "memposting": "meN~posting",     # meN- + posting
+            "di-follow-nya": "di~follow~nya",
+            "chatting-an": "chatting~an",
+            "update-ku": "update~ku",
+            
+            # Additional cases based on requirements
+            # Prefixes only
+            "mendownload": "meN~download", # meN- + download
+            "mengupdate": "meN~update",   # meN- + update (same as above, different input form)
+            "membackup": "meN~backup",    # meN- + backup (same as above, different input form)
+            "menscan": "meN~scan",       # meN- + scan
+            "difollow": "di~follow",
+
+            # Suffixes only
+            "updatean": "update~an",     # update + an (assuming "updatan" is a typo for "updatean")
+                                         # If "updatan" is intended, and "updat" is not the loanword, this will behave differently.
+                                         # Sticking to "update" as the loanword.
+            "backupnya": "backup~nya",   # backup + nya
+            "scanku": "scan~ku",         # scan + ku
+            "postinglah": "posting~lah", # posting + lah
+
+            # Prefix + Suffix combinations already covered by di-scan-nya, di-follow-nya
+            "mengupdatenya": "meN~update~nya", # meN- + update + nya
+            "membackupkan": "meN~backup~kan", # meN- + backup + kan
+        }
+
+        for word, expected_segmentation in test_cases.items():
+            # print(f"DEBUG: Testing word '{word}', expecting '{expected_segmentation}'")
+            # print(f"DEBUG: is_loanword('update') -> {self.mkk.dictionary.is_loanword('update')}")
+            # print(f"DEBUG: is_loanword('scan') -> {self.mkk.dictionary.is_loanword('scan')}")
+            # print(f"DEBUG: is_loanword('download') -> {self.mkk.dictionary.is_loanword('download')}")
+            self.assertEqual(self.mkk.segment(word), expected_segmentation, f"Failed for word: {word}")
+
+    def test_loanword_without_affixes(self):
+        """Test that loanwords without affixes return themselves (normalized)."""
+        loanwords = ["computer", "download", "update"] # Already added to loanword_set in setUp
+        for word in loanwords:
+            # Normalized version of the word is expected if it's a loanword and has no affixes
+            # and is not in kata_dasar. Segment() might return it normalized.
+            # The _handle_loanword_affixation returns "" if no affixes, so segment() relies on prior logic.
+            # If it's a loanword and not a KD, and no affixes found by S1/S2,
+            # _handle_loanword_affixation is called. It finds no affixes, returns "".
+            # Then segment() continues. If result_str was word, it returns word.
+            self.assertEqual(self.mkk.segment(word), self.mkk.normalizer.normalize_word(word))
+
+    def test_non_loanword_oov_fallback(self):
+        """Test words that look like affixed loanwords but the base is not a loanword."""
+        # These words should be handled by standard OOV behavior (likely returned as normalized form
+        # if no other segmentation rules apply and they are not kata dasar).
+        test_cases = {
+            "meng-xyzabc": "meng-xyzabc", # Assuming "xyzabc" is not a loanword or KD
+            "di-foobar-kan": "di-foobar-kan", # Assuming "foobar" is not a loanword or KD
+            "blabla-an": "blabla-an", # Assuming "blabla" is not a loanword or KD
+        }
+        # Add "xyzabc", "foobar", "blabla" to kata_dasar_set to ensure they are not treated as KD
+        # For this test, we must ensure these are NOT loanwords. They are not in loanwords_to_add.
+        # We also must ensure they are NOT kata_dasar.
+        # The default test_kata_dasar.txt is minimal.
+        # If these words happen to be in test_kata_dasar.txt, these tests would be invalid.
+        # For robustness, could explicitly remove them from dictionary_manager.kata_dasar_set if present,
+        # but that's more involved than necessary if test_kata_dasar.txt is controlled.
+
+        for word, expected_raw_form in test_cases.items():
+            normalized_expected = self.mkk.normalizer.normalize_word(expected_raw_form)
+            # The segment() method should return the normalized word if no segmentation is found
+            # and the word is not a kata dasar.
+            # The _handle_loanword_affixation will return "" for these.
+            # So, the final output of segment() would be the normalized input.
+            self.assertEqual(self.mkk.segment(word), normalized_expected, f"Failed for word: {word}")
+
 # Add more test cases as needed
