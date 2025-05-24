@@ -274,16 +274,15 @@ class Reconstructor:
             
             # 2. Root starting character condition(s)
             # This condition checks if the base_word starts with a character that this allomorph is specific to.
-            # The affix_rules.json uses "condition_root_starts_with" for this kind of phonological conditioning.
-            # Previous code was mistakenly using "next_char_is" here.
-            condition_to_check = allomorph_rule.get("condition_root_starts_with") # Using the correct key
+            # The affix_rules.json uses "next_char_is" for this kind of phonological conditioning.
+            condition_to_check = allomorph_rule.get("next_char_is") # Using the correct key from affix_rules.json
             if condition_to_check: 
                 expected_conditions += 1
                 if any(base_word.startswith(char) for char in condition_to_check): 
                     conditions_met += 1
                 else:
                     if prefix_canonical_form == "peN" and base_word == "tulis":
-                        print(f"DEBUG peN~tulis: Allomorph {surface_form} skipped, condition_root_starts_with {condition_to_check} not met by '{base_word}'.")
+                        print(f"DEBUG peN~tulis: Allomorph {surface_form} skipped, next_char_is {condition_to_check} not met by '{base_word}'.")
                     continue 
             
             # 3. Exact root condition 
@@ -329,4 +328,4 @@ class Reconstructor:
         
         if prefix_canonical_form == "peN" and base_word == "tulis": 
             print(f"DEBUG peN~tulis: No allomorph matched for '{base_word}'. Falling back to default_surface '{default_surface}'. Output: {default_surface + base_word}")
-        return default_surface + base_word 
+        return default_surface + base_word

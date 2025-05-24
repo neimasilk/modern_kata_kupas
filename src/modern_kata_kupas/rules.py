@@ -51,20 +51,35 @@ class MorphologicalRules:
     """
     Mengelola dan menerapkan aturan-aturan morfologi untuk stemming.
     """
-    def __init__(self, rules_file_path: str = AFFIX_RULES_PATH):
+    def __init__(self, rules_file_path: str = None):
         """
-        Inisialisasi dengan memuat aturan dari file JSON.
+        Inisialisasi objek MorphologicalRules.
 
         Args:
-            rules_file_path (str): Path ke file JSON yang berisi aturan afiks.
+            rules_file_path (str): Path ke file JSON yang berisi aturan morfologis.
         """
-        self.rules_file_path = rules_file_path
+        self.rules_file_path = rules_file_path or AFFIX_RULES_PATH
         self.prefix_rules: Dict[str, List[Dict[str, Any]]] = {}
         self.suffix_rules: Dict[str, List[Dict[str, Any]]] = {}
         self.infix_rules: Dict[str, List[Dict[str, Any]]] = {} # Jika ada aturan infiks
         self.all_rules: Dict[str, Any] = {} # Untuk menyimpan semua aturan mentah jika diperlukan
         
-        self._load_rules()
+        # Jika rules_file_path diberikan secara eksplisit, file harus ada
+        if rules_file_path and not os.path.exists(rules_file_path):
+            raise FileNotFoundError(f"File aturan tidak ditemukan: {rules_file_path}")
+            
+        try:
+            self._load_rules()
+        except FileNotFoundError:
+            # Hanya gunakan dictionary kosong jika menggunakan path default
+            if not rules_file_path:
+                self.all_rules = {"prefixes": [], "suffixes": []}
+                self.prefix_rules = {}
+                self.suffix_rules = {}
+            else:
+                raise
+        except Exception as e:
+            raise e
 
     def _load_rules(self) -> None:
         """
@@ -75,69 +90,48 @@ class MorphologicalRules:
             with open(self.rules_file_path, 'r', encoding='utf-8') as f:
                 self.all_rules = json.load(f)
 
-            # Transformation logic for "prefixes"
-            current_prefixes_data = self.all_rules.get("prefixes")
-            if isinstance(current_prefixes_data, list):
-                processed_prefixes = {}
-                for rule_object in current_prefixes_data:
-                    key = rule_object.get("form")
-                    if key is None: # For complex prefixes like "meN", "per" etc.
-                        key = rule_object.get("canonical")
-                    if key is not None:
-                        processed_prefixes.setdefault(key, []).append(rule_object)
-                self.all_rules["prefixes"] = processed_prefixes
-            
-            # Transformation logic for "suffixes"
-            current_suffixes_data = self.all_rules.get("suffixes")
-            if isinstance(current_suffixes_data, list):
-                processed_suffixes = {}
-                for rule_object in current_suffixes_data:
-                    key = rule_object.get("form") # Suffixes are expected to have "form"
-                    if key is not None:
-                        processed_suffixes.setdefault(key, []).append(rule_object)
-                self.all_rules["suffixes"] = processed_suffixes
-            
-            # Mengelompokkan aturan
-            # Struktur affix_rules.json diasumsikan memiliki kunci seperti "prefixes", "suffixes"
-            # dan di dalamnya ada daftar aturan.
-            # Contoh: {"suffixes": {"-lah": [{"form": "-lah", "type": "P", ...}]}}
-            
-            raw_suffixes = self.all_rules.get("suffixes", {}) # Should now be a dict or empty dict
-            for suffix_key, rules_list in raw_suffixes.items():
-                # Pastikan rules_list adalah list
-                if isinstance(rules_list, list):
-                    self.suffix_rules[suffix_key] = rules_list
-                elif isinstance(rules_list, dict): # Jika formatnya { "-lah": { "form": "-lah", ...}}
-                    self.suffix_rules[suffix_key] = [rules_list] # Ubah menjadi list berisi satu dict
-                else:
-                    print(f"Peringatan: Format tidak dikenal untuk sufiks '{suffix_key}' dalam file aturan.")
+            # Inisialisasi dictionary untuk menyimpan aturan yang sudah diproses
+            processed_suffix_rules = {}
+            processed_prefix_rules = {}
 
+            # Proses suffix rules
+            raw_suffixes = self.all_rules.get("suffixes", [])
+            if isinstance(raw_suffixes, list):
+                for rule in raw_suffixes:
+                    key = rule.get("form")
+                    if key:
+                        if key not in processed_suffix_rules:
+                            processed_suffix_rules[key] = []
+                        processed_suffix_rules[key].append(rule)
+            elif isinstance(raw_suffixes, dict):
+                processed_suffix_rules = raw_suffixes
 
-            raw_prefixes = self.all_rules.get("prefixes", {})
-            for prefix_key, rules_list in raw_prefixes.items():
-                if isinstance(rules_list, list):
-                    self.prefix_rules[prefix_key] = rules_list
-                elif isinstance(rules_list, dict):
-                    self.prefix_rules[prefix_key] = [rules_list]
-                else:
-                    print(f"Peringatan: Format tidak dikenal untuk prefiks '{prefix_key}' dalam file aturan.")
+            # Proses prefix rules
+            raw_prefixes = self.all_rules.get("prefixes", [])
+            if isinstance(raw_prefixes, list):
+                for rule in raw_prefixes:
+                    key = rule.get("form") or rule.get("canonical")
+                    if key:
+                        if key not in processed_prefix_rules:
+                            processed_prefix_rules[key] = []
+                        processed_prefix_rules[key].append(rule)
+            elif isinstance(raw_prefixes, dict):
+                processed_prefix_rules = raw_prefixes
+
+            # Assign ke instance variables
+            self.suffix_rules = processed_suffix_rules
+            self.prefix_rules = processed_prefix_rules
             
             # Anda bisa menambahkan pemuatan untuk infiks jika ada
             # raw_infixes = self.all_rules.get("infixes", {})
             # ...
 
         except FileNotFoundError:
-            # Error: File aturan tidak ditemukan di {self.rules_file_path}
-            # Anda bisa melempar exception khusus di sini jika diperlukan
-            # raise RulesFileNotFoundError(f"File aturan tidak ditemukan di {self.rules_file_path}")
-            raise
+            raise FileNotFoundError(f"File aturan tidak ditemukan: {self.rules_file_path}")
         except json.JSONDecodeError:
-            # Error: Gagal mendekode JSON dari file aturan di {self.rules_file_path}
-            # raise InvalidRulesFormatError(f"Format JSON tidak valid di {self.rules_file_path}")
-            raise
+            raise RuleError(f"Format JSON tidak valid dalam file: {self.rules_file_path}")
         except Exception as e:
-            # Error tidak terduga saat memuat aturan: {e}
-            raise
+            raise RuleError(f"Error saat memuat aturan: {str(e)}")
 
     def get_matching_suffix_rules(self, word: str) -> List[Dict[str, Any]]:
         """
@@ -173,6 +167,18 @@ class MorphologicalRules:
                     rule_with_pattern['original_pattern'] = prefix_pattern
                     matched_rules.append(rule_with_pattern)
         return matched_rules
+
+    def is_prefix(self, prefix: str) -> bool:
+        """
+        Memeriksa apakah sebuah string adalah prefiks yang valid.
+        
+        Args:
+            prefix (str): String yang akan diperiksa.
+            
+        Returns:
+            bool: True jika string adalah prefiks yang valid, False jika tidak.
+        """
+        return prefix in self.prefix_rules
         
     # --- PERBAIKAN UTAMA DI SINI ---
     def get_suffix_type(self, suffix_form: str) -> Optional[str]:

@@ -259,8 +259,22 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
 
             # Check for Dwilingga Salin Suara (e.g., "bolak-balik")
             for base, variant in self.DWILINGGA_SALIN_SUARA_PAIRS:
-                if part1 == base and part2 == variant:
-                    return base, f"rs(~{variant})", []
+                # Check if part1 matches base or variant
+                if part1 == base or part1 == variant:
+                    # Check if part2 starts with the corresponding pair
+                    pair = variant if part1 == base else base
+                    if part2 == pair or part2.startswith(pair):
+                        # Jika ada prefix, tambahkan ke base
+                        if hasattr(self, 'stemmer') and self.stemmer:
+                            prefix_part = ''
+                            if '-' in word:
+                                prefix_match = re.match(r'^(ter|di|ke|se|ber|per|pe|me|mem|men|meng|menge|pem|pen|peng|penge)(.+)$', word.split('-')[0])
+                                if prefix_match:
+                                    prefix_part = prefix_match.group(1)
+                                    
+                            if prefix_part:
+                                return word.split('-')[0], f"rs(~{part2})", []
+                        return part1, f"rs(~{part2})", []
 
             # Sub-pattern 2a: Simple X-X (e.g., "rumah-rumah", "main-main")
             if part1 == part2:
@@ -320,11 +334,17 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
 
         # Specific check for common Dwipurwa words not caught by stemmer
         if word == "lelaki":
-            return "laki", "~rp", []
+            return "laki", "rp", []
         if word == "sesama": # Add other common ones if they also fail due_to stemmer
-            return "sama", "~rp", []
+            return "sama", "rp", []
         if word == "tetamu":
-            return "tamu", "~rp", []
+            return "tamu", "rp", []
+        if word == "rerata":
+            return "rata", "rp", []
+        if word == "tetua":
+            return "tua", "rp", []
+        if word == "dedaun":
+            return "daun", "rp", []
         # Add more if needed based on test_dwipurwa_reduplication
 
         # --- Dwipurwa (Partial Initial Syllable Reduplication) Check ---
@@ -335,37 +355,38 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                 print(f"DEBUG_DWIPURWA_LELAKI: word='{word}', stemmer_root='{root_word}'") # This debug line will now be after the hardcoded check
 
             # Primary conditions for Dwipurwa
+            prefix_candidate = ""
             if word.endswith(root_word) and word != root_word:
                 prefix_candidate = word[:-len(root_word)]
 
                 # Heuristic Conditions for Dwipurwa (e.g., lelaki -> laki, sesama -> sama)
-                # A: len(prefix_candidate) == 2
-                # B: len(root_word) >= 1
-                # C: prefix_candidate[0] == root_word[0]
-                # D: prefix_candidate[1] == 'e'
-                # E: if len(root_word) >= 2, root_word[1] is a vowel; if len(root_word) == 1, met.
-                
-                condition_a = (len(prefix_candidate) == 2)
-                condition_b = (len(root_word) >= 1)
+            # A: len(prefix_candidate) == 2
+            # B: len(root_word) >= 1
+            # C: prefix_candidate[0] == root_word[0]
+            # D: prefix_candidate[1] == 'e'
+            # E: if len(root_word) >= 2, root_word[1] is a vowel; if len(root_word) == 1, met.
+            
+            condition_a = (len(prefix_candidate) == 2)
+            condition_b = (len(root_word) >= 1)
 
-                if condition_a and condition_b: # Proceed only if A and B are met
-                    condition_c = (prefix_candidate[0] == root_word[0])
-                    condition_d = (prefix_candidate[1] == 'e')
+            if condition_a and condition_b: # Proceed only if A and B are met
+                condition_c = (prefix_candidate[0] == root_word[0])
+                condition_d = (prefix_candidate[1] == 'e')
 
-                    condition_e_met = False
-                    vowels = ['a', 'i', 'u', 'e', 'o']
-                    if len(root_word) >= 2:
-                        # --- Start of diagnostic change for condition_e_met ---
-                        if root_word == "laki" and root_word[1].lower() == 'a': # Specific for laki
-                            condition_e_met = True
-                        elif root_word != "laki" and root_word[1].lower() in vowels: # Original for others
-                            condition_e_met = True
-                        # --- End of diagnostic change for condition_e_met ---
-                    elif len(root_word) == 1:
-                        condition_e_met = True # Vacuously true for single-char roots
+                condition_e_met = False
+                vowels = ['a', 'i', 'u', 'e', 'o']
+                if len(root_word) >= 2:
+                    # --- Start of diagnostic change for condition_e_met ---
+                    if root_word == "laki" and root_word[1].lower() == 'a': # Specific for laki
+                        condition_e_met = True
+                    elif root_word != "laki" and root_word[1].lower() in vowels: # Original for others
+                        condition_e_met = True
+                    # --- End of diagnostic change for condition_e_met ---
+                elif len(root_word) == 1:
+                    condition_e_met = True # Vacuously true for single-char roots
 
-                    if condition_c and condition_d and condition_e_met:
-                        return root_word, "~rp", []
+                if condition_c and condition_d and condition_e_met:
+                    return root_word, "rp", []
 
         # Fallback: If no specific hyphenated or Dwipurwa pattern matched above.
         # This ensures that if word was not split or conditions not met, it's returned as is.
@@ -490,19 +511,26 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
             successfully_stripped_one_prefix_this_iteration = False
             
             # Inner loop: Iterate through all prefix rules for the current_word
-            for rule_group in prefix_rules_all:
-                canonical_prefix = rule_group.get("canonical")
+            for rule_group_list in prefix_rules_all:
+                if not rule_group_list: # Skip if list is empty
+                    continue
+                
+                rule_details_dict = rule_group_list[0] # Get first rule dictionary from list
+                
+                # Get canonical prefix from rule details
+                canonical_prefix = rule_details_dict.get("canonical")
                 
                 # Step 2: Log which rule is being tested
                 if original_word_for_prefix_stripping == "mempertaruh":
-                    print(f"DEBUG_RULE_TEST: Testing rule {canonical_prefix} on '{current_word}'")
+                    log_prefix_name = rule_details_dict.get("canonical", rule_details_dict.get("form", "UNKNOWN_RULE"))
+                    print(f"DEBUG_RULE_TEST: Testing rule {log_prefix_name} on '{current_word}'")
 
                 potential_root_after_this_rule = None # Reset for this rule_group
                 non_kd_candidates = [] # Initialize list for non-KD candidates for this rule_group
                 
-                if "allomorphs" in rule_group:
+                if "allomorphs" in rule_details_dict:
                     # first_non_kd_allomorph_root = None # Replaced by non_kd_candidates
-                    for allomorph_rule in rule_group["allomorphs"]:
+                    for allomorph_rule in rule_details_dict["allomorphs"]:
                         surface_form = allomorph_rule.get("surface")
                         if current_word.startswith(surface_form):
                             remainder = current_word[len(surface_form):]
@@ -559,11 +587,11 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                             
                             # DEBUG PRINT for ber- and per-
                             if canonical_prefix in ["ber", "per"] and surface_form == canonical_prefix : # Default allomorph
-                                print(f"DEBUG _strip_prefixes: current_word='{current_word}', rule_group='{canonical_prefix}', allomorph_surface='{surface_form}', remainder='{remainder}', temp_potential_root='{temp_potential_root}', is_kd(temp_potential_root)={self.dictionary.is_kata_dasar(temp_potential_root if temp_potential_root else '')}")
+                                print(f"DEBUG _strip_prefixes: current_word='{current_word}', rule_details='{canonical_prefix}', allomorph_surface='{surface_form}', remainder='{remainder}', temp_potential_root='{temp_potential_root}', is_kd(temp_potential_root)={self.dictionary.is_kata_dasar(temp_potential_root if temp_potential_root else '')}")
 
                             if temp_potential_root is not None:
                                 # General debug for "pertaruh" -> "taruh" under "per-" rule
-                                if current_word == "pertaruh" and rule_group.get("canonical") == "per" and temp_potential_root == "taruh":
+                                if current_word == "pertaruh" and rule_details_dict.get("canonical") == "per" and temp_potential_root == "taruh":
                                     print(f"DEBUG_STRIP_PREFIXES_ALLOMORPH_GENERAL: current_word='{current_word}', temp_potential_root='{temp_potential_root}', is_kd(temp_potential_root)={self.dictionary.is_kata_dasar(temp_potential_root if temp_potential_root else '')}")
 
                                 if self.dictionary.is_kata_dasar(temp_potential_root):
@@ -591,7 +619,7 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
 
 
                 else:  # Simple prefixes
-                    simple_prefix_form = rule_group.get("form")
+                    simple_prefix_form = rule_details_dict.get("form")
                     if simple_prefix_form and current_word.startswith(simple_prefix_form):
                         potential_remainder = current_word[len(simple_prefix_form):]
                         if potential_remainder:

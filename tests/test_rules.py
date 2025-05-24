@@ -88,14 +88,6 @@ def test_rules_init_with_nonexistent_path():
     with pytest.raises(FileNotFoundError): # Changed ValueError to FileNotFoundError
         MorphologicalRules(rules_file_path="path/tidak/ada.json")
 
-# def test_rules_init_with_invalid_json(invalid_rules_file):
-#     """Tes inisialisasi MorphologicalRules dengan file JSON tidak valid."""
-#     # Placeholder saat ini hanya mencetak error, tidak melempar exception
-#     # Ini mungkin perlu diubah agar melempar RuleError
-#     # with pytest.raises(RuleError): # Jika implementasi diubah untuk raise error
-#     rules = MorphologicalRules(rules_file_path=invalid_rules_file)
-    assert rules.all_rules == {} # Karena loading gagal, all_rules is empty
-
 # Renamed test to reflect what it's testing now (structure of prefix_rules)
 def test_loaded_prefix_rules_structure(dummy_rules_file):
     """Tes struktur prefix_rules setelah memuat aturan."""
