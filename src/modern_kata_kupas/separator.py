@@ -210,6 +210,20 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                                     not assembled_suffixes and # Check assembled_suffixes instead of individual lists
                                     chosen_final_stem == normalized_word)
 
+        # 8. Loanword Affixation Handling
+        # If the best stem we found after regular S1/S2 strategies (chosen_final_stem) 
+        # is not a recognized kata_dasar, then it's potentially an OOV word,
+        # which might be an affixed loanword.
+        if not self.dictionary.is_kata_dasar(chosen_final_stem):
+            # Pass the original normalized_word to the loanword handler,
+            # as it contains the full form needed for loanword affix stripping.
+            loanword_segmentation = self._handle_loanword_affixation(normalized_word)
+            if loanword_segmentation:
+                # If loanword handling provides a valid segmentation, use it.
+                print(f"DEBUG: segment({word}): Using loanword segmentation: '{loanword_segmentation}'")
+                return loanword_segmentation
+
+        # 9. Return Logic (original return logic adjusted)
         if not result_str: 
             print(f"DEBUG_SEGMENT_RETURN: EMPTY result_str! Returning normalized_word: '{normalized_word}' for input '{word}'")
             return normalized_word
@@ -232,6 +246,83 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
 
         print(f"DEBUG: segment({word}): Returning final result_str: '{result_str}'") # Keep this one too
         return result_str
+
+    def _handle_loanword_affixation(self, word: str) -> str:
+        """
+        Attempts to segment a word by stripping Indonesian affixes if the base is a known loanword.
+        This is typically called for OOV words after standard stemming fails.
+
+        Args:
+            word (str): The word to process (usually the normalized_word).
+
+        Returns:
+            str: The segmented string (e.g., "di~download", "meN~update~nya") if a loanword
+                 and affixes are found, otherwise an empty string.
+        """
+        if not word:
+            return ""
+
+        # If normalized_word still contains hyphens (e.g. "di-download" instead of "didownload"),
+        # this explicit replacement ensures that prefix matching (e.g. "di") can find bases like "download".
+        # This is a targeted adjustment for loanword handling, assuming standard prefixes ("di", "meN")
+        # do not contain hyphens themselves.
+        processed_word = word.replace('-', '')
+
+        # Strategy 1: Check for prefix + loanword_base + suffix
+        # Iterate through all prefix forms (longest first for maximal munch)
+        sorted_prefix_forms = sorted(self.rules.get_all_prefix_forms(), key=len, reverse=True)
+        
+        for p_form in sorted_prefix_forms:
+            if processed_word.startswith(p_form): # Use processed_word
+                canonical_prefix = self.rules.get_canonical_prefix_form(p_form)
+                if not canonical_prefix: 
+                    continue
+
+                # Try with prefix only first
+                base_after_prefix = processed_word[len(p_form):] # Use processed_word
+                if not base_after_prefix: continue
+
+                if self.dictionary.is_loanword(base_after_prefix):
+                    return f"{canonical_prefix}~{base_after_prefix}"
+
+                # Try with prefix + suffix
+                matching_suffix_rules = self.rules.get_matching_suffix_rules(base_after_prefix)
+                for s_rule in matching_suffix_rules:
+                    s_form_on_word = s_rule.get("original_pattern") 
+                    s_form_clean = s_form_on_word.lstrip('-') 
+                    
+                    if not s_form_on_word or not base_after_prefix.endswith(s_form_on_word):
+                        continue
+
+                    loanword_candidate = base_after_prefix[:-len(s_form_on_word)]
+                    if not loanword_candidate: continue
+                    
+                    if self.dictionary.is_loanword(loanword_candidate):
+                        return f"{canonical_prefix}~{loanword_candidate}~{s_form_clean}"
+        
+        # Strategy 2: Check for loanword_base + suffix only (no prefix)
+        matching_suffix_rules = self.rules.get_matching_suffix_rules(processed_word) # Use processed_word
+        for s_rule in matching_suffix_rules:
+            s_form_on_word = s_rule.get("original_pattern")
+            s_form_clean = s_form_on_word.lstrip('-')
+            
+            if not s_form_on_word: continue
+
+            base_candidate = processed_word[:-len(s_form_on_word)] # Use processed_word
+            if not base_candidate: continue
+
+            if self.dictionary.is_loanword(base_candidate):
+                return f"{base_candidate}~{s_form_clean}"
+                
+        # Strategy 3: Check if the word itself is a loanword (no affixes)
+        # This might seem redundant if the main segment() checks for KD first.
+        # However, if a word is NOT a KD, but IS a loanword, segment() might still call this.
+        # In such a case, we should return it as is, but without '~' separators.
+        # The task is to identify AFFIXED loanwords. If it's just a loanword,
+        # the existing logic in segment() should handle it (return normalized_word if no affixes found).
+        # So, if we reach here, it means it's not an *affixed* loanword found by this method.
+
+        return "" # No loanword affixation pattern found
 
     def _handle_reduplication(self, word: str) -> tuple[str, str, list[str]]:
         """

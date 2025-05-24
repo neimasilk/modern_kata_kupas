@@ -34,5 +34,5 @@ This file will track the progress of the ModernKataKupas project.
 
 **Objective:** Enhance the segmenter to correctly handle loanwords with Indonesian affixes and other irregular forms.
 
-- [~] Step 4.1: Loanword Affixation Handling (DictionaryManager updated for loanword list; separator.py integration and tests pending)
+- [x] Step 4.1: Loanword Affixation Handling
 - [ ] ... (other steps)
