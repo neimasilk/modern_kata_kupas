@@ -7,16 +7,9 @@ import pytest
 from modern_kata_kupas import utils
 # from modern_kata_kupas.exceptions import ModernKataKupasError # Jika utils melempar error custom
 
-def test_normalize_word():
-    """Tes fungsi normalize_word."""
-    assert utils.normalize_word("BesAR") == "besar"
-    assert utils.normalize_word("kecil") == "kecil"
-    assert utils.normalize_word("DENGAN SPASI") == "dengan spasi"
-    assert utils.normalize_word("") == ""
-    assert utils.normalize_word("AngKa123") == "angka123"
-    # Tes dengan input non-string (sesuai implementasi di utils.py)
-    assert utils.normalize_word(123) == "123"
-    assert utils.normalize_word(None) == "none" # Tergantung bagaimana None dikonversi ke str
+# test_normalize_word has been removed as the function was removed from utils.string_utils
+# and consolidated into normalizer.TextNormalizer.
+# Tests for TextNormalizer.normalize_word are in test_normalizer.py.
 
 def test_is_vowel():
     """Tes fungsi is_vowel."""

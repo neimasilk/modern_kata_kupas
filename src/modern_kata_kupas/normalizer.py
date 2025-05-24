@@ -22,11 +22,18 @@ class TextNormalizer:
             str: Kata yang sudah dinormalisasi
         """
         if not isinstance(word, str):
-            return str(word).lower()
+            # For non-strings, convert to string, strip, and lowercase.
+            # This handles None, numbers, etc., consistently with dictionary needs.
+            return str(word).strip().lower() 
             
-        normalized = word.lower()
-        # Hapus tanda baca di akhir kata
-        while len(normalized) > 0 and normalized[-1] in {'.', ',', '?', '!'}:
+        # For strings, strip whitespace, then lowercase.
+        normalized = word.strip().lower()
+        
+        # Hapus tanda baca di akhir kata (setelah lowercase dan strip)
+        # Common trailing punctuation relevant for token cleaning.
+        # This simple loop is fine for typical cases.
+        # More complex scenarios might involve regex or more specific rules.
+        while len(normalized) > 0 and normalized[-1] in {'.', ',', '?', '!', ':', ';'}: # Added colon and semicolon
             normalized = normalized[:-1]
             
         return normalized

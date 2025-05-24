@@ -19,6 +19,7 @@ class Reconstructor:
             "suffixes_derivational": [],
             "suffixes_particle": [],
             "suffixes_possessive": [],
+            "suffixes_after_reduplication": [], # New category
             "redup_marker": None, # "ulg", "rp", "rs"
             "redup_variant": None, # e.g., "mayur" for "rs(~mayur)"
         }
@@ -62,71 +63,79 @@ class Reconstructor:
             print(f"DEBUG_SAYUR: Parts after split and restore: {parts}")
             
         root_candidates = []
+        previous_part_was_redup_marker = False
 
         for part_idx, part in enumerate(parts):
             print(f"DEBUG_PARSE: Processing part '{part}' from {parts}")
+            current_part_is_redup_marker = False
             if segmented_word == "sayur~rs(~mayur)":
                 print(f"DEBUG_SAYUR: Current part: '{part}'")
                 print(f"DEBUG_SAYUR: part.startswith('rs('): {part.startswith('rs(')}")
                 print(f"DEBUG_SAYUR: part.endswith(')'): {part.endswith(')')}")
             
             if not part: # Handle cases like "~~" or trailing/leading "~"
+                previous_part_was_redup_marker = False # Reset if empty part
                 continue
 
             # 1. Check for Reduplication Markers
             if part == "ulg":
                 result["redup_marker"] = "ulg"
+                current_part_is_redup_marker = True
                 print(f"DEBUG_PARSE:   Part '{part}' identified as redup_marker='ulg'")
-                continue
-            if part == "rp":
+            elif part == "rp":
                 result["redup_marker"] = "rp"
+                current_part_is_redup_marker = True
                 print(f"DEBUG_PARSE:   Part '{part}' identified as redup_marker='rp'")
-                continue
-            # This now expects `part` to be exactly "rs(~mayur)"
-            if part.startswith("rs(") and part.endswith(")") and part.count('~') == 1 and part.startswith("rs(~"):
+            elif part.startswith("rs(") and part.endswith(")") and part.count('~') == 1 and part.startswith("rs(~"):
                 result["redup_marker"] = "rs"
                 variant = part[len("rs(~"):-1] 
                 if variant: 
                     result["redup_variant"] = variant
+                current_part_is_redup_marker = True
                 print(f"DEBUG_PARSE:   Part '{part}' identified as redup_marker='rs' with variant='{variant}'")
-                continue
-            # Fallback for rs(variant) without internal tilde, if ever needed.
-            elif part.startswith("rs(") and part.endswith(")"):
+            elif part.startswith("rs(") and part.endswith(")"): # Fallback for rs(variant) without internal tilde
                 result["redup_marker"] = "rs"
                 variant = part[len("rs("):-1]
                 if variant:
                     result["redup_variant"] = variant
+                current_part_is_redup_marker = True
                 print(f"DEBUG_PARSE:   Part '{part}' identified as redup_marker='rs' (no tilde) with variant='{variant}'")
+            
+            if current_part_is_redup_marker:
+                previous_part_was_redup_marker = True
                 continue
 
             # 2. Check for Prefixes using MorphologicalRules
-            # print(f"DEBUG_PARSE:   Checking if '{part}' is a prefix. self.rules.is_prefix('{part}')")
             is_pfx = self.rules.is_prefix(part)
-            # print(f"DEBUG_PARSE:   Result of is_prefix for '{part}': {is_pfx}")
             if is_pfx:
                 result["prefixes"].append(part)
                 print(f"DEBUG_PARSE:   Part '{part}' identified as PREFIX. Current prefixes: {result['prefixes']}")
+                previous_part_was_redup_marker = False # Reset
                 continue
             
             # 3. Check for Suffixes using MorphologicalRules
-            # print(f"DEBUG_PARSE:   Checking if '{part}' is a suffix. self.rules.is_suffix('{part}')")
             is_sfx = self.rules.is_suffix(part)
-            # print(f"DEBUG_PARSE:   Result of is_suffix for '{part}': {is_sfx}")
             if is_sfx:
                 suffix_type = self.rules.get_suffix_type(part)
                 print(f"DEBUG_PARSE:   Part '{part}' identified as SUFFIX of type '{suffix_type}'")
-                if suffix_type == "suffix_derivational":
+                if previous_part_was_redup_marker and suffix_type == "suffix_derivational":
+                    result["suffixes_after_reduplication"].append(part)
+                    print(f"DEBUG_PARSE:     Added '{part}' to suffixes_after_reduplication. Current: {result['suffixes_after_reduplication']}")
+                elif suffix_type == "suffix_derivational":
                     result["suffixes_derivational"].append(part)
+                    print(f"DEBUG_PARSE:     Added '{part}' to suffixes_derivational. Current: {result['suffixes_derivational']}")
                 elif suffix_type == "particle":
                     result["suffixes_particle"].append(part)
                 elif suffix_type == "possessive":
                     result["suffixes_possessive"].append(part)
-                else:
-                    root_candidates.append(part) # Unknown suffix type
+                else: # Should not happen if suffix_type is one of the above
+                    root_candidates.append(part) 
+                previous_part_was_redup_marker = False # Reset
                 continue
             
             # 4. If not a known marker or affix, it's a root candidate
             root_candidates.append(part)
+            previous_part_was_redup_marker = False # Reset
 
         # Root Identification:
         if root_candidates:
@@ -213,7 +222,15 @@ class Reconstructor:
             current_form = self._apply_reduplication_reconstruction(current_form, redup_marker, redup_variant)
             print(f"DEBUG_RECONSTRUCT:   After reduplication, current_form: '{current_form}'")
 
-        # 3. Apply POSSESSIVE and PARTICLE suffixes AFTER reduplication
+        # 3. Apply SUFFIXES_AFTER_REDUPLICATION
+        suffixes_after_redup = parsed_morphemes.get("suffixes_after_reduplication", [])
+        if suffixes_after_redup:
+            print(f"DEBUG_RECONSTRUCT: Applying suffixes_after_reduplication: {suffixes_after_redup}")
+        for suffix in suffixes_after_redup:
+            current_form += suffix # Suffixes are typically simple appends at this stage
+            print(f"DEBUG_RECONSTRUCT:   After suffix_after_redup '{suffix}', current_form: '{current_form}'")
+
+        # 4. Apply POSSESSIVE and PARTICLE suffixes 
         possessive_suffixes = parsed_morphemes.get("suffixes_possessive", [])
         if possessive_suffixes:
             print(f"DEBUG_RECONSTRUCT: Applying possessive suffixes: {possessive_suffixes}")
@@ -228,7 +245,7 @@ class Reconstructor:
             current_form += suffix
             print(f"DEBUG_RECONSTRUCT:   After suffix '{suffix}', current_form: '{current_form}'")
         
-        # Placeholder for subsequent steps (prefixes)
+        # 5. Apply Prefixes
         prefixes_to_apply = parsed_morphemes.get("prefixes", [])
         if prefixes_to_apply:
             print(f"DEBUG_RECONSTRUCT: Applying prefixes (in reverse): {prefixes_to_apply}")
