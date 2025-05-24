@@ -22,7 +22,7 @@ We propose "ModernKataKupas," an enhanced rule-based algorithm for Indonesian su
 The key aspects of ModernKataKupas include:
 
 * Leveraging a robust Indonesian stemmer to identify the root word.  
-* Employing string alignment techniques to pinpoint differences between the original word and its root.  
+* Initially considering string alignment techniques (and implementing a utility for it), V1.0 focuses on heuristic rule application and dictionary lookups to pinpoint differences between the original word and its root.  
 * Applying a refined and expanded set of morphological rules to accurately parse these differences into valid affixes, handling complex phenomena like derivational layering, various types of reduplication, and systematic morphophonemic changes.  
 * Focusing on its application as a pre-processing step for Indonesian text or as an auxiliary feature to augment standard tokenization methods for LLMs and other NLP models.
 
@@ -266,13 +266,12 @@ Let `current_word_to_process` be `base_form_for_affixation`.
 
 #### **3.3.4 Step 4: Core Affix Identification and Separation**
 
-This iterative process uses string alignment and the `aturan_afiks`. Initialize `identified_prefixes = []` and `identified_suffixes = []`.
+This iterative process uses heuristic rule application, dictionary lookups, and the `aturan_afiks`. Initialize `identified_prefixes = []` and `identified_suffixes = []`.
 
-1. **String Alignment:**  
+1. **Initial Root and Affix Candidate Identification (Heuristic Approach):**  
      
-   * Perform Needleman-Wunsch alignment between `current_word_to_process` and `root_word`.  
-   * Identify initial differing segment (potential prefixes) and final differing segment (potential suffixes).  
-   * Example: `mempermainkan` vs `main` \-\> `prefix_candidate = "memper"`, `suffix_candidate = "kan"`.
+   * Potential prefix and suffix candidates are initially identified by comparing the `current_word_to_process` with the `root_word` obtained from the stemmer. For V1.0, this is done heuristically by checking starts-with/ends-with logic rather than explicit string alignment. The system then iteratively attempts to match these candidates against known affix rules.  
+   * Example: For `mempermainkan` and `root_word = main`, `prefix_candidate` might be "memper" (derived from `current_word_to_process.startswith(root_word)` logic) and `suffix_candidate` might be "kan" (derived from `current_word_to_process.endswith(root_word)` logic, after "memper" is considered). These candidates are then validated against `aturan_afiks`.
 
    
 
@@ -296,8 +295,8 @@ This iterative process uses string alignment and the `aturan_afiks`. Initialize 
        * If a valid prefix is identified:  
          * Add its canonical form (e.g., `meN~`, `per~`) to `identified_prefixes`.  
          * Update `prefix_candidate`/`current_word_to_process` by removing the surface form of the prefix.  
-         * **Crucially, if the rule involves elision of a root character (luluh), this must be noted for the reconstruction phase.** The `root_word` obtained from the stemmer already reflects this. The alignment helps confirm the elided character.  
-         * Example: `memukul`, `root_word = pukul`. Alignment shows `mem` as prefix part. Rule for `meN-` with `p` matches `mem` and elision of `p`. Prefix is `meN~`. `current_word_to_process` becomes `pukul`.  
+         * **Crucially, if the rule involves elision of a root character (luluh), this must be noted for the reconstruction phase.** The `root_word` obtained from the stemmer, in conjunction with morphophonemic rules, helps confirm any elided characters.  
+         * Example: `memukul`, `root_word = pukul`. Heuristic comparison identifies "mem" as a potential prefix. Rule for `meN-` with `p` matches "mem" and indicates elision of `p`. Prefix is `meN~`. `current_word_to_process` becomes `pukul` (after "mem" is stripped and `p` is conceptually restored based on the rule).  
      * After each strip, check if `current_word_to_process` matches `root_word`. If so, prefix stripping is complete.
 
    
@@ -341,7 +340,7 @@ This iterative process uses string alignment and the `aturan_afiks`. Initialize 
   * For derivational affixes, a predefined order based on linguistic principles (e.g., Sastrawi's visitor pattern) can be adapted.  
 * **Longest Match Principle:** When multiple affix rules could apply, prefer the one that matches the longest affix sequence (e.g., `per-` over `pe-` if both could lead to a valid stem, and `per-` is a valid prefix in that context).  
 * **Backtracking (Limited):** If a sequence of strips leads to an invalid state (e.g., remaining `current_word_to_process` is not `root_word` and cannot be further processed), the algorithm might need to backtrack and try an alternative stripping rule if one was available at a previous step. This adds complexity and should be used judiciously.  
-* **Default to Stemmer:** If complex affix interactions cannot be resolved by rules, the segmentation might default to `PREFIX_CANDIDATE ~ root_word ~ SUFFIX_CANDIDATE` where candidates are raw differences from alignment, or even just `original_word` if `root_word` is identical and no affixes are clearly identifiable.
+* **Default to Stemmer:** If complex affix interactions cannot be resolved by rules, the segmentation might default to `PREFIX_CANDIDATE ~ root_word ~ SUFFIX_CANDIDATE` where candidates are raw differences identified heuristically, or even just `original_word` if `root_word` is identical and no affixes are clearly identifiable.
 
 ### **3.5 Reconstruction Algorithm (for Validation and Application)**
 

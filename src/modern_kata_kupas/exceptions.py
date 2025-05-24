@@ -7,44 +7,72 @@ class ModernKataKupasError(Exception):
     """Kelas dasar untuk semua exception di ModernKataKupas."""
     pass
 
-class DictionaryError(Exception):
-    """Base class for dictionary related errors."""
+class DictionaryOperationError(Exception): # Renamed from DictionaryError
+    """Base class for general dictionary operation related errors."""
     pass
 
-class DictionaryFileNotFoundError(DictionaryError, FileNotFoundError):
-    """Custom exception raised when a dictionary file cannot be found."""
+class DictionaryFileNotFoundError(DictionaryOperationError, FileNotFoundError): # Inherits from renamed
+    """Raised when a dictionary or loanword file cannot be found at the specified path."""
     pass
 
-class DictionaryLoadingError(DictionaryError):
-    """Custom exception raised for errors during dictionary loading or parsing."""
+class DictionaryLoadingError(DictionaryOperationError): # Inherits from renamed
+    """Raised for errors encountered during the loading or parsing of dictionary files."""
     pass
 
-class DictionaryError(ModernKataKupasError):
-    """Exception terkait dengan operasi kamus (misalnya, file tidak ditemukan)."""
+class DictionaryError(ModernKataKupasError): # This is the library-specific one
+    """Exception raised for errors specific to dictionary operations within ModernKataKupas.
+    
+    This could include issues like failing to load a required dictionary or
+    problems accessing dictionary data.
+    """
     pass
 
 class RuleError(ModernKataKupasError):
-    """Exception terkait dengan pemuatan atau aplikasi aturan morfologi."""
+    """Exception raised for errors related to loading or applying morphological rules.
+
+    This could include issues with rule file format, or inconsistencies found
+    during rule processing.
+    """
     pass
 
-class WordNotInDictionaryError(DictionaryError):
-    """Exception ketika sebuah kata tidak ditemukan di kamus dan diperlukan."""
-    def __init__(self, word, message=None):
+class WordNotInDictionaryError(DictionaryError): # Inherits from the MKK-specific DictionaryError
+    """Exception raised when a word required for an operation is not found in the dictionary.
+    
+    Attributes:
+        word (str): The word that was not found.
+    """
+    def __init__(self, word: str, message: str = None):
+        """
+        Initializes the WordNotInDictionaryError.
+
+        Args:
+            word (str): The word that was not found in the dictionary.
+            message (str, optional): A custom message for the exception. If None,
+                                     a default message is generated. Defaults to None.
+        """
         self.word = word
         if message is None:
             message = f"Kata '{word}' tidak ditemukan dalam kamus."
         super().__init__(message)
 
 class InvalidAffixError(ModernKataKupasError):
-    """Exception ketika afiks yang diberikan tidak valid atau tidak dikenal."""
+    """Exception raised when an affix is invalid, unknown, or used incorrectly."""
     pass
 
 class ReconstructionError(ModernKataKupasError):
-    """Exception yang terjadi selama proses rekonstruksi kata."""
+    """Exception raised during the word reconstruction process.
+
+    This indicates an issue in reassembling a word from its morphemes, potentially
+    due to inconsistent segmentation or rule application problems.
+    """
     pass
 
 class SeparationError(ModernKataKupasError):
-    """Exception yang terjadi selama proses pemisahan kata."""
+    """Exception raised during the word separation (segmentation) process.
+
+    This indicates an issue in breaking down a word into its morphemes,
+    possibly due to complex or ambiguous structures not handled by current rules.
+    """
     pass
 
 # Contoh bagaimana exception ini bisa di-raise (untuk dokumentasi/tes):

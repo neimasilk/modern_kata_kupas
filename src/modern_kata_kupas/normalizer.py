@@ -5,21 +5,30 @@ Modul untuk normalisasi teks dalam ModernKataKupas.
 
 class TextNormalizer:
     """
-    Kelas untuk menormalisasi kata-kata.
+    Provides methods for normalizing text, specifically Indonesian words.
+
+    Normalization typically includes converting to lowercase, stripping whitespace,
+    and removing common trailing punctuation. Internal hyphens are preserved.
     """
 
     def normalize_word(self, word: str) -> str:
         """
-        Menormalisasi kata dengan:
-        - Mengubah ke huruf kecil
-        - Menghapus tanda baca di akhir kata
-        - Mempertahankan tanda hubung internal
+        Normalizes a given word according to defined rules.
+
+        The normalization process includes:
+        1. Converting the word to lowercase.
+        2. Stripping leading/trailing whitespace.
+        3. Removing common trailing punctuation (e.g., '.', ',', '?', '!', ':', ';').
+        Internal hyphens are preserved. Non-string inputs are first converted to
+        strings, then stripped and lowercased.
 
         Args:
-            word (str): Kata yang akan dinormalisasi
+            word (str): The word to be normalized. Can be any type that can be
+                        converted to a string.
 
         Returns:
-            str: Kata yang sudah dinormalisasi
+            str: The normalized word. If the input `word` is None or results in
+                 an empty string after stripping, an empty string is returned.
         """
         if not isinstance(word, str):
             # For non-strings, convert to string, strip, and lowercase.

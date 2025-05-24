@@ -8,13 +8,17 @@ String utility functions for ModernKataKupas.
 
 def is_vowel(char: str) -> bool:
     """
-    Memeriksa apakah sebuah karakter adalah huruf vokal (a, e, i, o, u).
+    Checks if a single character is a vowel (a, e, i, o, u).
+
+    The check is case-insensitive. If the input is not a single character string,
+    it returns False.
 
     Args:
-        char (str): Karakter tunggal untuk diperiksa.
+        char (str): The character to check. Expected to be a single character.
 
     Returns:
-        bool: True jika vokal, False jika tidak.
+        bool: True if the character is a vowel, False otherwise (including if
+              the input is not a single character string).
     """
     if not isinstance(char, str) or len(char) != 1:
         return False
@@ -23,13 +27,18 @@ def is_vowel(char: str) -> bool:
 
 def is_consonant(char: str) -> bool:
     """
-    Memeriksa apakah sebuah karakter adalah huruf konsonan.
+    Checks if a single character is a consonant.
+
+    A character is considered a consonant if it is an alphabet letter (a-z, case-insensitive)
+    and not a vowel. If the input is not a single character string, or not an
+    alphabetic character, it returns False.
 
     Args:
-        char (str): Karakter tunggal untuk diperiksa.
+        char (str): The character to check. Expected to be a single character.
 
     Returns:
-        bool: True jika konsonan, False jika tidak.
+        bool: True if the character is a consonant, False otherwise (including if
+              the input is not a single alphabetic character).
     """
     # normalized_char = normalize_word(char) # Original line
     normalized_char = char.lower() # Use simple lower() for this internal utility
