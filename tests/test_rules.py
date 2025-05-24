@@ -53,15 +53,16 @@ def invalid_rules_file(tmp_path):
     return str(file_path)
 
 def test_rules_init_no_path():
-    """Tes inisialisasi MorphologicalRules tanpa path file."""
+    """Tes inisialisasi MorphologicalRules tanpa path file, jika path eksplisit tidak ada."""
     # This test assumes AFFIX_RULES_PATH (default) does not exist or is empty/invalid during test execution
     # or that we want to test the state if loading fails.
-    # If AFFIX_RULES_PATH is valid and loaded, all_rules, prefix_rules, suffix_rules would be populated.
     # For a true "no path given and default fails" scenario:
-    rules = MorphologicalRules(rules_file_path="non_existent_default.json") # Force failure
-    assert rules.all_rules == {} # If default load fails
-    assert rules.prefix_rules == {}
-    assert rules.suffix_rules == {}
+    # rules = MorphologicalRules(rules_file_path="non_existent_default.json") # Force failure
+    # self.assertEqual(rules.all_rules, {"prefixes": [], "suffixes": []})
+    # self.assertEqual(rules.prefix_rules, {})
+    # self.assertEqual(rules.suffix_rules, {})
+    with pytest.raises(FileNotFoundError):
+        MorphologicalRules(rules_file_path="non_existent_default.json")
 
 def test_rules_init_with_valid_path(dummy_rules_file):
     """Tes inisialisasi MorphologicalRules dengan path file yang valid."""

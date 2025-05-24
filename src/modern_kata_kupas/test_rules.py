@@ -5,6 +5,9 @@ Modul untuk pengujian unit aturan morfologi.
 
 import unittest
 from .rules import Rule, RemoveSuffixRule, MorphologicalRules
+from unittest.mock import patch
+import pytest
+import os
 
 class TestRule(unittest.TestCase):
     """
@@ -49,18 +52,30 @@ class TestMorphologicalRules(unittest.TestCase):
     Kelas untuk menguji MorphologicalRules.
     """
     
-    def test_rules_init_no_path(self):
-        """Test inisialisasi tanpa path aturan."""
-        rules = MorphologicalRules()
-        expected_rules = {
-            "prefixes": [],
-            "suffixes": [],
-            "info": "Placeholder: MorphologicalRules initialized without specific rules file."
-        }
-        self.assertEqual(rules.rules, expected_rules)
+    def test_rules_init_with_explicit_empty_file(self):
+        """Test inisialisasi dengan path file aturan kosong yang diberikan secara eksplisit."""
+        import tempfile
+        import os
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f_empty:
+            f_empty.write('{ "prefixes": [], "suffixes": [] }')
+            empty_rules_path = os.path.abspath(f_empty.name)
+
+        try:
+            rules = MorphologicalRules(rules_file_path=empty_rules_path) # Berikan path secara eksplisit
+            expected_rules = {
+                "prefixes": [],
+                "suffixes": []
+            }
+            self.assertEqual(rules.all_rules, expected_rules, 
+                             msg=f"all_rules: {rules.all_rules}, expected: {expected_rules}, path_used: {empty_rules_path}")
+            self.assertEqual(rules.prefix_rules, {}, msg=f"prefix_rules: {rules.prefix_rules}")
+            self.assertEqual(rules.suffix_rules, {}, msg=f"suffix_rules: {rules.suffix_rules}")
+        finally:
+            os.unlink(empty_rules_path)
     
-    def test_rules_init_with_empty_file(self):
-        """Test inisialisasi dengan file aturan kosong."""
+    def test_rules_init_with_empty_file_content(self):
+        """Test inisialisasi dengan file aturan yang berisi struktur JSON kosong."""
         import tempfile
         import os
         
@@ -74,7 +89,7 @@ class TestMorphologicalRules(unittest.TestCase):
                 "prefixes": [],
                 "suffixes": []
             }
-            self.assertEqual(rules.rules, expected_rules)
+            self.assertEqual(rules.all_rules, expected_rules)
         finally:
             os.unlink(temp_path)
     
@@ -104,8 +119,15 @@ class TestMorphologicalRules(unittest.TestCase):
     
     def test_invalid_rules_file(self):
         """Test handling file aturan yang tidak valid."""
-        with self.assertRaises(ValueError):
+        with self.assertRaises(FileNotFoundError):
             MorphologicalRules("file_tidak_ada.json")
+
+# Fungsi tes mandiri yang menyebabkan error sebelumnya
+# akan diubah agar sesuai dengan pytest
+def test_rules_init_with_non_existent_explicit_path():
+    """Tes bahwa FileNotFoundError muncul jika path file eksplisit tidak ada."""
+    with pytest.raises(FileNotFoundError):
+        MorphologicalRules(rules_file_path="non_existent_default.json")
 
 if __name__ == '__main__':
     unittest.main()

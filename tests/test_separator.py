@@ -81,7 +81,7 @@ def test_strip_basic_prefixes():
     # Test cases for basic prefixes
     assert mkk._strip_prefixes("dibaca") == ("baca", ["di"])
     assert mkk._strip_prefixes("ketua") == ("tua", ["ke"])
-    assert mkk._strip_prefixes("sekolah") == ("kolah", ["se"])
+    assert mkk._strip_prefixes("sekolah") == ("sekolah", [])
     assert mkk._strip_prefixes("dimakan") == ("makan", ["di"])
 
     # Test case with no prefix

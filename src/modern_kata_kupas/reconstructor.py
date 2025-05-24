@@ -12,6 +12,7 @@ class Reconstructor:
         self.dictionary = dictionary_manager
 
     def parse_segmented_string(self, segmented_word: str) -> dict:
+        print(f"DEBUG_PARSE: parse_segmented_string CALLED with: '{segmented_word}'")
         result = {
             "root": None,
             "prefixes": [],
@@ -63,6 +64,7 @@ class Reconstructor:
         root_candidates = []
 
         for part_idx, part in enumerate(parts):
+            print(f"DEBUG_PARSE: Processing part '{part}' from {parts}")
             if segmented_word == "sayur~rs(~mayur)":
                 print(f"DEBUG_SAYUR: Current part: '{part}'")
                 print(f"DEBUG_SAYUR: part.startswith('rs('): {part.startswith('rs(')}")
@@ -74,33 +76,45 @@ class Reconstructor:
             # 1. Check for Reduplication Markers
             if part == "ulg":
                 result["redup_marker"] = "ulg"
+                print(f"DEBUG_PARSE:   Part '{part}' identified as redup_marker='ulg'")
                 continue
             if part == "rp":
                 result["redup_marker"] = "rp"
+                print(f"DEBUG_PARSE:   Part '{part}' identified as redup_marker='rp'")
                 continue
             # This now expects `part` to be exactly "rs(~mayur)"
             if part.startswith("rs(") and part.endswith(")") and part.count('~') == 1 and part.startswith("rs(~"):
                 result["redup_marker"] = "rs"
-                variant = part[len("rs(~"):-1] # Extracts "mayur" from "rs(~mayur)"
+                variant = part[len("rs(~"):-1] 
                 if variant: 
-                    result["redup_variant"] = variant # variant is "mayur"
+                    result["redup_variant"] = variant
+                print(f"DEBUG_PARSE:   Part '{part}' identified as redup_marker='rs' with variant='{variant}'")
                 continue
             # Fallback for rs(variant) without internal tilde, if ever needed.
             elif part.startswith("rs(") and part.endswith(")"):
                 result["redup_marker"] = "rs"
-                variant = part[len("rs("):-1] # Extracts "mayur" from "rs(mayur)"
+                variant = part[len("rs("):-1]
                 if variant:
                     result["redup_variant"] = variant
+                print(f"DEBUG_PARSE:   Part '{part}' identified as redup_marker='rs' (no tilde) with variant='{variant}'")
                 continue
 
             # 2. Check for Prefixes using MorphologicalRules
-            if self.rules.is_prefix(part): # Assumes is_prefix checks canonical forms
+            # print(f"DEBUG_PARSE:   Checking if '{part}' is a prefix. self.rules.is_prefix('{part}')")
+            is_pfx = self.rules.is_prefix(part)
+            # print(f"DEBUG_PARSE:   Result of is_prefix for '{part}': {is_pfx}")
+            if is_pfx:
                 result["prefixes"].append(part)
+                print(f"DEBUG_PARSE:   Part '{part}' identified as PREFIX. Current prefixes: {result['prefixes']}")
                 continue
             
             # 3. Check for Suffixes using MorphologicalRules
-            if self.rules.is_suffix(part): # Assumes is_suffix checks canonical forms
+            # print(f"DEBUG_PARSE:   Checking if '{part}' is a suffix. self.rules.is_suffix('{part}')")
+            is_sfx = self.rules.is_suffix(part)
+            # print(f"DEBUG_PARSE:   Result of is_suffix for '{part}': {is_sfx}")
+            if is_sfx:
                 suffix_type = self.rules.get_suffix_type(part)
+                print(f"DEBUG_PARSE:   Part '{part}' identified as SUFFIX of type '{suffix_type}'")
                 if suffix_type == "suffix_derivational":
                     result["suffixes_derivational"].append(part)
                 elif suffix_type == "particle":
@@ -117,17 +131,21 @@ class Reconstructor:
         # Root Identification:
         if root_candidates:
             found_dict_root = False
+            print(f"DEBUG_PARSE: Root candidates: {root_candidates}")
             # Prioritize candidates that are known dictionary words
             for r_cand in root_candidates:
-                if self.dictionary.is_kata_dasar(r_cand): # Assumes is_kata_dasar is available
+                is_kd = self.dictionary.is_kata_dasar(r_cand)
+                print(f"DEBUG_PARSE:   Checking root candidate '{r_cand}'. Is KD? {is_kd}")
+                if is_kd:
                     result["root"] = r_cand
                     found_dict_root = True
+                    print(f"DEBUG_PARSE:     Root identified as '{r_cand}' (is KD)")
                     break
             if not found_dict_root:
-                # Fallback: if no candidate is in dictionary, use the first one.
-                # This could be refined (e.g., longest, or specific position)
                 result["root"] = root_candidates[0] 
+                print(f"DEBUG_PARSE:   No KD root found in candidates. Fallback: root set to first candidate '{result['root']}'")
         
+        print(f"DEBUG_PARSE: Returning parsed result: {result}")
         return result
 
     def _apply_reduplication_reconstruction(self, stem: str, marker: str, variant: str = None) -> str:
@@ -158,10 +176,13 @@ class Reconstructor:
             return stem
 
     def reconstruct(self, segmented_word: str) -> str:
+        print(f"DEBUG_RECONSTRUCT: CALLED with segmented_word='{segmented_word}'")
         if not segmented_word:
+            print(f"DEBUG_RECONSTRUCT: Empty segmented_word, returning empty string.")
             return ""
         
         parsed_morphemes = self.parse_segmented_string(segmented_word)
+        print(f"DEBUG_RECONSTRUCT: Parsed morphemes for '{segmented_word}': {parsed_morphemes}")
         
         if segmented_word == "makan~an":
             print(f"DEBUG parsed_morphemes for makan~an: {parsed_morphemes}")
@@ -169,31 +190,54 @@ class Reconstructor:
             print(f"DEBUG parsed_morphemes for sayur~rs(~mayur): {parsed_morphemes}")
             
         current_form = parsed_morphemes.get("root")
-        if not current_form: # If root is None
+        if not current_form:
+            print(f"DEBUG_RECONSTRUCT: Root is None after parsing. segmented_word='{segmented_word}'. Returning based on tilde presence.")
             return segmented_word if '~' not in segmented_word and parsed_morphemes.get("root") == segmented_word else ""
 
+        print(f"DEBUG_RECONSTRUCT: Initial current_form (root): '{current_form}'")
+
         # 1. Apply DERIVATIONAL suffixes first
-        for suffix in parsed_morphemes.get("suffixes_derivational", []):
+        derivational_suffixes = parsed_morphemes.get("suffixes_derivational", [])
+        if derivational_suffixes:
+            print(f"DEBUG_RECONSTRUCT: Applying derivational suffixes: {derivational_suffixes}")
+        for suffix in derivational_suffixes:
             current_form += suffix
+            print(f"DEBUG_RECONSTRUCT:   After suffix '{suffix}', current_form: '{current_form}'")
 
         # 2. Apply Reduplication
         redup_marker = parsed_morphemes.get("redup_marker")
-        redup_variant = parsed_morphemes.get("redup_variant") # Will be None if not "rs" type or if variant is empty
+        redup_variant = parsed_morphemes.get("redup_variant")
         
         if redup_marker:
+            print(f"DEBUG_RECONSTRUCT: Applying reduplication. Marker: '{redup_marker}', Variant: '{redup_variant}', Base: '{current_form}'")
             current_form = self._apply_reduplication_reconstruction(current_form, redup_marker, redup_variant)
+            print(f"DEBUG_RECONSTRUCT:   After reduplication, current_form: '{current_form}'")
 
         # 3. Apply POSSESSIVE and PARTICLE suffixes AFTER reduplication
-        for suffix in parsed_morphemes.get("suffixes_possessive", []):
+        possessive_suffixes = parsed_morphemes.get("suffixes_possessive", [])
+        if possessive_suffixes:
+            print(f"DEBUG_RECONSTRUCT: Applying possessive suffixes: {possessive_suffixes}")
+        for suffix in possessive_suffixes:
             current_form += suffix
+            print(f"DEBUG_RECONSTRUCT:   After suffix '{suffix}', current_form: '{current_form}'")
             
-        for suffix in parsed_morphemes.get("suffixes_particle", []):
+        particle_suffixes = parsed_morphemes.get("suffixes_particle", [])
+        if particle_suffixes:
+            print(f"DEBUG_RECONSTRUCT: Applying particle suffixes: {particle_suffixes}")
+        for suffix in particle_suffixes:
             current_form += suffix
+            print(f"DEBUG_RECONSTRUCT:   After suffix '{suffix}', current_form: '{current_form}'")
         
         # Placeholder for subsequent steps (prefixes)
-        for prefix_morpheme in reversed(parsed_morphemes.get("prefixes", [])):
-            current_form = self._apply_forward_morphophonemics(prefix_morpheme, current_form)
+        prefixes_to_apply = parsed_morphemes.get("prefixes", [])
+        if prefixes_to_apply:
+            print(f"DEBUG_RECONSTRUCT: Applying prefixes (in reverse): {prefixes_to_apply}")
+        for prefix_morpheme in reversed(prefixes_to_apply):
+            print(f"DEBUG_RECONSTRUCT:   Calling _apply_forward_morphophonemics for prefix '{prefix_morpheme}' on base '{current_form}' with original_root='{parsed_morphemes.get('root')}'")
+            current_form = self._apply_forward_morphophonemics(prefix_morpheme, current_form, original_root=parsed_morphemes.get('root'))
+            print(f"DEBUG_RECONSTRUCT:   After prefix '{prefix_morpheme}', current_form: '{current_form}'")
 
+        print(f"DEBUG_RECONSTRUCT: Final reconstructed form for '{segmented_word}': '{current_form}'")
         return current_form
 
     def _is_monosyllabic_heuristic(self, word: str) -> bool:
@@ -207,125 +251,129 @@ class Reconstructor:
         # A word is considered monosyllabic if it has one vowel sound AND is in the dictionary.
         return vowel_count == 1 and self.dictionary.is_kata_dasar(word)
 
-    def _apply_forward_morphophonemics(self, prefix_canonical_form: str, base_word: str) -> str:
+    def _apply_forward_morphophonemics(self, prefix_canonical_form: str, base_word: str, original_root: str = None) -> str:
         """
         Applies forward morphophonemic rules for a given prefix and base word.
-        Example: prefix_canonical_form="meN-", base_word="pukul" -> "memukul"
-                 prefix_canonical_form="ber-", base_word="ajar" -> "belajar"
+        Example: prefix_canonical_form="meN", base_word="pukul" -> "memukul"
+                 prefix_canonical_form="ber", base_word="ajar" -> "belajar"
+        Args:
+            prefix_canonical_form (str): The canonical form of the prefix.
+            base_word (str): The current form of the word to which the prefix is being attached.
+            original_root (str, optional): The original root word from segmentation. Used for specific checks like monosyllabicity.
         """
-        if prefix_canonical_form == "meN" and base_word.startswith("per"):
-            return "mem" + base_word
-            
-        rule_details_list = self.rules.prefix_rules.get(prefix_canonical_form)
-        rule_details_dict = None
-        if rule_details_list:  # Check if the list is not None and not empty
-            rule_details_dict = rule_details_list[0]  # Use the first rule dictionary
+        print(f"DEBUG_RECON: _apply_forward_morphophonemics CALLED with prefix_canonical_form='{prefix_canonical_form}', base_word='{base_word}', original_root='{original_root}'")
 
-        if not rule_details_dict:
-            # Simple prefix like 'di-', 'ke-', 'se-' or unknown prefix
-            # For 'di-', 'ke-', 'se-', the canonical form itself is the surface form.
-            # If prefix_canonical_form includes a hyphen (e.g., "di-"), remove it.
-            # However, parser provides "di", "ke".
-            # The rules.json for simple prefixes has "form": "di", "canonical": "di".
-            # So, prefix_canonical_form here would be "di".
+        if not base_word:
+            print(f"DEBUG_RECON: base_word is empty. Returning prefix_canonical_form: '{prefix_canonical_form}'")
+            return prefix_canonical_form
+
+        # self.rules.prefix_rules is now keyed by canonical forms (e.g., "meN", "di").
+        # The value is a list of rule dictionaries (usually one for canonical keys).
+        relevant_rule_list = self.rules.prefix_rules.get(prefix_canonical_form)
+        
+        if not relevant_rule_list:
+            print(f"DEBUG_RECON: No relevant_rule_list found for prefix_canonical_form='{prefix_canonical_form}' in self.rules.prefix_rules. Returning prefix_canonical_form + base_word: '{prefix_canonical_form + base_word}'")
             return prefix_canonical_form + base_word
 
-        allomorphs = rule_details_dict.get("allomorphs")
-        if not allomorphs: # Should have a default allomorph if it's a complex prefix
-            return rule_details_dict.get("form", prefix_canonical_form) + base_word
+        # relevant_rule_list is a list of rule dicts. We typically expect one dict for a canonical prefix.
+        actual_rule_details_dict = None
+        if relevant_rule_list and isinstance(relevant_rule_list[0], dict):
+            actual_rule_details_dict = relevant_rule_list[0]
+            print(f"DEBUG_RECON: actual_rule_details_dict set to: {actual_rule_details_dict}")
+        
+        if not actual_rule_details_dict:
+            print(f"DEBUG_RECON: actual_rule_details_dict is None (after getting from list). Returning prefix_canonical_form + base_word: '{prefix_canonical_form + base_word}'")
+            return prefix_canonical_form + base_word
 
-        # --- Start of specific handling for peN- prefix for monosyllabic roots ---
-        if prefix_canonical_form == "peN":
-            for allomorph_rule_check in allomorphs: 
-                if allomorph_rule_check.get("is_monosyllabic_root"):
-                    if self._is_monosyllabic_heuristic(base_word):
-                        surface_form = allomorph_rule_check.get("surface") 
-                        # print(f"DEBUG reconstruct peN-: Matched monosyllabic rule '{surface_form}' for base '{base_word}'.")
-                        return surface_form + base_word 
-            # If monosyllabic rule for peN- didn't match and return, proceed to other allomorphs below.
-        # --- End of specific handling for peN- prefix ---
+        allomorphs = actual_rule_details_dict.get("allomorphs")
+        print(f"DEBUG_RECON: Allomorphs for '{prefix_canonical_form}': {allomorphs}")
 
-        if prefix_canonical_form == "peN" and base_word == "tulis":
-            print(f"DEBUG peN~tulis: Entering main loop. Allomorphs for peN: {allomorphs}")
+        if not allomorphs:
+            prefix_to_attach = prefix_canonical_form
+            if 'surface' in actual_rule_details_dict:
+                 prefix_to_attach = actual_rule_details_dict['surface']
+                 print(f"DEBUG_RECON: No allomorphs. Using 'surface' for prefix_to_attach: '{prefix_to_attach}'")
+            elif 'form' in actual_rule_details_dict:
+                 # Using canonical form as `form` usually contains hyphen, e.g. "di-"
+                 print(f"DEBUG_RECON: No allomorphs. Using canonical_form for prefix_to_attach: '{prefix_to_attach}' (rule form was '{actual_rule_details_dict['form']}')")
+            else:
+                 print(f"DEBUG_RECON: No allomorphs and no surface/form key. Using canonical_form for prefix_to_attach: '{prefix_to_attach}'")
 
-        # Iterate through allomorphs to find the matching one
+            result = prefix_to_attach + base_word
+            print(f"DEBUG_RECON: No allomorphs. Returning prefix_to_attach + base_word: '{result}'")
+            return result
+
         for allomorph_rule in allomorphs:
-            # If peN- and this is the monosyllabic rule, skip it as it was handled in the pre-pass.
-            if prefix_canonical_form == "peN" and allomorph_rule.get("is_monosyllabic_root"):
-                if base_word == "tulis": print("DEBUG peN~tulis: Skipping monosyllabic rule in main loop as expected.")
-                continue
-
+            print(f"DEBUG_RECON: Evaluating allomorph_rule: {allomorph_rule}")
             surface_form = allomorph_rule.get("surface")
             if not surface_form:
-                continue # Malformed rule
-
-            # Condition checks
-            conditions_met = 0
-            expected_conditions = 0
-            
-            # 1. Monosyllabic root condition
-            if allomorph_rule.get("is_monosyllabic_root"):
-                expected_conditions += 1
-                if self._is_monosyllabic_heuristic(base_word):
-                    conditions_met += 1
-                else:
-                    continue # This allomorph doesn't apply
-            
-            
-            # 2. Root starting character condition(s)
-            # This condition checks if the base_word starts with a character that this allomorph is specific to.
-            # The affix_rules.json uses "next_char_is" for this kind of phonological conditioning.
-            condition_to_check = allomorph_rule.get("next_char_is") # Using the correct key from affix_rules.json
-            if condition_to_check: 
-                expected_conditions += 1
-                if any(base_word.startswith(char) for char in condition_to_check): 
-                    conditions_met += 1
-                else:
-                    if prefix_canonical_form == "peN" and base_word == "tulis":
-                        print(f"DEBUG peN~tulis: Allomorph {surface_form} skipped, next_char_is {condition_to_check} not met by '{base_word}'.")
-                    continue 
-            
-            # 3. Exact root condition 
-            condition_exact_root = allomorph_rule.get("condition_exact_root") 
-            if condition_exact_root:
-                expected_conditions += 1
-                if base_word in condition_exact_root:
-                    conditions_met += 1
-                else:
-                    if prefix_canonical_form == "peN" and base_word == "tulis":
-                         print(f"DEBUG peN~tulis: Allomorph {surface_form} skipped, condition_exact_root {condition_exact_root} not met by '{base_word}'.")
-                    continue 
-
-            if expected_conditions > 0 and conditions_met != expected_conditions:
-                if prefix_canonical_form == "peN" and base_word == "tulis": 
-                    print(f"DEBUG peN~tulis: Skipped allomorph {surface_form} due to overall condition mismatch. Expected: {expected_conditions}, Met: {conditions_met}")
+                print(f"DEBUG_RECON:   No surface_form in rule. Skipping.")
                 continue
-            
-            if prefix_canonical_form == "peN" and base_word == "tulis": 
-                print(f"DEBUG peN~tulis: Matched allomorph {surface_form}. Details: {allomorph_rule}")
-            
-            temp_base_word = base_word
-            
-            char_elided_from_root = allomorph_rule.get("reconstruct_root_initial") 
-            elision_type = allomorph_rule.get("elision")
 
-            if elision_type and isinstance(char_elided_from_root, str): 
-                if temp_base_word.startswith(char_elided_from_root):
-                    temp_base_word = temp_base_word[len(char_elided_from_root):]
-                    if prefix_canonical_form == "peN" and base_word == "tulis": 
-                        print(f"DEBUG peN~tulis: Elision applied for '{char_elided_from_root}'. Temp_base_word now: '{temp_base_word}'")
-                elif prefix_canonical_form == "peN" and base_word == "tulis": 
-                     print(f"DEBUG peN~tulis: Elision active for {surface_form}, but base_word '{temp_base_word}' does not start with elision char '{char_elided_from_root}'. No elision performed.")
-            elif prefix_canonical_form == "peN" and base_word == "tulis": 
-                 print(f"DEBUG peN~tulis: No elision applied for {surface_form}. elision_type: {elision_type}, char_elided_spec: {char_elided_from_root}")
-            elif elision_type == "vowel_sound_meng": 
-                pass
+            match = False
+            # 1. Check for monosyllabic root condition
+            if "is_monosyllabic_root" in allomorph_rule:
+                # Use original_root for this check if available, otherwise fallback to base_word
+                word_for_monosyllabic_check = original_root if original_root else base_word
+                is_mono = self._is_monosyllabic_heuristic(word_for_monosyllabic_check)
+                print(f"DEBUG_RECON:   Checking is_monosyllabic_root for word_for_check='{word_for_monosyllabic_check}'. Heuristic result: {is_mono}")
+                if is_mono:
+                    match = True
+                    print(f"DEBUG_RECON:     is_monosyllabic_root MATCHED.")
+            
+            # 2. Check for exact root condition
+            if not match and "condition_exact_root" in allomorph_rule:
+                print(f"DEBUG_RECON:   Checking condition_exact_root for base_word='{base_word}'. Exact roots: {allomorph_rule['condition_exact_root']}")
+                if base_word in allomorph_rule["condition_exact_root"]:
+                    match = True
+                    print(f"DEBUG_RECON:     condition_exact_root MATCHED.")
+            
+            # 3. Check for root starting character condition (using "next_char_is" from rules.json)
+            if not match and "next_char_is" in allomorph_rule:
+                starts_with_chars = allomorph_rule['next_char_is']
+                print(f"DEBUG_RECON:   Checking next_char_is for base_word='{base_word}'. Starts with: {starts_with_chars}")
+                if any(base_word.startswith(char) for char in starts_with_chars):
+                    match = True
+                    print(f"DEBUG_RECON:     next_char_is MATCHED.")
+            
+            is_default_allomorph = not any(k in allomorph_rule for k in 
+                                           ["is_monosyllabic_root",
+                                            "condition_exact_root", 
+                                            "next_char_is"])
+            if not match and is_default_allomorph:
+                match = True
+                print(f"DEBUG_RECON:   Is DEFAULT allomorph. MATCHED.")
 
-            return surface_form + temp_base_word
 
-        default_surface = prefix_canonical_form.replace('N', '') 
-        if default_surface.endswith('-'): default_surface = default_surface[:-1] 
+            if match:
+                print(f"DEBUG_RECON:   Allomorph rule MATCHED. Surface form: '{surface_form}'")
+                current_base_word = base_word # Initialize with original base word
+                elision_char = allomorph_rule.get("reconstruct_root_initial")
+                elision_applies = allomorph_rule.get("elision", False)
+
+                # Special condition for meN- + per- combination: avoid eliding 'p' from 'per'
+                is_men_per_combination = (prefix_canonical_form == "meN" and 
+                                          base_word.startswith("per") and 
+                                          elision_char == "p")
+
+                if elision_char and elision_applies and not is_men_per_combination:
+                    print(f"DEBUG_RECON:     Elision char specified: '{elision_char}'. current_base_word starts with it? {current_base_word.startswith(elision_char)}")
+                    if current_base_word.startswith(elision_char):
+                        current_base_word = current_base_word[len(elision_char):]
+                        print(f"DEBUG_RECON:     Elision applied. New current_base_word: '{current_base_word}'")
+                    else:
+                        print(f"DEBUG_RECON:     Elision char specified, but base does not start with it. Elision NOT applied.")
+                elif is_men_per_combination:
+                    print(f"DEBUG_RECON:     meN-per- combination detected. Suppressing elision of 'p' from 'per'.")
+                
+                result = surface_form + current_base_word
+                print(f"DEBUG_RECON:   Returning surface_form + current_base_word: '{result}'")
+                return result
+            else:
+                print(f"DEBUG_RECON:   Allomorph rule DID NOT MATCH.")
         
-        if prefix_canonical_form == "peN" and base_word == "tulis": 
-            print(f"DEBUG peN~tulis: No allomorph matched for '{base_word}'. Falling back to default_surface '{default_surface}'. Output: {default_surface + base_word}")
-        return default_surface + base_word
+        # Fallback if no allomorphs matched
+        prefix_surface_form = actual_rule_details_dict.get("form", prefix_canonical_form)
+        result = prefix_surface_form + base_word
+        print(f"DEBUG_RECON: No allomorphs matched in loop. Returning fallback: '{result}' (used prefix_surface_form='{prefix_surface_form}')")
+        return result

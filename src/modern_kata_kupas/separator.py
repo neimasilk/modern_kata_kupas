@@ -59,13 +59,21 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
             try:
                 with importlib.resources.path(DEFAULT_DATA_PACKAGE_PATH, DEFAULT_RULES_FILENAME) as default_rules_path:
                     self.rules = MorphologicalRules(rules_file_path=str(default_rules_path))
-            except (FileNotFoundError, TypeError, ModuleNotFoundError) as e: # TODO: Add logging here
+                    print(f"INFO: Loaded rules via importlib: {str(default_rules_path)}") # Diagnostic
+            except (FileNotFoundError, TypeError, ModuleNotFoundError) as e: 
                 base_dir = os.path.dirname(os.path.abspath(__file__))
                 default_rules_path_rel = os.path.join(base_dir, "data", DEFAULT_RULES_FILENAME)
                 if os.path.exists(default_rules_path_rel):
                     self.rules = MorphologicalRules(rules_file_path=default_rules_path_rel)
-                else: # TODO: Add logging here
-                    self.rules = MorphologicalRules()
+                    print(f"INFO: Loaded rules via os.path: {default_rules_path_rel}") # Diagnostic
+                else: 
+                    print(f"WARNING: Default rules file not found via importlib or os.path ({default_rules_path_rel}). Attempting final fallback.") # Diagnostic
+                    self.rules = MorphologicalRules() # This will use AFFIX_RULES_PATH from rules.py
+                    # Check if the final fallback loaded anything
+                    if not self.rules.prefix_rules and not self.rules.suffix_rules:
+                        print("WARNING: Final fallback for rule loading resulted in empty rules.")
+                    else:
+                        print(f"INFO: Rules loaded via MorphologicalRules default constructor (rules.py AFFIX_RULES_PATH: {self.rules.rules_file_path}).")
         
         # Initialize Reconstructor
         self.reconstructor = Reconstructor(rules=self.rules, dictionary_manager=self.dictionary)
@@ -442,19 +450,15 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
                         if sfx == "lah" and current_word == "sekolah" and stem_candidate == "seko":
                             continue
 
-                        # Conservative check: If the current word is not a KD, only strip if the resulting stem is a KD.
-                        # Or, if the current word IS a KD, then stripping is generally safer (e.g. "makanan" -> "makan")
-                        # This helps prevent "katadenganspas~i" from "katadenganspasi"
-                        # This check should be less strict if we are stripping from a known suffix cluster like "anlah"
-                        # For "anlah", current_word is "anlah", stem_candidate is "an". Neither are KDs.
-                        # We rely on the fact that if _strip_suffixes("anlah") -> ("", ["an", "lah"]), then it's valid.
-                        #
-                        # The following conservative check was preventing confix stripping like peN-...-an
-                        # if not is_processing_suffix_cluster and \
-                        #    not self.dictionary.is_kata_dasar(current_word) and \
-                        #    not self.dictionary.is_kata_dasar(stem_candidate) and \
-                        #    sfx in suffix_types[2]: # Be extra careful with derivational suffixes
-                        #     continue
+                        # --- MODIFIED CONSERVATIVE CHECK ---
+                        # For derivational suffixes (e.g., -kan, -i, -an):
+                        # Only strip them if the resulting stem_candidate is a known Kata Dasar (KD),
+                        # OR if we are specifically processing a suffix cluster (is_processing_suffix_cluster is True),
+                        # where intermediate non-KD steps are expected.
+                        if sfx in suffix_types[2]: # Check if suffix is derivational
+                            if not self.dictionary.is_kata_dasar(stem_candidate) and not is_processing_suffix_cluster:
+                                continue # Don't strip if stem is not KD and not in cluster processing mode
+                        # --- END MODIFIED CONSERVATIVE CHECK ---
                         
                         # Tambahkan sufiks ke daftar dan perbarui kata saat ini
                         current_word = stem_candidate
@@ -493,183 +497,94 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         return False # Default
 
     def _strip_prefixes(self, original_word_for_prefix_stripping: str) -> tuple[str, list[str]]:
+        """
+        Memisahkan prefiks dari kata menggunakan _strip_prefixes_detailed.
+        """
         current_word = str(original_word_for_prefix_stripping)
-        all_stripped_prefixes = [] # Accumulates all stripped prefixes in order
-        
-        prefix_rules_all = list(self.rules.prefix_rules.values())
-        loop_count = 0 # Max iterations to prevent infinite loops
+        if not current_word:
+            return "", []
 
-        while True: # Outer loop to handle multiple layers of prefixes
-            loop_count += 1
-            if loop_count > 5: # Safety break for too many prefix layers
-                print(f"DEBUG_STRIP_PREFIXES: Exceeded max loop count for {original_word_for_prefix_stripping}")
-                break
+        # Check if the original word itself is a KD, if so, no prefixes to strip.
+        # This is a guard, primary KD check is at the start of segment()
+        if self.dictionary.is_kata_dasar(current_word):
+            return current_word, []
 
-            if original_word_for_prefix_stripping == "mempertaruh": # Focus on the problematic case
-                print(f"DEBUG_ITER_START: original_input='{original_word_for_prefix_stripping}', current_word='{current_word}', all_stripped_prefixes={all_stripped_prefixes}, iteration={loop_count}")
+        return self._strip_prefixes_detailed(current_word, [])
 
-            successfully_stripped_one_prefix_this_iteration = False
-            
-            # Inner loop: Iterate through all prefix rules for the current_word
-            for rule_group_list in prefix_rules_all:
-                if not rule_group_list: # Skip if list is empty
+    def _strip_prefixes_detailed(self, word_to_strip: str, accumulated_prefixes: list[str]) -> tuple[str, list[str]]:
+        """
+        Implementasi rekursif (atau iteratif yang dimodelkan secara rekursif) untuk pelepasan prefiks.
+        """
+        # Base case: Jika kata sudah menjadi kata dasar, kembalikan apa adanya.
+        if self.dictionary.is_kata_dasar(word_to_strip):
+            return word_to_strip, accumulated_prefixes
+
+        # Optimization: If word is too short to have prefixes and a meaningful stem
+        if len(word_to_strip) < 3: # e.g., "di", "ku" - too short for prefix + stem_min_1
+            return word_to_strip, accumulated_prefixes
+
+        # Check all known prefixes from longest to shortest to prefer maximal munch for prefixes
+        # This helps with layered prefixes like "memper-"
+        sorted_prefixes = sorted(self.rules.get_all_prefix_forms(), key=len, reverse=True)
+
+        for prefix_form in sorted_prefixes:
+            if word_to_strip.startswith(prefix_form):
+                stem_candidate = word_to_strip[len(prefix_form):]
+
+                if not stem_candidate: # Stripping prefix left nothing
                     continue
+
+                canonical_prefix = self.rules.get_canonical_prefix_form(prefix_form)
+                if not canonical_prefix: 
+                    continue
+
+                # Option 1: If stem_candidate is directly a KD
+                if self.dictionary.is_kata_dasar(stem_candidate):
+                    new_prefixes = accumulated_prefixes + [canonical_prefix]
+                    print(f"DEBUG_STRIP_PREFIX_DETAILED: '{prefix_form}' stripped, '{stem_candidate}' is KD. Finalizing here.")
+                    return stem_candidate, new_prefixes
+
+                # Option 2: If reversing morphophonemics on stem_candidate yields a KD
+                potential_original_stem = self.rules.reverse_morphophonemics(prefix_form, canonical_prefix, stem_candidate)
+                if potential_original_stem != stem_candidate and self.dictionary.is_kata_dasar(potential_original_stem):
+                    new_prefixes = accumulated_prefixes + [canonical_prefix]
+                    print(f"DEBUG_STRIP_PREFIX_DETAILED: '{prefix_form}' (canon: {canonical_prefix}) stripped, reverse_morpho to '{potential_original_stem}' is KD. Finalizing here.")
+                    return potential_original_stem, new_prefixes
+
+                # Option 3: Recursively strip from stem_candidate (the surface form after stripping prefix_form)
+                # This handles layered prefixes (e.g., di-per-oleh, mem-per-mainkan)
+                further_stripped_stem, deeper_prefixes = self._strip_prefixes_detailed(stem_candidate, []) 
                 
-                rule_details_dict = rule_group_list[0] # Get first rule dictionary from list
+                # If the recursive call found a KD OR found more prefixes, then this path is valid.
+                if self.dictionary.is_kata_dasar(further_stripped_stem) or deeper_prefixes:
+                    current_prefixes = accumulated_prefixes + [canonical_prefix] + deeper_prefixes
+                    print(f"DEBUG_STRIP_PREFIX_DETAILED: '{prefix_form}' stripped, recur_stem='{further_stripped_stem}', deeper_prefixes={deeper_prefixes}")
+                    return further_stripped_stem, current_prefixes
                 
-                # Get canonical prefix from rule details
-                canonical_prefix = rule_details_dict.get("canonical")
+                # Option 4: (NEW FALLBACK FOR CONFIDENCE) If no KD was found via options 1, 2, or 3,
+                # but a prefix was indeed stripped, consider this a valid partial strip.
+                # This allows the main `segment` function's S1 strategy (prefix then suffix)
+                # to attempt suffix stripping on this `stem_candidate`.
+                # We only do this if this is the first prefix being stripped in this call chain (accumulated_prefixes is empty)
+                # to avoid overly greedy behavior in deep recursion, or if no other prefix choice worked out from the loop.
+                # For now, let's be more direct: if a prefix matched, and recursion didn't improve, take the current strip.
+                # This path is taken if this `prefix_form` was the first one in `sorted_prefixes` that matched.
+                # The loop will try other (shorter) prefixes if this path isn't taken.
+                # The crucial change is to allow returning a non-KD stem if a prefix is found.
                 
-                # Step 2: Log which rule is being tested
-                if original_word_for_prefix_stripping == "mempertaruh":
-                    log_prefix_name = rule_details_dict.get("canonical", rule_details_dict.get("form", "UNKNOWN_RULE"))
-                    print(f"DEBUG_RULE_TEST: Testing rule {log_prefix_name} on '{current_word}'")
+                # If we are here, it means: 
+                # 1. stem_candidate is not KD
+                # 2. potential_original_stem is not KD (or same as stem_candidate)
+                # 3. recursion on stem_candidate did not yield a KD and found no further prefixes.
+                # In this case, we accept the current prefix strip and return the non-KD stem.
+                # This allows the S1 strategy in segment() to try suffix stripping later.
+                new_prefixes = accumulated_prefixes + [canonical_prefix]
+                print(f"DEBUG_STRIP_PREFIX_DETAILED: '{prefix_form}' stripped, stem '{stem_candidate}' is not KD, but accepting prefix.")
+                return stem_candidate, new_prefixes
 
-                potential_root_after_this_rule = None # Reset for this rule_group
-                non_kd_candidates = [] # Initialize list for non-KD candidates for this rule_group
-                
-                if "allomorphs" in rule_details_dict:
-                    # first_non_kd_allomorph_root = None # Replaced by non_kd_candidates
-                    for allomorph_rule in rule_details_dict["allomorphs"]:
-                        surface_form = allomorph_rule.get("surface")
-                        if current_word.startswith(surface_form):
-                            remainder = current_word[len(surface_form):]
-                            if not remainder: continue
-
-                            elision_for_this_rule = allomorph_rule.get("elision")
-                            applicable_allomorph = True
-                            if not elision_for_this_rule:
-                                next_char_conditions = allomorph_rule.get("next_char_is")
-                                if next_char_conditions:
-                                    if not any(remainder.startswith(c) for c in next_char_conditions):
-                                        applicable_allomorph = False
-                            
-                            if not applicable_allomorph:
-                                continue
-
-                            if allomorph_rule.get("is_monosyllabic_root"):
-                                if not self.dictionary.is_kata_dasar(remainder) or \
-                                   not self._is_monosyllabic(remainder):
-                                    continue
-                            
-                            temp_potential_root = None
-                            char_to_prepend_val = allomorph_rule.get("reconstruct_root_initial")
-                            if elision_for_this_rule:
-                                if char_to_prepend_val:
-                                    actual_char = ""
-                                    if isinstance(char_to_prepend_val, dict):
-                                        # Assuming the first key of the dict is the char to use for reconstruction
-                                        if char_to_prepend_val: # Ensure dict is not empty
-                                            actual_char = list(char_to_prepend_val.keys())[0]
-                                    elif isinstance(char_to_prepend_val, str):
-                                        actual_char = char_to_prepend_val
-                                    
-                                    if actual_char:
-                                        # If remainder already starts with the actual_char (e.g., "pertaruhkan" and "p"),
-                                        # it implies that for this layer of prefixation, the initial consonant of the
-                                        # existing stem was NOT elided (e.g., meN- + pertaruhkan -> mempertaruhkan, not memertaruhkan).
-                                        # So, the temp_potential_root is the remainder itself.
-                                        # Otherwise, (e.g., meN- + tulis -> menulis; remainder="ulis", actual_char="t"),
-                                        # the elided character must be prepended.
-                                        if remainder.startswith(actual_char):
-                                            temp_potential_root = remainder
-                                        else:
-                                            temp_potential_root = actual_char + remainder
-                                    else:
-                                        # char_to_prepend_val was not a recognized type or actual_char ended up empty
-                                        temp_potential_root = remainder
-                                else: 
-                                    # No reconstruct_root_initial specified for this elision type (e.g. meN- + vowel)
-                                    temp_potential_root = remainder
-                            else: 
-                                # No elision involved with this allomorph (e.g. di-, ke-, se-, or non-eliding 'ber-', 'per-' variants)
-                                temp_potential_root = remainder
-                            
-                            # DEBUG PRINT for ber- and per-
-                            if canonical_prefix in ["ber", "per"] and surface_form == canonical_prefix : # Default allomorph
-                                print(f"DEBUG _strip_prefixes: current_word='{current_word}', rule_details='{canonical_prefix}', allomorph_surface='{surface_form}', remainder='{remainder}', temp_potential_root='{temp_potential_root}', is_kd(temp_potential_root)={self.dictionary.is_kata_dasar(temp_potential_root if temp_potential_root else '')}")
-
-                            if temp_potential_root is not None:
-                                # General debug for "pertaruh" -> "taruh" under "per-" rule
-                                if current_word == "pertaruh" and rule_details_dict.get("canonical") == "per" and temp_potential_root == "taruh":
-                                    print(f"DEBUG_STRIP_PREFIXES_ALLOMORPH_GENERAL: current_word='{current_word}', temp_potential_root='{temp_potential_root}', is_kd(temp_potential_root)={self.dictionary.is_kata_dasar(temp_potential_root if temp_potential_root else '')}")
-
-                                if self.dictionary.is_kata_dasar(temp_potential_root):
-                                    potential_root_after_this_rule = temp_potential_root
-                                    print(f"DEBUG _strip_prefixes: KD found for '{canonical_prefix}' allomorph '{surface_form}'. Root: '{temp_potential_root}'. Chosen as potential_root_after_this_rule. Breaking allomorph loop.")
-                                    non_kd_candidates = [] # Clear candidates as KD is found
-                                    break 
-                                else:
-                                    non_kd_candidates.append({'root': temp_potential_root, 'allomorph_len': len(surface_form), 'allomorph_surface': surface_form})
-                                    print(f"DEBUG _strip_prefixes: Allomorph '{surface_form}' for '{canonical_prefix}' yielded non-KD '{temp_potential_root}'. Added to non_kd_candidates.")
-                    
-                    if potential_root_after_this_rule is None: # No KD was found from any allomorph
-                        if non_kd_candidates:
-                            # Sort by allomorph_len descending (longer allomorph preferred), then by root length descending as tie-breaker
-                            non_kd_candidates.sort(key=lambda x: (x['allomorph_len'], len(x['root'])), reverse=True)
-                            potential_root_after_this_rule = non_kd_candidates[0]['root']
-                            print(f"DEBUG _strip_prefixes: No KD found for '{canonical_prefix}'. Chosen non-KD root '{potential_root_after_this_rule}' from allomorph '{non_kd_candidates[0]['allomorph_surface']}' (len {non_kd_candidates[0]['allomorph_len']}).")
-                        else:
-                            print(f"DEBUG _strip_prefixes: No KD found for '{canonical_prefix}' and no non-KD allomorph root was found either.")
-                    
-                    # DEBUG PRINT for "pertaruh" specifically when "per-" rule is processed
-                    # DEBUG PRINT
-                    if canonical_prefix in ["ber", "per"]:
-                        print(f"DEBUG _strip_prefixes: After allomorph loop for '{canonical_prefix}'. potential_root_after_this_rule='{potential_root_after_this_rule}'")
-
-
-                else:  # Simple prefixes
-                    simple_prefix_form = rule_details_dict.get("form")
-                    if simple_prefix_form and current_word.startswith(simple_prefix_form):
-                        potential_remainder = current_word[len(simple_prefix_form):]
-                        if potential_remainder:
-                            potential_root_after_this_rule = potential_remainder
-                
-                # ---- START OF NEW DEBUG ----
-                if original_word_for_prefix_stripping == "mempertaruh" and current_word == "pertaruh" and canonical_prefix == "per":
-                    print(f"DEBUG_BEFORE_CRITICAL_IF: For 'per-' rule on 'pertaruh', potential_root_after_this_rule is '{potential_root_after_this_rule}' (type: {type(potential_root_after_this_rule)})")
-                # ---- END OF NEW DEBUG ----
-
-                # If a prefix (complex or simple) was successfully processed for this rule_group
-                if potential_root_after_this_rule:
-                    all_stripped_prefixes.append(canonical_prefix)
-                    current_word = potential_root_after_this_rule
-                    successfully_stripped_one_prefix_this_iteration = True
-                    
-                    # Custom DEBUG for "mempertaruhkan" / "pertaruh"
-                    if original_word_for_prefix_stripping == "mempertaruh" and canonical_prefix == "per" and current_word == "taruh":
-                        print(f"DEBUG_PER_STRIP: original_input='{original_word_for_prefix_stripping}', rule='{canonical_prefix}', current_word set to '{current_word}', all_stripped_prefixes now {all_stripped_prefixes}")
-                    elif original_word_for_prefix_stripping == "mempertaruh" and canonical_prefix == "meN" and current_word == "pertaruh":
-                        print(f"DEBUG_MEN_STRIP: original_input='{original_word_for_prefix_stripping}', rule='{canonical_prefix}', current_word set to '{current_word}', all_stripped_prefixes now {all_stripped_prefixes}")
-
-                    # DEBUG PRINT
-                    if canonical_prefix in ["ber", "per"]: # This will also print for the "per" in "mempertaruhkan"
-                         print(f"DEBUG _strip_prefixes: Rule group '{canonical_prefix}' processed. current_word='{current_word}', all_stripped_prefixes={all_stripped_prefixes}")
-
-                    # If the new current_word is a KD, this is a valid segmentation point.
-                    # _strip_prefixes will return this as the result for this path.
-                    if self.dictionary.is_kata_dasar(current_word):
-                        # DEBUG PRINT
-                        if canonical_prefix in ["ber", "per"]:
-                            print(f"DEBUG _strip_prefixes: Early KD exit. current_word='{current_word}', all_stripped_prefixes={all_stripped_prefixes}")
-                        return current_word, all_stripped_prefixes # Exit early
-                    
-                    # Break from the rule_group loop to restart the while loop for further stripping on new current_word
-                    break 
-            
-            # If a full pass through all prefix rules did not strip any prefix
-            if not successfully_stripped_one_prefix_this_iteration:
-                # DEBUG PRINT
-                if original_word_for_prefix_stripping in ["perbuat", "perjuangan", "bermain"]:
-                    print(f"DEBUG _strip_prefixes: No prefix stripped in full pass for '{original_word_for_prefix_stripping}'. current_word='{current_word}'")
-                break # Break from the outer while True loop (no more layers of prefixes)
-        
-        # DEBUG PRINT
-        if original_word_for_prefix_stripping == "mempertaruh":
-            print(f"DEBUG _strip_prefixes: FINAL RETURN for 'mempertaruh'. current_word='{current_word}', all_stripped_prefixes={all_stripped_prefixes}")
-        elif original_word_for_prefix_stripping in ["perbuat", "perjuangan", "bermain"]: # Keep existing debug
-            print(f"DEBUG _strip_prefixes: Final return for '{original_word_for_prefix_stripping}'. current_word='{current_word}', all_stripped_prefixes={all_stripped_prefixes}")
-        return current_word, all_stripped_prefixes
+        # If no prefix could be stripped at all from word_to_strip
+        print(f"DEBUG_STRIP_PREFIX_DETAILED: No prefix stripped from '{word_to_strip}' or no valid stem found after stripping.")
+        return word_to_strip, accumulated_prefixes
 
     def _apply_morphophonemic_segmentation_rules(self, word: str) -> str:
         """
