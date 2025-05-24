@@ -21,20 +21,28 @@ class TestRemoveSuffixRule(unittest.TestCase):
     """
     def test_remove_suffix(self):
         """Test penghapusan suffix yang valid."""
-        rule = RemoveSuffixRule(["kan", "i"])
+        rule = RemoveSuffixRule("kan")
         self.assertEqual(rule.apply("mengatakan"), "mengata")
-        self.assertEqual(rule.apply("mengulangi"), "mengulang")
+        # The following test for "mengulangi" with "i" will no longer be covered by this rule instance.
+        # A separate test or parameterization would be needed if "i" is to be tested with RemoveSuffixRule.
+        # For now, focusing on fixing the type error.
+        # self.assertEqual(rule.apply("mengulangi"), "mengulang") 
+        rule_i = RemoveSuffixRule("i") # Added for "i"
+        self.assertEqual(rule_i.apply("mengulangi"), "mengulang")
         
         # Test case untuk fitur 0.4
-        self.assertEqual(rule.apply("meyakinkan"), "meyakin")
-        self.assertEqual(rule.apply("melukai"), "meluka")
-        self.assertEqual(rule.apply("membatukan"), "membatu")
-        self.assertEqual(rule.apply("memasuki"), "memasuk")
+        self.assertEqual(rule.apply("meyakinkan"), "meyakin") # Uses rule for "kan"
+        self.assertEqual(rule_i.apply("melukai"), "meluka") # Changed to use rule_i for "i"
+        self.assertEqual(rule.apply("membatukan"), "membatu") # Uses rule for "kan"
+        self.assertEqual(rule_i.apply("memasuki"), "memasuk") # Changed to use rule_i for "i"
     
     def test_no_suffix_match(self):
         """Test ketika tidak ada suffix yang cocok."""
-        rule = RemoveSuffixRule(["-kan", "-i"])
+        rule = RemoveSuffixRule("-kan") 
         self.assertEqual(rule.apply("membaca"), "membaca")
+        # Test with "-i" as well, if that was the original intent for the list
+        rule_i_no_match = RemoveSuffixRule("-i")
+        self.assertEqual(rule_i_no_match.apply("membaca"), "membaca")
 
 class TestMorphologicalRules(unittest.TestCase):
     """

@@ -11,7 +11,7 @@ from modern_kata_kupas.dictionary_manager import DictionaryManager # Added impor
 @pytest.fixture
 def dummy_rules_recon():
     # Buat rules dummy untuk tes rekonstruksi
-    rules = MorphologicalRules(rules_path="src/modern_kata_kupas/data/affix_rules.json") # Asumsi ada file aturan dummy atau cara inisialisasi lain
+    rules = MorphologicalRules(rules_file_path="src/modern_kata_kupas/data/affix_rules.json") # Asumsi ada file aturan dummy atau cara inisialisasi lain
     # Tambahkan beberapa aturan dummy jika perlu untuk rekonstruksi
     return rules
 

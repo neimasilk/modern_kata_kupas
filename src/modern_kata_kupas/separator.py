@@ -3,6 +3,7 @@
 Modul untuk memisahkan kata berimbuhan menjadi kata dasar dan afiksnya.
 """
 import re
+import os
 
 from .normalizer import TextNormalizer
 from .dictionary_manager import DictionaryManager
@@ -53,16 +54,16 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         self.aligner = align
 
         if rules_file_path:
-            self.rules = MorphologicalRules(rules_path=rules_file_path)
+            self.rules = MorphologicalRules(rules_file_path=rules_file_path)
         else:
             try:
                 with importlib.resources.path(DEFAULT_DATA_PACKAGE_PATH, DEFAULT_RULES_FILENAME) as default_rules_path:
-                    self.rules = MorphologicalRules(rules_path=str(default_rules_path))
+                    self.rules = MorphologicalRules(rules_file_path=str(default_rules_path))
             except (FileNotFoundError, TypeError, ModuleNotFoundError) as e: # TODO: Add logging here
                 base_dir = os.path.dirname(os.path.abspath(__file__))
                 default_rules_path_rel = os.path.join(base_dir, "data", DEFAULT_RULES_FILENAME)
                 if os.path.exists(default_rules_path_rel):
-                    self.rules = MorphologicalRules(rules_path=default_rules_path_rel)
+                    self.rules = MorphologicalRules(rules_file_path=default_rules_path_rel)
                 else: # TODO: Add logging here
                     self.rules = MorphologicalRules()
         
@@ -474,7 +475,7 @@ Inisialisasi ModernKataKupas dengan dependensi yang diperlukan.
         current_word = str(original_word_for_prefix_stripping)
         all_stripped_prefixes = [] # Accumulates all stripped prefixes in order
         
-        prefix_rules_all = self.rules.get_prefix_rules()
+        prefix_rules_all = list(self.rules.prefix_rules.values())
         loop_count = 0 # Max iterations to prevent infinite loops
 
         while True: # Outer loop to handle multiple layers of prefixes

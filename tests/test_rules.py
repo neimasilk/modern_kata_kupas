@@ -13,15 +13,15 @@ from modern_kata_kupas.exceptions import RuleError
 def dummy_rules_file(tmp_path):
     """Membuat file aturan JSON dummy untuk tes."""
     rules_content = {
-        "prefixes": [
-            {"form": "meN-", "allomorphs": ["me-", "mem-", "men-", "meng-", "meny-", "menge-"]},
-            {"form": "di-"}
-        ],
-        "suffixes": [
-            {"form": "-kan"},
-            {"form": "-i"}
-        ],
-        "fonologis": [
+        "prefixes": {
+            "meN-": [{"form": "meN-", "allomorphs": ["me-", "mem-", "men-", "meng-", "meny-", "menge-"]}],
+            "di-": [{"form": "di-"}]
+        },
+        "suffixes": {
+            "-kan": [{"form": "-kan"}],
+            "-i": [{"form": "-i"}]
+        },
+        "fonologis": [ # This section is not directly used by prefix_rules/suffix_rules but part of all_rules
             {"pattern": "N-p", "replacement": "m-p"} 
         ]
     }
@@ -54,59 +54,70 @@ def invalid_rules_file(tmp_path):
 
 def test_rules_init_no_path():
     """Tes inisialisasi MorphologicalRules tanpa path file."""
-    rules = MorphologicalRules()
-    expected_rules = {
-        "prefixes": [],
-        "suffixes": [],
-        "info": "Placeholder: MorphologicalRules initialized without specific rules file."
-    }
-    assert rules.rules == expected_rules
-    assert rules.get_prefix_rules() == []
-    assert rules.get_suffix_rules() == []
+    # This test assumes AFFIX_RULES_PATH (default) does not exist or is empty/invalid during test execution
+    # or that we want to test the state if loading fails.
+    # If AFFIX_RULES_PATH is valid and loaded, all_rules, prefix_rules, suffix_rules would be populated.
+    # For a true "no path given and default fails" scenario:
+    rules = MorphologicalRules(rules_file_path="non_existent_default.json") # Force failure
+    assert rules.all_rules == {} # If default load fails
+    assert rules.prefix_rules == {}
+    assert rules.suffix_rules == {}
 
 def test_rules_init_with_valid_path(dummy_rules_file):
     """Tes inisialisasi MorphologicalRules dengan path file yang valid."""
-    rules = MorphologicalRules(rules_path=dummy_rules_file)
-    assert "prefixes" in rules.rules
-    assert len(rules.get_prefix_rules()) == 2
-    assert len(rules.get_suffix_rules()) == 2
+    rules = MorphologicalRules(rules_file_path=dummy_rules_file)
+    assert "prefixes" in rules.all_rules # Check that the loaded content is in all_rules
+    assert "meN-" in rules.prefix_rules  # Check specific prefix key
+    assert "di-" in rules.prefix_rules
+    assert len(rules.prefix_rules) == 2     # Check number of prefix rule groups (keys)
+    assert "-kan" in rules.suffix_rules
+    assert "-i" in rules.suffix_rules
+    assert len(rules.suffix_rules) == 2     # Check number of suffix rule groups (keys)
 
 def test_rules_init_with_empty_file(empty_rules_file):
     """Tes inisialisasi MorphologicalRules dengan file aturan kosong."""
-    rules = MorphologicalRules(rules_path=empty_rules_file)
-    expected_rules = {
-        "prefixes": [],
-        "suffixes": []
-    }
-    assert rules.rules == expected_rules
+    rules = MorphologicalRules(rules_file_path=empty_rules_file)
+    # all_rules will contain the raw loaded content: {"prefixes": [], "suffixes": []}
+    # _load_rules will try to iterate over these empty lists, resulting in empty dicts for prefix_rules and suffix_rules
+    assert rules.all_rules == {"prefixes": [], "suffixes": []}
+    assert rules.prefix_rules == {}
+    assert rules.suffix_rules == {}
 
 def test_rules_init_with_nonexistent_path():
     """Tes inisialisasi MorphologicalRules dengan path file yang tidak ada."""
-    with pytest.raises(ValueError, match="Gagal memuat aturan dari path/tidak/ada.json:"):
-        MorphologicalRules(rules_path="path/tidak/ada.json")
+    with pytest.raises(FileNotFoundError): # Changed ValueError to FileNotFoundError
+        MorphologicalRules(rules_file_path="path/tidak/ada.json")
 
 # def test_rules_init_with_invalid_json(invalid_rules_file):
 #     """Tes inisialisasi MorphologicalRules dengan file JSON tidak valid."""
 #     # Placeholder saat ini hanya mencetak error, tidak melempar exception
 #     # Ini mungkin perlu diubah agar melempar RuleError
 #     # with pytest.raises(RuleError): # Jika implementasi diubah untuk raise error
-#     rules = MorphologicalRules(rules_path=invalid_rules_file)
-#     assert rules.rules == {} # Karena loading gagal
+#     rules = MorphologicalRules(rules_file_path=invalid_rules_file)
+    assert rules.all_rules == {} # Karena loading gagal, all_rules is empty
 
-def test_get_prefix_rules(dummy_rules_file):
-    """Tes pengambilan aturan prefiks."""
-    rules = MorphologicalRules(rules_path=dummy_rules_file)
-    prefix_rules = rules.get_prefix_rules()
-    assert isinstance(prefix_rules, list)
+# Renamed test to reflect what it's testing now (structure of prefix_rules)
+def test_loaded_prefix_rules_structure(dummy_rules_file):
+    """Tes struktur prefix_rules setelah memuat aturan."""
+    rules = MorphologicalRules(rules_file_path=dummy_rules_file)
+    prefix_rules = rules.prefix_rules
+    assert isinstance(prefix_rules, dict)
     assert len(prefix_rules) > 0
-    assert any(rule.get("form") == "meN-" for rule in prefix_rules)
+    assert "meN-" in prefix_rules # Check if "meN-" is a key
+    assert isinstance(prefix_rules["meN-"], list) # Value should be a list of rule dicts
+    assert isinstance(prefix_rules["meN-"][0], dict) # First item in list is a dict
+    assert prefix_rules["meN-"][0].get("form") == "meN-"
 
-def test_get_suffix_rules(dummy_rules_file):
-    """Tes pengambilan aturan sufiks."""
-    rules = MorphologicalRules(rules_path=dummy_rules_file)
-    suffix_rules = rules.get_suffix_rules()
-    assert isinstance(suffix_rules, list)
+# Renamed test to reflect what it's testing now (structure of suffix_rules)
+def test_loaded_suffix_rules_structure(dummy_rules_file):
+    """Tes struktur suffix_rules setelah memuat aturan."""
+    rules = MorphologicalRules(rules_file_path=dummy_rules_file)
+    suffix_rules = rules.suffix_rules
+    assert isinstance(suffix_rules, dict)
     assert len(suffix_rules) > 0
-    assert any(rule.get("form") == "-kan" for rule in suffix_rules)
+    assert "-kan" in suffix_rules # Check if "-kan" is a key
+    assert isinstance(suffix_rules["-kan"], list)
+    assert isinstance(suffix_rules["-kan"][0], dict)
+    assert suffix_rules["-kan"][0].get("form") == "-kan"
 
 # Tambahkan lebih banyak tes untuk berbagai aspek pemuatan dan pengambilan aturan

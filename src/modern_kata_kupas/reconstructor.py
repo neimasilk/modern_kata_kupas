@@ -216,9 +216,12 @@ class Reconstructor:
         if prefix_canonical_form == "meN" and base_word.startswith("per"):
             return "mem" + base_word
             
-        rule_details = self.rules.get_rule_details(prefix_canonical_form)
+        rule_details_list = self.rules.prefix_rules.get(prefix_canonical_form)
+        rule_details_dict = None
+        if rule_details_list:  # Check if the list is not None and not empty
+            rule_details_dict = rule_details_list[0]  # Use the first rule dictionary
 
-        if not rule_details:
+        if not rule_details_dict:
             # Simple prefix like 'di-', 'ke-', 'se-' or unknown prefix
             # For 'di-', 'ke-', 'se-', the canonical form itself is the surface form.
             # If prefix_canonical_form includes a hyphen (e.g., "di-"), remove it.
@@ -227,9 +230,9 @@ class Reconstructor:
             # So, prefix_canonical_form here would be "di".
             return prefix_canonical_form + base_word
 
-        allomorphs = rule_details.get("allomorphs")
+        allomorphs = rule_details_dict.get("allomorphs")
         if not allomorphs: # Should have a default allomorph if it's a complex prefix
-            return rule_details.get("form", prefix_canonical_form) + base_word
+            return rule_details_dict.get("form", prefix_canonical_form) + base_word
 
         # --- Start of specific handling for peN- prefix for monosyllabic roots ---
         if prefix_canonical_form == "peN":
