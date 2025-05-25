@@ -101,7 +101,7 @@ class ModernKataKupas:
                         logging.info(f"Rules loaded via MorphologicalRules default constructor (rules.py AFFIX_RULES_PATH: {self.rules.rules_file_path}).")
         
         # Initialize Reconstructor
-        self.reconstructor = Reconstructor(rules=self.rules, dictionary_manager=self.dictionary)
+        self.reconstructor = Reconstructor(rules=self.rules, dictionary_manager=self.dictionary, stemmer=self.stemmer)
 
     def reconstruct(self, segmented_word: str) -> str:
         """

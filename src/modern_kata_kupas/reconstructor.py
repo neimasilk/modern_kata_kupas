@@ -2,6 +2,7 @@ import re
 import logging
 from .rules import MorphologicalRules
 from .dictionary_manager import DictionaryManager
+from .stemmer_interface import IndonesianStemmer
 # from typing import TYPE_CHECKING # Optional, for type hinting
 # if TYPE_CHECKING:
 #     from .rules import MorphologicalRules
@@ -29,8 +30,11 @@ class Reconstructor:
         dictionary (DictionaryManager): An instance of `DictionaryManager` for
             validating root words or checking word properties (e.g., if a root
             is monosyllabic, which can affect prefix allomorphy).
+        stemmer (IndonesianStemmer): An instance of `IndonesianStemmer` for
+            obtaining root words, used in specific reconstruction scenarios like
+            reduplication with affixes.
     """
-    def __init__(self, rules: 'MorphologicalRules', dictionary_manager: 'DictionaryManager'):
+    def __init__(self, rules: 'MorphologicalRules', dictionary_manager: 'DictionaryManager', stemmer: 'IndonesianStemmer'):
         """Initializes the Reconstructor.
 
         Args:
@@ -39,9 +43,12 @@ class Reconstructor:
             dictionary_manager (DictionaryManager): An instance of
                 `DictionaryManager`, used for dictionary lookups (e.g.,
                 validating monosyllabic roots for certain prefix changes).
+            stemmer (IndonesianStemmer): An instance of `IndonesianStemmer` used
+                for root word identification during complex reconstructions.
         """
         self.rules = rules
         self.dictionary = dictionary_manager
+        self.stemmer = stemmer
 
     def parse_segmented_string(self, segmented_word: str) -> dict:
         """
@@ -234,32 +241,52 @@ class Reconstructor:
         logging.debug(f"parse_segmented_string: Returning parsed result: {result}")
         return result
 
-    def _apply_reduplication_reconstruction(self, stem: str, marker: str, variant: str = None) -> str:
+    def _apply_reduplication_reconstruction(self, stem: str, marker: str, variant: str = None, suffixes_after_reduplication: list[str] = None) -> str:
         if not stem: # Should not happen if called correctly
             return ""
 
+        base_reduplicated_form = stem # Default if marker is unknown or stem is empty for rp
+        suffix_to_apply_post_redup = ""
+        if suffixes_after_reduplication:
+            suffix_to_apply_post_redup = "".join(sfx for sfx in suffixes_after_reduplication if sfx)
+
         if marker == "ulg":
-            return f"{stem}-{stem}"
+            if suffix_to_apply_post_redup: # Special handling for ulg~sfx like berkejar~ulg~an or mobil~ulg~an
+                # Need to stem X to get its root, then attach sfx to that root for the second part.
+                root_of_stem = self.stemmer.get_root_word(stem)
+                second_part = root_of_stem + suffix_to_apply_post_redup
+                base_reduplicated_form = f"{stem}-{second_part}"
+            else:
+                # Standard X~ulg (e.g., buku~ulg -> buku-buku)
+                base_reduplicated_form = f"{stem}-{stem}"
+            # For ulg, suffix is handled internally, so return directly
+            return base_reduplicated_form 
+
         elif marker == "rp":
             # Reverses the Dwipurwa segmentation (e.g., laki -> lelaki)
-            # Assumes the first char of stem is consonant, followed by 'e'
             if len(stem) >= 1:
-                return stem[0] + 'e' + stem 
+                base_reduplicated_form = stem[0] + 'e' + stem 
             else: # Should not happen with valid stem for Dwipurwa
-                return stem 
+                base_reduplicated_form = stem 
+            # Suffixes from suffixes_after_reduplication are appended after forming "lelaki"
+            return base_reduplicated_form + suffix_to_apply_post_redup
+
         elif marker == "rs":
             if variant:
                 # The variant as parsed from "rs(variant_content)" will just be "variant_content"
                 # If variant is "~mayur", we want "mayur"
-                actual_variant = variant
-                if actual_variant.startswith("~"):
-                    actual_variant = actual_variant[1:]
-                return f"{stem}-{actual_variant}"
+                actual_variant = variant # Already stripped of rs() and ~ by parser
+                # actual_variant = variant.lstrip("~") # Parser should handle this now
+                base_reduplicated_form = f"{stem}-{actual_variant}"
             else:
                 # This case (rs marker without variant) should ideally not occur if parsing is correct
-                return f"{stem}-<unknown_variant>" # Or just stem
-        else: # Unknown marker
-            return stem
+                base_reduplicated_form = f"{stem}-{stem}" # Fallback, or could be just stem
+            # Suffixes from suffixes_after_reduplication are appended after forming "sayur-mayur"
+            return base_reduplicated_form + suffix_to_apply_post_redup
+        
+        else: # Unknown marker, or if somehow marker was None but suffixes_after_reduplication existed
+            # Return stem with any suffixes_after_reduplication appended
+            return stem + suffix_to_apply_post_redup
 
     def reconstruct(self, segmented_word: str) -> str:
         """
@@ -296,67 +323,67 @@ class Reconstructor:
             >>> reconstructor.reconstruct("meN~per~main~kan~lah")
             'mempermainkanlah'
         """
-        logging.debug(f"Reconstructor.reconstruct CALLED with segmented_word='{segmented_word}'")
-        if not segmented_word:
-            logging.debug("Reconstructor.reconstruct: Empty segmented_word, returning empty string.")
-            return ""
-        
+        logging.debug(f"Reconstructor.reconstruct CALLED with: '{segmented_word}'")
         parsed_morphemes = self.parse_segmented_string(segmented_word)
-        logging.debug(f"Reconstructor.reconstruct: Parsed morphemes for '{segmented_word}': {parsed_morphemes}")
-        
-        if segmented_word == "makan~an": # Example of keeping a specific detailed log
-            logging.debug(f"Reconstructor.reconstruct (makan~an): Parsed morphemes: {parsed_morphemes}")
-        if segmented_word == "sayur~rs(~mayur)": # Example of keeping a specific detailed log
+        logging.debug(f"Reconstructor.reconstruct: Parsed morphemes: {parsed_morphemes}")
+
+        if segmented_word == "sayur~rs(~mayur)": # Keep this specific detail log if needed for this case
             logging.debug(f"Reconstructor.reconstruct (sayur~rs(~mayur)): Parsed morphemes: {parsed_morphemes}")
             
-        current_form = parsed_morphemes.get("root")
-        if not current_form:
-            logging.debug(f"Reconstructor.reconstruct: Root is None after parsing. segmented_word='{segmented_word}'. Returning based on tilde presence.")
-            return segmented_word if '~' not in segmented_word and parsed_morphemes.get("root") == segmented_word else ""
-
+        current_form = parsed_morphemes.get("root", "")
         logging.debug(f"Reconstructor.reconstruct: Initial current_form (root): '{current_form}'")
 
-        # 1. Apply DERIVATIONAL suffixes first
-        derivational_suffixes = parsed_morphemes.get("suffixes_derivational", [])
-        if derivational_suffixes:
-            logging.debug(f"Reconstructor.reconstruct: Applying derivational suffixes: {derivational_suffixes}")
-        for suffix in derivational_suffixes:
-            current_form += suffix
-            logging.debug(f"Reconstructor.reconstruct:   After suffix '{suffix}', current_form: '{current_form}'")
-
-        # 2. Apply Reduplication
+        # Priority 1: Apply DERIVATIONAL suffixes that are NOT "suffixes_after_reduplication"
+        # These apply to the root before any reduplication is considered.
+        derivational_suffixes_direct = parsed_morphemes.get("suffixes_derivational", [])
+        if derivational_suffixes_direct:
+            logging.debug(f"Reconstructor.reconstruct: Applying direct derivational suffixes: {derivational_suffixes_direct}")
+            for sfx_morpheme in derivational_suffixes_direct:
+                current_form += sfx_morpheme
+                logging.debug(f"Reconstructor.reconstruct:   After direct derivational suffix '{sfx_morpheme}', current_form: '{current_form}'")
+        
+        # Priority 2: Apply Reduplication
+        # The stem for reduplication is the current_form (root + direct derivational suffixes)
+        stem_for_reduplication = current_form
         redup_marker = parsed_morphemes.get("redup_marker")
-        redup_variant = parsed_morphemes.get("redup_variant")
         
         if redup_marker:
-            logging.debug(f"Reconstructor.reconstruct: Applying reduplication. Marker: '{redup_marker}', Variant: '{redup_variant}', Base: '{current_form}'")
-            current_form = self._apply_reduplication_reconstruction(current_form, redup_marker, redup_variant)
+            redup_variant = parsed_morphemes.get("redup_variant")
+            # suffixes_after_reduplication are those like ~an in mobil~ulg~an, handled by _apply_reduplication_reconstruction
+            suffixes_for_ulg_special_handling = parsed_morphemes.get("suffixes_after_reduplication") 
+            logging.debug(f"Reconstructor.reconstruct: Applying reduplication. Marker: '{redup_marker}', Variant: '{redup_variant}', Suffixes_for_special_handling: {suffixes_for_ulg_special_handling}, Stem_for_redup: '{stem_for_reduplication}'")
+            current_form = self._apply_reduplication_reconstruction(
+                stem=stem_for_reduplication, 
+                marker=redup_marker, 
+                variant=redup_variant,
+                suffixes_after_reduplication=suffixes_for_ulg_special_handling
+            )
             logging.debug(f"Reconstructor.reconstruct:   After reduplication, current_form: '{current_form}'")
-
-        # 3. Apply SUFFIXES_AFTER_REDUPLICATION
-        suffixes_after_redup = parsed_morphemes.get("suffixes_after_reduplication", [])
-        if suffixes_after_redup:
-            logging.debug(f"Reconstructor.reconstruct: Applying suffixes_after_reduplication: {suffixes_after_redup}")
-        for suffix in suffixes_after_redup:
-            current_form += suffix # Suffixes are typically simple appends at this stage
-            logging.debug(f"Reconstructor.reconstruct:   After suffix_after_redup '{suffix}', current_form: '{current_form}'")
-
-        # 4. Apply POSSESSIVE and PARTICLE suffixes 
+        
+        # Priority 3: Apply POSSESSIVE suffixes
+        # These apply to the (potentially reduplicated and derivationally suffixed) form.
         possessive_suffixes = parsed_morphemes.get("suffixes_possessive", [])
         if possessive_suffixes:
             logging.debug(f"Reconstructor.reconstruct: Applying possessive suffixes: {possessive_suffixes}")
-        for suffix in possessive_suffixes:
-            current_form += suffix
-            logging.debug(f"Reconstructor.reconstruct:   After suffix '{suffix}', current_form: '{current_form}'")
-            
+            for sfx_morpheme in possessive_suffixes:
+                current_form += sfx_morpheme # e.g., "buku-buku" + "nya" -> "buku-bukunya"
+                logging.debug(f"Reconstructor.reconstruct:   After possessive suffix '{sfx_morpheme}', current_form: '{current_form}'")
+
+        # Priority 4: Apply PARTICLE suffixes
+        # These apply last to the form.
         particle_suffixes = parsed_morphemes.get("suffixes_particle", [])
         if particle_suffixes:
             logging.debug(f"Reconstructor.reconstruct: Applying particle suffixes: {particle_suffixes}")
-        for suffix in particle_suffixes:
-            current_form += suffix
-            logging.debug(f"Reconstructor.reconstruct:   After suffix '{suffix}', current_form: '{current_form}'")
+            for sfx_morpheme in particle_suffixes:
+                current_form += sfx_morpheme
+                logging.debug(f"Reconstructor.reconstruct:   After particle suffix '{sfx_morpheme}', current_form: '{current_form}'")
         
-        # 5. Apply Prefixes
+        # Note: The block for handling suffixes_after_reduplication for non-ulg cases has been removed
+        # as that category should ideally only contain suffixes meant to be handled *within* _apply_reduplication_reconstruction (for ulg)
+        # or they should be parsed as standard derivational/possessive/particle if they apply after other redup types.
+        # If other redup types (rp, rs) need suffixes handled differently, parse_segmented_string and this area may need adjustment.
+
+        # Priority 5: Apply Prefixes
         prefixes_to_apply = parsed_morphemes.get("prefixes", [])
         if prefixes_to_apply:
             logging.debug(f"Reconstructor.reconstruct: Applying prefixes (in reverse): {prefixes_to_apply}")

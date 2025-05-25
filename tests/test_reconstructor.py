@@ -7,21 +7,32 @@ import pytest
 from modern_kata_kupas.reconstructor import Reconstructor
 from modern_kata_kupas.rules import MorphologicalRules # Mungkin diperlukan nanti
 from modern_kata_kupas.dictionary_manager import DictionaryManager # Added import
+from modern_kata_kupas.stemmer_interface import IndonesianStemmer # Added
+from modern_kata_kupas import ModernKataKupas # For integration tests
+from modern_kata_kupas.exceptions import DictionaryFileNotFoundError, RuleError
 
 @pytest.fixture
 def dummy_rules_recon():
-    # Buat rules dummy untuk tes rekonstruksi
-    rules = MorphologicalRules(rules_file_path="src/modern_kata_kupas/data/affix_rules.json") # Asumsi ada file aturan dummy atau cara inisialisasi lain
-    # Tambahkan beberapa aturan dummy jika perlu untuk rekonstruksi
-    return rules
+    """Provides a MorphologicalRules instance for Reconstructor tests."""
+    return MorphologicalRules() # Assumes default loading
 
 @pytest.fixture
-def reconstructor_instance(dummy_rules_recon):
+def dummy_dict_mgr_recon():
+    """Provides a DictionaryManager instance for Reconstructor tests."""
+    return DictionaryManager() # Assumes default loading
+
+@pytest.fixture
+def dummy_stemmer_recon(): # Added fixture for stemmer
+    """Provides an IndonesianStemmer instance for Reconstructor tests.""" # Added
+    return IndonesianStemmer() # Added
+
+@pytest.fixture
+def reconstructor_instance(dummy_rules_recon, dummy_dict_mgr_recon, dummy_stemmer_recon): # Added stemmer
     # Create a DictionaryManager instance.
     # This might require a path to a dummy dictionary or allowing it to use default.
     # For simplicity, let's assume it can initialize with default or None.
-    dictionary_manager = DictionaryManager() 
-    return Reconstructor(rules=dummy_rules_recon, dictionary_manager=dictionary_manager)
+    # dictionary_manager = DictionaryManager()
+    return Reconstructor(rules=dummy_rules_recon, dictionary_manager=dummy_dict_mgr_recon, stemmer=dummy_stemmer_recon) # Pass stemmer
 
 def test_reconstructor_init(reconstructor_instance):
     """Tes inisialisasi Reconstructor."""
@@ -198,7 +209,13 @@ class TestWordReconstruction(unittest.TestCase):
                 normalized = self.mkk.normalizer.normalize_word(word)
                 segmented = self.mkk.segment(word)
                 reconstructed = self.mkk.reconstruct(segmented)
-                self.assertEqual(reconstructed, normalized, f"Failed for word: {word} (segmented: {segmented}, reconstructed: {reconstructed}, expected: {normalized})")
+                # if word == "sebaik-baiknya": # Debug print (keeping commented for now)
+                #     print(f"DEBUG: word='{word}', norm='{normalized}', recon='{reconstructed}'")
+                #     print(f"DEBUG: repr(norm)='{repr(normalized)}', repr(recon)='{repr(reconstructed)}'")
+                #     print(f"DEBUG: type(norm)={type(normalized)}, type(recon)={type(reconstructed)}")
+                #     print(f"DEBUG: norm == recon? {normalized == reconstructed}")
+                #     print(f"DEBUG: str(norm) == str(recon)? {str(normalized) == str(reconstructed)}")
+                self.assertEqual(str(reconstructed), str(normalized), f"Failed for word: {word} (segmented: {segmented}, reconstructed: {reconstructed}, expected: {normalized})")
 
 if __name__ == '__main__':
     unittest.main()
