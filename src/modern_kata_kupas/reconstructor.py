@@ -241,37 +241,38 @@ class Reconstructor:
         logging.debug(f"parse_segmented_string: Returning parsed result: {result}")
         return result
 
-    def _apply_reduplication_reconstruction(self, stem: str, marker: str, variant: str = None, suffixes_after_reduplication: list[str] = None) -> str:
+    def _apply_reduplication_reconstruction(self, stem: str, marker: str, variant: str = None, suffixes_after_reduplication: list[str] = None, stem_second_part_for_suffix: bool = False) -> str:
         if not stem: # Should not happen if called correctly
             return ""
 
         base_reduplicated_form = stem # Default if marker is unknown or stem is empty for rp
-        suffix_to_apply_post_redup = ""
-        if suffixes_after_reduplication:
-            suffix_to_apply_post_redup = "".join(sfx for sfx in suffixes_after_reduplication if sfx)
-
+        
         if marker == "ulg":
-            if suffix_to_apply_post_redup: # Special handling for ulg~sfx like berkejar~ulg~an or mobil~ulg~an
-                # Need to stem X to get its root, then attach sfx to that root for the second part.
+            suffix_to_apply_post_redup = "".join(sfx for sfx in (suffixes_after_reduplication or []) if sfx)
+
+            if suffix_to_apply_post_redup: # Derivational like mobil~ulg~an
                 root_of_stem = self.stemmer.get_root_word(stem)
                 second_part = root_of_stem + suffix_to_apply_post_redup
                 base_reduplicated_form = f"{stem}-{second_part}"
-            else:
-                # Standard X~ulg (e.g., buku~ulg -> buku-buku)
+            elif stem_second_part_for_suffix: # Possessive/particle will be added later
+                root_of_stem_for_second = self.stemmer.get_root_word(stem)
+                base_reduplicated_form = f"{stem}-{root_of_stem_for_second}"
+            else: # Simple X-X like buku-buku
                 base_reduplicated_form = f"{stem}-{stem}"
-            # For ulg, suffix is handled internally, so return directly
-            return base_reduplicated_form 
+            return base_reduplicated_form
 
         elif marker == "rp":
             # Reverses the Dwipurwa segmentation (e.g., laki -> lelaki)
+            suffix_to_apply_post_redup = "".join(sfx for sfx in (suffixes_after_reduplication or []) if sfx)
             if len(stem) >= 1:
-                base_reduplicated_form = stem[0] + 'e' + stem 
+                base_reduplicated_form = stem[0] + 'e' + stem
             else: # Should not happen with valid stem for Dwipurwa
-                base_reduplicated_form = stem 
+                base_reduplicated_form = stem
             # Suffixes from suffixes_after_reduplication are appended after forming "lelaki"
             return base_reduplicated_form + suffix_to_apply_post_redup
 
         elif marker == "rs":
+            suffix_to_apply_post_redup = "".join(sfx for sfx in (suffixes_after_reduplication or []) if sfx)
             if variant:
                 # The variant as parsed from "rs(variant_content)" will just be "variant_content"
                 # If variant is "~mayur", we want "mayur"
@@ -286,6 +287,7 @@ class Reconstructor:
         
         else: # Unknown marker, or if somehow marker was None but suffixes_after_reduplication existed
             # Return stem with any suffixes_after_reduplication appended
+            suffix_to_apply_post_redup = "".join(sfx for sfx in (suffixes_after_reduplication or []) if sfx)
             return stem + suffix_to_apply_post_redup
 
     def reconstruct(self, segmented_word: str) -> str:
@@ -347,16 +349,26 @@ class Reconstructor:
         stem_for_reduplication = current_form
         redup_marker = parsed_morphemes.get("redup_marker")
         
-        if redup_marker:
+        if redup_marker: # This block needs modification
             redup_variant = parsed_morphemes.get("redup_variant")
-            # suffixes_after_reduplication are those like ~an in mobil~ulg~an, handled by _apply_reduplication_reconstruction
-            suffixes_for_ulg_special_handling = parsed_morphemes.get("suffixes_after_reduplication") 
-            logging.debug(f"Reconstructor.reconstruct: Applying reduplication. Marker: '{redup_marker}', Variant: '{redup_variant}', Suffixes_for_special_handling: {suffixes_for_ulg_special_handling}, Stem_for_redup: '{stem_for_reduplication}'")
+            suffixes_for_ulg_special_handling = parsed_morphemes.get("suffixes_after_reduplication")
+            
+            # Determine if the second part of ulg should be stemmed
+            stem_second_part = False
+            if redup_marker == "ulg":
+                # Check if there are upcoming possessive or particle suffixes
+                # AND no derivational suffixes that are handled by suffixes_after_reduplication
+                if (parsed_morphemes.get("suffixes_possessive") or parsed_morphemes.get("suffixes_particle")) \
+                   and not suffixes_for_ulg_special_handling:
+                    stem_second_part = True
+            
+            logging.debug(f"Reconstructor.reconstruct: Applying reduplication. Marker: '{redup_marker}', Variant: '{redup_variant}', Suffixes_for_special_handling: {suffixes_for_ulg_special_handling}, Stem_for_redup: '{stem_for_reduplication}', Stem_second_part_flg: {stem_second_part}")
             current_form = self._apply_reduplication_reconstruction(
                 stem=stem_for_reduplication, 
                 marker=redup_marker, 
                 variant=redup_variant,
-                suffixes_after_reduplication=suffixes_for_ulg_special_handling
+                suffixes_after_reduplication=suffixes_for_ulg_special_handling,
+                stem_second_part_for_suffix=stem_second_part # Pass the new flag
             )
             logging.debug(f"Reconstructor.reconstruct:   After reduplication, current_form: '{current_form}'")
         
