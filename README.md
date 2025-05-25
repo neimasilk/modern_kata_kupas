@@ -1,192 +1,179 @@
-# **ModernKataKupas \- Indonesian Morphological Separator**
+# **ModernKataKupas - Indonesian Morphological Separator (V1.0)**
 
 ## **Overview**
 
-ModernKataKupas is a Python library designed for the morphological separation of Indonesian words. It breaks down words into their constituent morphemes (root word, prefixes, suffixes, and reduplication markers). This rule-based tool aims to enhance Natural Language Processing (NLP) tasks, particularly for Large Language Models (LLMs) and applications in low-resource settings by providing linguistically informed sub-word units.
+ModernKataKupas is a Python library for the morphological separation of Indonesian words. It breaks down words into their constituent morphemes: root word, prefixes, suffixes, and reduplication markers. This rule-based tool aims to enhance Natural Language Processing (NLP) tasks by providing linguistically informed sub-word units, particularly useful for applications working with Indonesian text.
 
-## **Current Status**
+## **V1.0 Status**
 
-This project is under active development. Key implemented features include:
+Version 1.0 provides a foundational rule-based segmenter and reconstructor with the following capabilities:
 
-* Normalization of input words.  
-* Segmentation of various prefix types:  
-  * Simple prefixes (di-, ke-, se-).  
-  * Complex prefixes with morphophonemic changes (meN-, peN-, ber-, ter-, per-).  
-* Segmentation of suffixes:  
-  * Particles (-lah, \-kah, \-pun).  
-  * Possessive pronouns (-ku, \-mu, \-nya).  
-  * Derivational suffixes (-kan, \-i, \-an).  
-* Handling of layered affixes and confixes (e.g., ke-an, per-an, memper-kan).  
-* Identification of full reduplication (Dwilingga, e.g., rumah-rumah, mobil-mobilan, bermain-main).  
-* *Word reconstruction functionality is planned for a future update.*
+*   **Text Normalization:** Input words are normalized (lowercase, whitespace stripping, common trailing punctuation removal).
+*   **Prefix Segmentation:**
+    *   Simple prefixes: `di-`, `ke-`, `se-`.
+    *   Complex prefixes with morphophonemic changes: `meN-` (e.g., `mem-`, `men-`, `meng-`), `peN-`, `ber-` (e.g., `bel-`, `be-`), `ter-` (e.g., `tel-`), `per-`.
+*   **Suffix Segmentation:**
+    *   Particles: `-lah`, `-kah`, `-pun`.
+    *   Possessive pronouns: `-ku`, `-mu`, `-nya`.
+    *   Common derivational suffixes: `-kan`, `-i`, `-an`.
+*   **Layered Affixes & Basic Confixes:** Handles combinations like `ke-an`, `per-an`, `meN-kan`, `di-i`, etc., by applying prefix and suffix rules iteratively.
+*   **Reduplication Handling:**
+    *   Dwilingga (Full Reduplication): e.g., `rumah-rumah` (`rumah~ulg`), `buku-bukunya` (`buku~ulg~nya`).
+    *   Dwilingga Salin Suara (Phonetic Change Reduplication): e.g., `sayur-mayur` (`sayur~rs(~mayur)`).
+    *   Dwipurwa (Partial Initial Syllable Reduplication): e.g., `lelaki` (`laki~rp`).
+*   **Loanword Affixation:** Basic handling for loanwords that have taken Indonesian affixes (e.g., `di-scan`, `mem-backup-nya`). Recognition depends on the loanword root being present in a configurable loanword list.
+*   **Word Reconstruction:** Reconstructs the original word from its segmented form.
+*   **Basic Ambiguity Resolution:** Employs heuristics (dictionary checks, rule order, longest stem preference) to choose between segmentation strategies. See [Architecture Documentation](memory-bank/architecture.md#penanganan-ambiguitas-dasar-v10) for details.
 
 ## **Features**
 
-* **Rule-Based Analysis:** Utilizes a comprehensive set of morphological rules for Indonesian.  
-* **Morpheme Segmentation:** Identifies root words and affixes (prefixes, suffixes, particles, possessives).  
-* **Handles Complex Morphology:**  
-  * Allomorphic variations of prefixes (e.g., meN- becoming mem-, men-, meny-, etc.).  
-  * Phonological adjustments/elisions at morpheme boundaries.  
-  * Layered affixation (multiple prefixes and/or suffixes).  
-  * Confixes (e.g., ke-an, per-an).  
-* **Reduplication:** Detects full reduplication (Dwilingga), including affixed forms.  
-* **Customizable Dictionary:** Allows loading of a custom root word dictionary.  
-* **Extensible Rules:** Morphological rules are defined in an external JSON file for easier modification and extension.
+*   **Rule-Based Analysis:** Utilizes a configurable set of morphological rules for Indonesian.
+*   **Morpheme Segmentation:** Identifies root words and various affixes.
+*   **Handles Complex Morphology:** Addresses allomorphic variations of prefixes, some phonological adjustments at morpheme boundaries, layered affixation, and common confixes.
+*   **Multiple Reduplication Types:** Detects Dwilingga, Dwilingga Salin Suara, and Dwipurwa.
+*   **Customizable Dictionaries:** Allows users to provide custom root word and loanword lists.
+*   **Extensible Rules:** Morphological rules are defined in an external JSON file, allowing for modification and extension.
+*   **Word Reconstruction:** Capable of reconstructing full words from their segmented morpheme strings.
 
 ## **Installation**
 
-pip install modern\_kata\_kupas \# Placeholder for actual package name  
-\# Or, for development:  
-\# git clone \[https://github.com/neimasilk/modern\_kata\_kupas.git\](https://github.com/neimasilk/modern\_kata\_kupas.git) 
-\# cd modern\_kata\_kupas  
-\# pip install \-e .
+```bash
+pip install modern_kata_kupas # Target package name
+```
 
-Ensure you have Python 3.7+ installed.
+**Dependencies:**
+*   Python 3.8+
+*   PySastrawi (used by the underlying `IndonesianStemmer` for root word identification in some internal processes like reduplication handling, not directly for the primary rule-based affix stripping).
+
+For development:
+```bash
+git clone https://github.com/username/modern_kata_kupas.git # Replace with actual repo URL
+cd modern_kata_kupas
+pip install -e .
+```
 
 ## **Basic Usage**
 
-from modern\_kata\_kupas import ModernKataKupas \# Ensure this import matches your \_\_init\_\_.py
-
-\# Initialize the separator  
-\# Optionally, provide paths to custom dictionary and rule files:  
-\# separator \= ModernKataKupas(dictionary\_path="path/to/your/kata\_dasar.txt", rules\_file\_path="path/to/your/rules.json")  
-separator \= ModernKataKupas()
-
-\# Example 1: Simple Affixation  
-result1 \= separator.segment("makanan")  
-print(f"makanan \-\> {result1}") \# Expected: makan\~an
-
-result2 \= separator.segment("dibaca")  
-print(f"dibaca \-\> {result2}") \# Actual: dibaca (The current segmenter might return the unsegmented word if the root 'baca' is not found or if 'di' is not processed as a separable prefix in this context without a known root)
-
-\# Example 2: Complex Prefix (meN-)  
-result3 \= separator.segment("memukul")  
-print(f"memukul \-\> {result3}") \# Expected: meN\~pukul
-
-result4 \= separator.segment("mengupas")  
-print(f"mengupas \-\> {result4}") \# Expected: meN\~kupas
-
-\# Example 3: Layered Affixes / Confix  
-result5 \= separator.segment("keberhasilan")  
-print(f"keberhasilan \-\> {result5}") \# Expected: ke\~ber\~hasil\~an
-
-result6 \= separator.segment("mempertaruhkan")  
-print(f"mempertaruhkan \-\> {result6}") \# Actual: mempertaruhkan (This might indicate issues with recognizing 'taruh' as a root or handling the 'memper-kan' confix)
-
-\# Example 4: Reduplication (Dwilingga)  
-result7 \= separator.segment("rumah-rumah")  
-print(f"rumah-rumah \-\> {result7}") \# Expected: rumah\~ulg
-
-result8 \= separator.segment("mobil-mobilan")  
-print(f"mobil-mobilan \-\> {result8}") \# Expected: mobil\~ulg\~an
-
-result9 \= separator.segment("bermain-main")  
-print(f"bermain-main \-\> {result9}") \# Actual: bermain~ulg (The current segmenter treats 'bermain' as the base for reduplication)
-
-\# Example 5: Word with particle and possessive  
-result10 \= separator.segment("bukunyalah")  
-print(f"bukunyalah \-\> {result10}") \# Expected: buku\~nya\~lah
-
-## **Output Format**
-
-The segment method returns a string where morphemes are separated by a tilde (\~). Canonical forms of affixes are used where appropriate (e.g., meN for its various allomorphs). Full reduplication (Dwilingga) is marked with \~ulg.
-
-Examples:
-
-* mempertaruhkan \-\> mempertaruhkan (Actual: mempertaruhkan) 
-* buku-bukunya \-\> buku\~ulg\~nya  
-* bermain-main \-\> bermain~ulg (Actual: bermain~ulg)
-
-## **API Documentation**
-
-### **ModernKataKupas Class**
-
-The main class for morphological separation.
-
-* \_\_init\_\_(self, dictionary\_path: Optional\[str\] \= None, rules\_file\_path: Optional\[str\] \= None)  
-  * Initializes the separator.  
-  * dictionary\_path (optional): Path to a custom root word dictionary file (UTF-8 encoded, one word per line). If not provided, a default dictionary is used.  
-  * rules\_file\_path (optional): Path to a custom affix rules JSON file. If not provided, default rules are used.  
-* segment(self, word: str) \-\> str:  
-  * The primary method to separate an Indonesian word into its morphemes.  
-  * Input: A single Indonesian word (string).  
-  * Output: A string with morphemes separated by \~.  
-* reconstruct(self, segmented\_word: str) \-\> str:  
-  * Takes a tilde-separated morpheme string (as produced by `segment()`) and reconstructs the original, fully formed word.  
-  * This method applies forward morphophonemic rules (e.g., meN- + tulis -> menulis) and correctly reconstructs various forms of reduplication based on the segmented markers.
-
-### **Code Examples for `reconstruct()`**
-
-Here's how to use the `reconstruct()` method:
-
-**Example 1 (Simple):**
 ```python
 from modern_kata_kupas import ModernKataKupas
 
+# Initialize the separator (uses default dictionary and rules if no path provided)
 mkk = ModernKataKupas()
-segmented_word = "di~makan~nya"
-original_word = mkk.reconstruct(segmented_word)
-print(f"'{segmented_word}' -> '{original_word}'")
-# Expected output: 'di~makan~nya' -> 'dimakannya'
+
+# --- Using segment() ---
+word1 = "makanan"
+segmented1 = mkk.segment(word1)
+print(f"'{word1}' -> '{segmented1}'") # Expected: 'makan~an' (if 'makan' is in kata_dasar.txt)
+
+word2 = "memperbarui"
+segmented2 = mkk.segment(word2)
+print(f"'{word2}' -> '{segmented2}'") # Expected: 'meN~per~baru~i' (if 'baru' is in kata_dasar.txt)
+
+word3 = "rumah-rumah"
+segmented3 = mkk.segment(word3)
+print(f"'{word3}' -> '{segmented3}'") # Expected: 'rumah~ulg' (if 'rumah' is in kata_dasar.txt)
+
+word4 = "sayur-mayur"
+segmented4 = mkk.segment(word4)
+print(f"'{word4}' -> '{segmented4}'") # Expected: 'sayur~rs(~mayur)'
+
+word5 = "lelaki"
+segmented5 = mkk.segment(word5)
+print(f"'{word5}' -> '{segmented5}'") # Expected: 'laki~rp' (if 'laki' is in kata_dasar.txt)
+
+word6 = "di-backup" # Loanword example
+segmented6 = mkk.segment(word6)
+# Expected: 'di~backup' (if 'backup' is in loanwords.txt and 'di-' rule applies)
+# If 'backup' isn't a known loanword, might be 'di-backup' or 'dibackup'
+print(f"'{word6}' -> '{segmented6}'")
+
+
+# --- Using reconstruct() ---
+segmented_form1 = "makan~an"
+reconstructed1 = mkk.reconstruct(segmented_form1)
+print(f"'{segmented_form1}' -> '{reconstructed1}'") # Expected: 'makanan'
+
+segmented_form2 = "meN~per~baru~i"
+reconstructed2 = mkk.reconstruct(segmented_form2)
+print(f"'{segmented_form2}' -> '{reconstructed2}'") # Expected: 'memperbarui'
+
+segmented_form3 = "rumah~ulg"
+reconstructed3 = mkk.reconstruct(segmented_form3)
+print(f"'{segmented_form3}' -> '{reconstructed3}'") # Expected: 'rumah-rumah'
+
+segmented_form4 = "sayur~rs(~mayur)"
+reconstructed4 = mkk.reconstruct(segmented_form4)
+print(f"'{segmented_form4}' -> '{reconstructed4}'") # Expected: 'sayur-mayur'
+
+segmented_form5 = "laki~rp"
+reconstructed5 = mkk.reconstruct(segmented_form5)
+print(f"'{segmented_form5}' -> '{reconstructed5}'") # Expected: 'lelaki'
+
+segmented_form6 = "di~backup"
+reconstructed6 = mkk.reconstruct(segmented_form6)
+print(f"'{segmented_form6}' -> '{reconstructed6}'") # Expected: 'dibackup'
 ```
+*Note: Actual segmentation results for words like "makanan", "memperbarui", "dibaca" depend on the contents of `kata_dasar.txt`. If the root word ("makan", "baru", "baca") is not found, the word may be returned unsegmented or only partially segmented.*
 
-**Example 2 (Morphophonemic Change):**
-```python
-# mkk instance from previous example
-segmented_word = "meN~tulis"
-original_word = mkk.reconstruct(segmented_word)
-print(f"'{segmented_word}' -> '{original_word}'")
-# Expected output: 'meN~tulis' -> 'menulis'
-```
+## **Output Format for `segment()`**
 
-**Example 3 (Reduplication with Suffix):**
-```python
-# mkk instance from previous example
-segmented_word = "mobil~ulg~an"
-original_word = mkk.reconstruct(segmented_word)
-print(f"'{segmented_word}' -> '{original_word}'")
-# Expected output: 'mobil~ulg~an' -> 'mobil-mobilan'
-```
+The `segment()` method returns a string where morphemes are separated by a tilde (`~`).
+*   **Canonical Affixes:** Prefixes are generally represented in their canonical forms (e.g., `meN-` for `meng-`, `mem-`, `meny-`, etc.; `peN-` for `peng-`, `pem-`, etc.).
+*   **Reduplication Markers:**
+    *   `~ulg`: Dwilingga (full reduplication), e.g., `rumah~ulg` for "rumah-rumah". Suffixes attached to the reduplicated form appear after the marker, e.g., `mobil~ulg~an` for "mobil-mobilan".
+    *   `~rp`: Dwipurwa (initial syllable reduplication), e.g., `laki~rp` for "lelaki".
+    *   `~rs(~VARIANT)`: Dwilingga Salin Suara (phonetic change reduplication), e.g., `sayur~rs(~mayur)` for "sayur-mayur". The `~VARIANT` part captures the changed stem.
+*   **No Special Compound Marker:** Compound words are not explicitly marked with `_` unless the underscore is part of the root word itself as defined in `kata_dasar.txt`.
 
-**Example 4 (Complex Layering):**
-```python
-# mkk instance from previous example
-segmented_word = "meN~per~juang~kan~lah"
-original_word = mkk.reconstruct(segmented_word)
-print(f"'{segmented_word}' -> '{original_word}'")
-# Expected output: 'meN~per~juang~kan~lah' -> 'memperjuangkanlah'
-```
+## **Handling of OOV (Out-Of-Vocabulary) Words**
 
-### **Exceptions**
+When `segment()` encounters a word:
+1.  It first normalizes the word.
+2.  If the normalized word is already in `kata_dasar.txt`, it's returned as is.
+3.  Otherwise, the system attempts to strip known affixes according to morphological rules.
+4.  If, after stripping affixes, the remaining stem is found in `kata_dasar.txt`, the segmented form is returned.
+5.  If the remaining stem is NOT in `kata_dasar.txt`, the system may try loanword affixation rules if the stem is found in `loanwords.txt`.
+6.  If no segmentation rule can be successfully applied to find a known root word (either from `kata_dasar.txt` or `loanwords.txt` via loanword handling), the word is typically returned in its normalized form.
 
-All custom exceptions inherit from ModernKataKupasError. Key exceptions include:
+## **Limitations (V1.0)**
 
-* DictionaryError: Base class for dictionary-related errors.  
-  * DictionaryFileNotFoundError: Raised if the dictionary file is not found.  
-  * DictionaryLoadingError: Raised for errors during dictionary loading.  
-* RuleError: For errors related to loading or applying morphological rules.  
-* WordNotInDictionaryError: Raised when a word is expected in the dictionary but not found (usage context-dependent).  
-* SeparationError: Raised for errors specifically during the separation process.  
-* ReconstructionError: (Will be relevant when reconstruction is implemented) Raised for errors during word reconstruction.
+*   **Ambiguitas:** While V1.0 includes basic heuristics for ambiguity (see [Architecture Documentation](memory-bank/architecture.md#penanganan-ambiguitas-dasar-v10)), it may not always choose the most linguistically accurate segmentation in highly ambiguous cases.
+*   **Ketergantungan Kamus:** The quality of segmentation heavily depends on the comprehensiveness of the root word dictionary (`kata_dasar.txt`) and the loanword list (`loanwords.txt`). Roots not present in these files may lead to suboptimal segmentation or words being returned unsegmented.
+*   **Kompleksitas Morfologis:** V1.0 may not yet support all rare or highly complex morphological variations and affix combinations found in Indonesian.
+*   **Idempotency:** For some complex words involving reduplication and unknown roots, the `reconstruct(segment(word))` cycle may not perfectly return the original normalized word due to simplifications in the segmented representation. For example, `segment("berkejar-kejaran")` might yield `berkejar~ulg~an`, which reconstructs to `berkejar-berkejaran`.
 
-## **Rules and Dictionary**
+## **API Reference (Key Methods)**
 
-* **Root Word Dictionary:** A default list of Indonesian root words is included (typically located at src/modern\_kata\_kupas/data/kata\_dasar.txt within the package). You can provide your own dictionary file (UTF-8 encoded, one word per line) using the dictionary\_path parameter during ModernKataKupas initialization.  
-* **Affix Rules:** Morphological rules are defined in a JSON file (typically src/modern\_kata\_kupas/data/affix\_rules.json within the package). This file specifies prefixes, suffixes, their allomorphs, and conditions for their application. You can supply a custom rules file using the rules\_file\_path parameter.
+For detailed API information, please refer to the docstrings within the source code.
+
+*   **`ModernKataKupas(dictionary_path: Optional[str] = None, rules_file_path: Optional[str] = None)`**
+    *   Initializes the segmenter. `dictionary_path` allows specifying a custom root word list, and `rules_file_path` a custom rules JSON. Defaults to packaged files if not provided.
+*   **`ModernKataKupas.segment(word: str) -> str`**
+    *   Segments an Indonesian word into its morphemes.
+    *   Returns a tilde-separated string of morphemes.
+*   **`ModernKataKupas.reconstruct(segmented_word: str) -> str`**
+    *   Reconstructs the original word from a tilde-separated morpheme string.
+
+## **Customization**
+
+*   **Root Word Dictionary:** Provide a path to your own UTF-8 encoded text file (one word per line) to the `dictionary_path` parameter of `ModernKataKupas`.
+*   **Affix Rules:** Supply a path to your custom JSON rules file to the `rules_file_path` parameter.
+*   **Loanwords:** Provide a path to your own UTF-8 encoded text file (one word per line) of loanword roots to the `loanword_list_path` parameter of `DictionaryManager` (if using `DictionaryManager` directly) or ensure your custom dictionary for `ModernKataKupas` also contains loanwords to be recognized as roots after Indonesian affix stripping. The default `DictionaryManager` used by `ModernKataKupas` will try to load a `loanwords.txt` from the package data.
 
 ## **Contributing**
 
-Contributions are welcome\! Please report issues, suggest features, or submit pull requests via the project's GitHub repository. (Replace with actual GitHub link when available).
+Contributions are welcome! Please report issues, suggest features, or submit pull requests via the project's GitHub repository: [https://github.com/USERNAME/modern_kata_kupas](https://github.com/USERNAME/modern_kata_kupas) (Replace with actual URL).
 
-Before contributing, please ensure your code adheres to formatting standards (e.g., using Black and Flake8 as defined in .pre-commit-config.yaml).
+Before contributing, please ensure your code adheres to formatting standards (e.g., using Black and Flake8).
 
 ## **Future Work**
 
-* Handling of other reduplication types (Dwilingga Salin Suara, Dwipurwa).  
-* Segmentation of loanword affixation.  
-* Advanced ambiguity resolution.  
-* Comprehensive benchmarking and performance optimization.
+*   Enhanced ambiguity resolution mechanisms.
+*   More comprehensive handling of idiomatic expressions and multi-word expressions.
+*   Expansion of default dictionaries and rule sets.
+*   Benchmarking against other Indonesian morphological analyzers.
 
 ## **License**
 
 MIT License
+(c) 2024 [Your Name/Organization]

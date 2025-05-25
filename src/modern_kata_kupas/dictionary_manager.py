@@ -6,46 +6,53 @@ from .exceptions import (
     DictionaryFileNotFoundError,
     DictionaryLoadingError
 )
-from modern_kata_kupas.normalizer import TextNormalizer # Added import
+from .normalizer import TextNormalizer # Changed to relative import
 
 class DictionaryManager:
     """
     Manages Indonesian root word dictionaries and loanword lists.
 
-    This class is responsible for loading, storing, and providing access to sets of
-    normalized root words (`kata_dasar`) and loanwords. It handles loading from
-    default packaged files or custom external files. All words are normalized
-    (e.g., lowercased) before storage and lookup.
+    Responsible for loading, storing, and providing access to sets of
+    normalized root words (`kata_dasar`) and loanwords. It supports loading
+    from default packaged files or custom external files. All words are
+    normalized (e.g., lowercased) before storage and lookup.
 
     Attributes:
-        kata_dasar_set (Set[str]): A set of normalized Indonesian root words.
-        loanwords_set (Set[str]): A set of normalized loanwords.
-        normalizer (TextNormalizer): An instance of TextNormalizer used for
-                                     normalizing words before adding or checking.
+        kata_dasar_set (set[str]): A set of normalized Indonesian root words.
+        loanwords_set (set[str]): A set of normalized loanwords.
+        normalizer (TextNormalizer): An instance of `TextNormalizer` used for
+            normalizing words before they are added to the sets or checked
+            for existence.
     """
     DEFAULT_DICT_PACKAGE_PATH = "modern_kata_kupas.data" # Corrected path as per task
     DEFAULT_DICT_FILENAME = "kata_dasar.txt"
     DEFAULT_LOANWORD_FILENAME = "loanwords.txt"
 
     def __init__(self, dictionary_path: Optional[str] = None, loanword_list_path: Optional[str] = None):
-        """
-        Initializes the DictionaryManager and loads root words and loanwords.
+        """Initializes the DictionaryManager and loads dictionaries.
 
-        If paths are not provided, it attempts to load default lists packaged
-        with the library. Words are normalized before being added to the sets.
+        Loads root words and loanwords from specified file paths or from
+        default packaged files if paths are not provided. Words are normalized
+        (e.g., lowercased, whitespace stripped) before being added to the
+        internal sets.
 
         Args:
-            dictionary_path (Optional[str]): Path to an external root word dictionary file.
-                If None, the default packaged dictionary is loaded. Defaults to None.
-            loanword_list_path (Optional[str]): Path to an external loanword list file.
-                If None, the default packaged loanword list is loaded. Defaults to None.
+            dictionary_path (Optional[str]): Path to an external root word
+                dictionary file (one word per line, UTF-8 encoded). If None,
+                the default packaged dictionary is loaded. Defaults to None.
+            loanword_list_path (Optional[str]): Path to an external loanword list
+                file (one word per line, UTF-8 encoded). If None, the default
+                packaged loanword list is loaded. Defaults to None.
                 
         Raises:
             DictionaryFileNotFoundError: If a specified `dictionary_path` or
-                                         `loanword_list_path` is not found.
-            DictionaryLoadingError: If there's an error during the loading or parsing
-                                    of dictionary or loanword files (e.g., IO errors,
-                                    module not found for default packaged files).
+                `loanword_list_path` points to a file that is not found or is
+                not a file. Also raised if default files cannot be located and
+                no custom path is given.
+            DictionaryLoadingError: If there's an error during the loading or
+                parsing of dictionary or loanword files (e.g., IO errors,
+                issues with `importlib.resources` if default files are missing
+                from the package).
         """
         self.kata_dasar_set: Set[str] = set()
         self.loanwords_set: Set[str] = set() # Renamed from self.loanwords to self.loanwords_set
@@ -67,14 +74,24 @@ class DictionaryManager:
         """
         Adds a new word to the appropriate dictionary set after normalization.
 
-        The word is normalized (e.g., lowercased) before being added. If the
-        normalized word is empty, it is not added.
+        The word is normalized (e.g., lowercased, stripped of leading/trailing
+        whitespace) before being added. If the normalized form of the word is
+        empty, it is not added to either set.
 
         Args:
-            word (str): The word to add.
-            is_loanword (bool): If True, adds the word to the loanwords set.
-                                Otherwise, adds to the root words (`kata_dasar`) set.
-                                Defaults to False.
+            word (str): The word to add to one of the dictionary sets.
+            is_loanword (bool, optional): If True, adds the word to the loanwords
+                set. Otherwise, adds to the root words (`kata_dasar`) set.
+                Defaults to False.
+
+        Example:
+            >>> dm = DictionaryManager() # Assumes default dict loads
+            >>> dm.add_word("   TesT   ")
+            >>> dm.is_kata_dasar("test")
+            True
+            >>> dm.add_word("  LoAnWoRd!  ", is_loanword=True)
+            >>> dm.is_loanword("loanword")
+            True
         """
         normalized_word = self.normalizer.normalize_word(word) # Use TextNormalizer
         if normalized_word:
@@ -116,15 +133,23 @@ class DictionaryManager:
         """
         Checks if a given word is present in the loaded root word dictionary.
 
-        The word is normalized before checking. The check is case-insensitive
-        due to normalization.
+        The word is normalized before checking. The check is effectively
+        case-insensitive due to this normalization.
         
         Args:
-            kata (str): The word to check.
+            kata (str): The word to check for existence in the root word dictionary.
             
         Returns:
-            bool: True if the normalized word exists in the root word set,
-                  False otherwise.
+            bool: True if the normalized form of `kata` exists in the root word
+                set, False otherwise.
+
+        Example:
+            >>> dm = DictionaryManager(dictionary_path="path/to/your/dict.txt")
+            >>> # Assuming "contoh" is in your dict.txt
+            >>> dm.is_kata_dasar("Contoh")
+            True
+            >>> dm.is_kata_dasar("tidakada")
+            False
         """
         normalized_kata = self.normalizer.normalize_word(kata) # Use TextNormalizer
         is_present = normalized_kata in self.kata_dasar_set
@@ -134,15 +159,15 @@ class DictionaryManager:
         """
         Checks if a given word is present in the loaded loanword list.
 
-        The word is normalized before checking. The check is case-insensitive
-        due to normalization.
+        The word is normalized before checking. The check is effectively
+        case-insensitive due to this normalization.
         
         Args:
-            word (str): The word to check.
+            word (str): The word to check for existence in the loanword list.
             
         Returns:
-            bool: True if the normalized word exists in the loanword set,
-                  False otherwise.
+            bool: True if the normalized form of `word` exists in the loanword
+                set, False otherwise.
         """
         normalized_word = self.normalizer.normalize_word(word) # Use TextNormalizer
         is_present = normalized_word in self.loanwords_set

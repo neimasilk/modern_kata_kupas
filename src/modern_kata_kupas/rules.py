@@ -57,39 +57,48 @@ class MorphologicalRules:
     """
     Manages morphological rules for Indonesian word segmentation and reconstruction.
 
-    This class loads, parses, and provides access to affix rules (prefixes, suffixes,
-    infixes) and their associated morphophonemic changes from a JSON file.
-    It organizes rules for efficient lookup and application during the
-    segmentation and reconstruction processes.
+    Loads, parses, and provides access to affix rules (prefixes, suffixes)
+    and their associated morphophonemic changes from a JSON configuration file.
+    The class organizes these rules for efficient lookup and application during
+    the segmentation and reconstruction processes undertaken by other components
+    like `ModernKataKupas` and `Reconstructor`.
 
     Attributes:
-        prefix_rules (Dict[str, List[Dict[str, Any]]]): A dictionary storing prefix rules,
-            typically keyed by canonical prefix forms. Each value is a list of rule details.
-        suffix_rules (Dict[str, List[Dict[str, Any]]]): A dictionary storing suffix rules,
-            typically keyed by the suffix form (e.g., "-kan"). Each value is a list of rule details.
-        infix_rules (Dict[str, List[Dict[str, Any]]]): A dictionary storing infix rules (if any).
-        all_rules (Dict[str, Any]): The raw JSON structure loaded from the rules file.
+        prefix_rules (dict[str, list[dict[str, Any]]]): Stores prefix rules,
+            keyed by canonical prefix forms (e.g., "meN"). Each value is a list
+            of rule detail dictionaries.
+        suffix_rules (dict[str, list[dict[str, Any]]]): Stores suffix rules,
+            keyed by the suffix form (e.g., "-kan"). Each value is a list of
+            rule detail dictionaries.
+        infix_rules (dict[str, list[dict[str, Any]]]): Stores infix rules.
+            Currently initialized but not populated by default `affix_rules.json`.
+        all_rules (dict[str, Any]): The entire raw JSON structure loaded from the
+            rules file, providing access to any additional rule categories or
+            metadata present in the file.
+        is_default_load (bool): True if the default packaged rules were loaded
+            (i.e., no `rules_file_path` was provided during initialization).
     """
-    def __init__(self, rules_file_path: str = None):
-        """
-        Initializes the MorphologicalRules engine by loading rules from a JSON file.
+    def __init__(self, rules_file_path: Optional[str] = None):
+        """Initializes MorphologicalRules by loading rules from a JSON file.
 
-        If `rules_file_path` is not provided, it attempts to load default rules
-        packaged with the library. If the specified file is empty or contains
-        invalid JSON, rules will be empty (for default load) or an error raised
-        (for explicit path).
+        If `rules_file_path` is not provided, it attempts to load the default
+        `affix_rules.json` packaged with the library. If a custom path is
+        provided, it loads rules from that file. The method handles file loading,
+        JSON parsing, and structuring the rules into internal dictionaries for
+        easy access.
 
         Args:
-            rules_file_path (str, optional): Path to a custom JSON file containing
-                morphological rules. Defaults to None, which triggers loading of
-                default packaged rules.
+            rules_file_path (Optional[str]): Path to a custom JSON file
+                containing morphological rules. If None, loads default packaged
+                rules. Defaults to None.
 
         Raises:
             FileNotFoundError: If `rules_file_path` is specified but the file
-                               does not exist.
-            RuleError: If the JSON file specified by `rules_file_path` is invalid
-                       or if there's an unexpected error during rule processing from
-                       an explicitly provided file.
+                does not exist.
+            RuleError: If the JSON file (either specified or default) is invalid,
+                cannot be parsed, or if there's an unexpected error during rule
+                processing. This can also be raised if the default rules file is
+                missing from the package and no custom path is provided.
         """
         self.rules_file_path_arg = rules_file_path # Simpan argumen asli untuk referensi
         
@@ -208,10 +217,18 @@ class MorphologicalRules:
             word (str): The word to check for matching suffixes.
 
         Returns:
-            List[Dict[str, Any]]: A list of rule dictionaries for all matching suffixes.
-                                  Each dictionary contains details of a suffix rule,
-                                  plus an 'original_pattern' key indicating the matched suffix form.
-                                  Returns an empty list if no suffixes match.
+            list[dict[str, Any]]: A list of rule dictionaries for all matching
+                suffixes. Each dictionary contains details of a suffix rule,
+                plus an 'original_pattern' key indicating the matched suffix form
+                (e.g., "-kan", "-nya"). Returns an empty list if no suffixes match.
+
+        Example:
+            >>> rules = MorphologicalRules() # Assuming default rules are loaded
+            >>> rules.get_matching_suffix_rules("makanannya")
+            [{'form': '-nya', 'type': 'P', 'description': 'Posesif -nya', 'original_pattern': '-nya'}, 
+             {'form': '-an', 'type': 'DS', 'description': 'Sufiks pembentuk nomina -an', 'original_pattern': '-an'}]
+            >>> # Note: Example output simplified for brevity. Actual rule dicts may vary.
+            >>> # Order depends on internal sorting (longest match first).
         """
         matched_rules = []
         # Urutkan kunci sufiks berdasarkan panjangnya secara menurun
@@ -240,10 +257,16 @@ class MorphologicalRules:
             word (str): The word to check for matching prefixes.
 
         Returns:
-            List[Dict[str, Any]]: A list of rule dictionaries for all matching prefixes.
-                                  Each dictionary contains details of a prefix rule,
-                                  plus an 'original_pattern' key indicating the matched prefix form.
-                                  Returns an empty list if no prefixes match.
+            list[dict[str, Any]]: A list of rule dictionaries for all matching
+                prefixes. Each dictionary contains details of a prefix rule,
+                plus an 'original_pattern' key indicating the matched prefix form
+                (e.g., "mem", "di"). Returns an empty list if no prefixes match.
+
+        Example:
+            >>> rules = MorphologicalRules() # Assuming default rules
+            >>> rules.get_matching_prefix_rules("mempermainkan") # doctest: +ELLIPSIS
+            [{'form': 'memper', ..., 'original_pattern': 'memper'}, ...]
+            >>> # Note: Example output simplified. Actual rule dicts and order may vary.
         """
         matched_rules = []
         sorted_prefix_keys = sorted(self.prefix_rules.keys(), key=len, reverse=True)
@@ -260,17 +283,17 @@ class MorphologicalRules:
         """
         Checks if a given string is a valid canonical prefix form.
 
-        A canonical prefix form is a key in the `self.prefix_rules` dictionary,
-        representing a standardized form of a prefix (e.g., "meN", "di").
+        A canonical prefix form is typically a key in the `self.prefix_rules`
+        dictionary (e.g., "meN", "di", "ber").
 
         Args:
-            prefix (str): The canonical prefix string to check (e.g., "meN", "di", "ber").
+            prefix (str): The canonical prefix string to check.
 
         Returns:
-            bool: True if the string is a valid canonical prefix form present in the
-                  loaded rules, False otherwise.
+            bool: True if the string is a recognized canonical prefix form based
+                on the loaded rules, False otherwise.
         """
-        # self.prefix_rules is now keyed by canonical forms (e.g., "meN", "di").
+        # self.prefix_rules is keyed by canonical forms (e.g., "meN", "di").
         # Each value is a list of rule_detail_dicts (usually one dict for canonical keys).
         return prefix in self.prefix_rules
         
@@ -283,11 +306,23 @@ class MorphologicalRules:
         as defined in the morphological rules file.
 
         Args:
-            suffix_form (str): The suffix form whose type is to be determined (e.g., "-kan").
+            suffix_form (str): The suffix form string (e.g., "-kan", "-lah")
+                whose type is to be determined.
 
         Returns:
-            Optional[str]: The type of the suffix (e.g., "suffix_derivational") if found,
-                           otherwise None.
+            Optional[str]: The type of the suffix (e.g., "DS" for derivational
+                suffix, "P" for particle) if the suffix form is found and has a
+                defined type in the rules. Returns None if the suffix form is not
+                found or has no type specified.
+
+        Example:
+            >>> rules = MorphologicalRules() # Assuming default rules
+            >>> rules.get_suffix_type("-kan")
+            'DS'
+            >>> rules.get_suffix_type("-lah")
+            'P'
+            >>> rules.get_suffix_type("-xyz") is None
+            True
         """
         # self.suffix_rules adalah Dict[str, List[Dict[str, Any]]]
         # Contoh: {"-lah": [{"form": "-lah", "type": "P", ...}, ...], ...}
@@ -323,11 +358,20 @@ class MorphologicalRules:
         This method checks against the canonical prefix forms.
 
         Args:
-            prefix_form (str): The canonical prefix form whose type is to be determined
-                               (e.g., "meN", "di").
+            prefix_form (str): The canonical prefix form (e.g., "meN", "di")
+                whose type is to be determined.
 
         Returns:
-            Optional[str]: The type of the prefix if found, otherwise None.
+            Optional[str]: The type of the prefix (e.g., "DP" for derivational
+                prefix) if the canonical prefix form is found and has a defined
+                type. Returns None otherwise.
+
+        Example:
+            >>> rules = MorphologicalRules() # Assuming default rules
+            >>> rules.get_prefix_type("meN") # Canonical form
+            'DP'
+            >>> rules.get_prefix_type("di")
+            'IP'
         """
         if prefix_form in self.prefix_rules:
             rules_for_prefix = self.prefix_rules[prefix_form]
@@ -341,14 +385,15 @@ class MorphologicalRules:
         """
         Checks if a given string is a valid suffix form.
 
-        A suffix form is a key in the `self.suffix_rules` dictionary (e.g., "-an", "-lah").
+        A suffix form is typically a key in the `self.suffix_rules` dictionary
+        (e.g., "-an", "-lah").
 
         Args:
-            form (str): The suffix form string to check (e.g., "-an", "-lah").
+            form (str): The suffix form string to check.
 
         Returns:
-            bool: True if the string is a valid suffix form present in the loaded rules,
-                  False otherwise.
+            bool: True if the string is a recognized suffix form based on the
+                loaded rules, False otherwise.
         """
         # self.suffix_rules adalah Dict[str_form, List[Dict_rule_details]]
         # Contoh: {"-an": [{...}], "-lah": [{...}]}
@@ -358,11 +403,13 @@ class MorphologicalRules:
         """
         Retrieves a list of all unique surface forms of prefixes from the loaded rules.
 
-        This includes simple forms (e.g., "di-") and all allomorphs
-        (e.g., "me", "mem", "men", "meny", "meng", "menge" for "meN-").
+        This includes simple forms (e.g., "di-") and all defined allomorphs
+        (e.g., "me-", "mem-", "men-", "meny-", "meng-", "menge-" which are
+        allomorphs of a canonical "meN" prefix).
 
         Returns:
-            List[str]: A list of all unique prefix surface forms.
+            list[str]: A list of all unique prefix surface forms found in the rules.
+                       The list may not be in any particular order.
         """
         all_forms = set()
         for canon_rules_list in self.prefix_rules.values():
@@ -385,11 +432,23 @@ class MorphologicalRules:
         canonical prefix and "mem" is one of its allomorphs.
 
         Args:
-            surface_form (str): The surface form of the prefix (e.g., "mem", "di-").
+            surface_form (str): The surface form of the prefix (e.g., "mem",
+                "di-", "ber-").
 
         Returns:
-            Optional[str]: The canonical form of the prefix (e.g., "meN") if found,
-                           otherwise None.
+            Optional[str]: The canonical form of the prefix (e.g., "meN" for
+                "mem", "di" for "di-") if found in the rules. Returns None if
+                the surface form does not correspond to any known prefix or
+                allomorph.
+
+        Example:
+            >>> rules = MorphologicalRules() # Assuming default rules
+            >>> rules.get_canonical_prefix_form("mem")
+            'meN'
+            >>> rules.get_canonical_prefix_form("di-")
+            'di'
+            >>> rules.get_canonical_prefix_form("xyz") is None
+            True
         """
         for canonical, rules_list in self.prefix_rules.items():
             for rule_details in rules_list:
@@ -410,16 +469,27 @@ class MorphologicalRules:
         and return "pukul".
 
         Args:
-            surface_stripped_prefix (str): The surface form of the prefix that was stripped
-                                           (e.g., "mem").
-            canonical_prefix (str): The canonical form of the stripped prefix (e.g., "meN").
-            stem_after_strip (str): The remaining stem after the prefix was stripped
-                                    (e.g., "ukul").
+            surface_stripped_prefix (str): The surface form of the prefix that
+                was actually stripped from the word (e.g., "mem").
+            canonical_prefix (str): The canonical form of the prefix to which
+                `surface_stripped_prefix` belongs (e.g., "meN").
+            stem_after_strip (str): The remaining part of the word after
+                `surface_stripped_prefix` was removed (e.g., "ukul" from
+                "memukul").
 
         Returns:
-            str: The stem with the initial character restored if an elision rule applies.
-                 Returns the `stem_after_strip` unchanged if no applicable elision rule
-                 is found for the given prefix combination.
+            str: The stem with the initial character restored if an elision rule
+                associated with the `surface_stripped_prefix` (under its
+                `canonical_prefix`) applies. For example, "ukul" might become
+                "pukul". Returns the `stem_after_strip` unchanged if no
+                applicable elision rule is found.
+
+        Example:
+            >>> rules = MorphologicalRules() # Assuming default rules
+            >>> rules.reverse_morphophonemics("mem", "meN", "ukul")
+            'pukul'
+            >>> rules.reverse_morphophonemics("di-", "di", "baca")
+            'baca'
         """
         if not canonical_prefix or not surface_stripped_prefix:
             return stem_after_strip # Tidak bisa melakukan apa-apa tanpa info prefiks
@@ -459,21 +529,26 @@ class MorphologicalRules:
         """
         Returns the dictionary of all loaded prefix rules.
 
-        The dictionary is typically keyed by canonical prefix forms.
+        The dictionary is typically keyed by canonical prefix forms (e.g., "meN",
+        "di", "ber"). The values are lists of rule detail dictionaries.
+        This method is primarily for inspection or advanced usage.
 
         Returns:
-            Dict[str, List[Dict[str, Any]]]: The raw dictionary of prefix rules.
+            dict[str, list[dict[str, Any]]]: A dictionary representing the
+                loaded prefix rules.
         """
         return self.prefix_rules
 
     def get_suffix_rules(self) -> Dict[str, List[Dict[str, Any]]]:
-        """
-        Returns the dictionary of all loaded suffix rules.
+        """Returns the dictionary of all loaded suffix rules.
 
-        The dictionary is typically keyed by suffix forms (e.g., "-kan").
+        The dictionary is typically keyed by suffix forms (e.g., "-kan", "-lah").
+        The values are lists of rule detail dictionaries.
+        This method is primarily for inspection or advanced usage.
 
         Returns:
-            Dict[str, List[Dict[str, Any]]]: The raw dictionary of suffix rules.
+            dict[str, list[dict[str, Any]]]: A dictionary representing the
+                loaded suffix rules.
         """
         return self.suffix_rules
 

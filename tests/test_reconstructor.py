@@ -65,6 +65,9 @@ def test_reconstruct_with_simple_prefix(reconstructor_instance):
 
 import unittest
 from src.modern_kata_kupas.separator import ModernKataKupas # Main class for .reconstruct()
+# from src.modern_kata_kupas.reconstructor import Reconstructor # Directly test Reconstructor if needed
+# from src.modern_kata_kupas.rules import MorphologicalRules
+# from src.modern_kata_kupas.dictionary_manager import DictionaryManager
 
 class TestWordReconstruction(unittest.TestCase):
     def setUp(self):
@@ -179,7 +182,15 @@ class TestWordReconstruction(unittest.TestCase):
             "pengeboman", "pelajar",
             "mobil-mobilan", # Should now work with the new logic
             "bolak-balikan", # Should now work with the new logic
-            "rumah-rumahan"  # Added for completeness
+            "rumah-rumahan",  # Added for completeness
+            # New complex words for idempotency test (V1.0 context)
+            "mempertanggungjawabkan",
+            "dipersemakmurkan",
+            "berkejar-kejaran", # V1.0 segments to berkejar~ulg~an
+            "sebaik-baiknya",   # V1.0 segments to sebaik~ulg~nya
+            "keberlangsungan",
+            "mengkomunikasikan",
+            "ketidakadilan",
         ]
         
         for word in words_to_test:
