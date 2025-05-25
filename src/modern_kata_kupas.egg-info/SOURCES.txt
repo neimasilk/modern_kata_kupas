@@ -13,10 +13,12 @@ src/modern_kata_kupas/test_rules.py
 src/modern_kata_kupas.egg-info/PKG-INFO
 src/modern_kata_kupas.egg-info/SOURCES.txt
 src/modern_kata_kupas.egg-info/dependency_links.txt
+src/modern_kata_kupas.egg-info/requires.txt
 src/modern_kata_kupas.egg-info/top_level.txt
 src/modern_kata_kupas/data/__init__.py
 src/modern_kata_kupas/data/affix_rules.json
 src/modern_kata_kupas/data/kata_dasar.txt
+src/modern_kata_kupas/data/loanwords.txt
 src/modern_kata_kupas/utils/__init__.py
 src/modern_kata_kupas/utils/alignment.py
 src/modern_kata_kupas/utils/string_utils.py

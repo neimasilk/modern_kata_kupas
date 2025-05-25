@@ -4,9 +4,49 @@ Dokumen ini menjelaskan arsitektur dan komponen utama dari library `modern-kata-
 
 ## Komponen Utama
 
+### Packaging and Data Access
+
+The `modern-kata-kupas` library relies on several data files for its operation:
+
+*   `kata_dasar.txt`: The main dictionary of Indonesian root words.
+*   `loanwords.txt`: A list of common loanwords.
+*   `affix_rules.json`: A JSON file containing morphological rules for prefixes, suffixes, and their morphophonemic changes.
+
+These files are included within the installable package. This is achieved by specifying them in the `package_data` directive within the `setup.py` file:
+
+```python
+# setup.py
+setup(
+    # ... other setup arguments ...
+    package_data={
+        "modern_kata_kupas": ["data/kata_dasar.txt", "data/loanwords.txt", "data/affix_rules.json"],
+    },
+    # ...
+)
+```
+
+#### Data Access within the Package
+
+Components like `DictionaryManager` (for `kata_dasar.txt` and `loanwords.txt`) and `MorphologicalRules` (for `affix_rules.json`) are designed to load these data files from the package itself. This is typically done using Python's `importlib.resources` module.
+
+For example, `DictionaryManager` uses `importlib.resources.read_text` to load the default dictionary and loanword list:
+
+```python
+# In DictionaryManager
+import importlib.resources
+# ...
+file_content = importlib.resources.read_text(
+    self.DEFAULT_DICT_PACKAGE_PATH, # e.g., "modern_kata_kupas.data"
+    self.DEFAULT_DICT_FILENAME,     # e.g., "kata_dasar.txt"
+    encoding='utf-8'
+)
+```
+
+Similarly, `MorphologicalRules` loads `affix_rules.json` using the same mechanism. This ensures that the library functions correctly when installed, without needing direct access to the file system where the source code was originally located.
+
 ### DictionaryManager
 
-Bertanggung jawab untuk memuat dan mengelola kamus kata dasar bahasa Indonesia. Mendukung pemuatan dari file eksternal atau kamus default yang dikemas dalam library.
+Bertanggung jawab untuk memuat dan mengelola kamus kata dasar (`kata_dasar.txt`) dan daftar kata serapan (`loanwords.txt`) bahasa Indonesia. Mendukung pemuatan dari file eksternal atau file default yang dikemas dalam library (lihat bagian 'Packaging and Data Access'). Semua kata dinormalisasi sebelum disimpan dan diperiksa.
 
 ### StemmerInterface
 
@@ -14,7 +54,7 @@ Kelas ini berfungsi sebagai wrapper untuk library stemming bahasa Indonesia, saa
 
 ### Normalizer
 
-The `utils` directory contains helper modules. One such utility is `utils/alignment.py`, which implements the Needleman-Wunsch algorithm for string alignment. However, it's important to note that this explicit string alignment is not actively used in the core V1.0 segmentation logic within `Separator.py`. For V1.0, a heuristic approach based on direct rule application and dictionary lookups was found to be sufficient for common cases. The string alignment utility exists for potential future exploration in handling more complex or ambiguous scenarios.
+`Normalizer` (diimplementasikan sebagai kelas `TextNormalizer`) bertanggung jawab untuk membersihkan dan menstandarkan teks input. Ini termasuk mengubah teks menjadi huruf kecil, menghapus karakter khusus atau tanda baca yang tidak relevan, dan menangani variasi spasi. Normalisasi adalah langkah pra-pemrosesan penting sebelum segmentasi atau analisis morfologis lainnya.
 
 ### Separator
 
@@ -58,10 +98,12 @@ Meskipun tidak ada mekanisme eksplisit untuk memilih antara interpretasi afiks y
     2.  Posesif: `-ku`, `-mu`, `-nya`
     3.  Derivasional: `-kan`, `-i`, `-an`
     Proses ini iteratif; setelah satu sufiks dilepas, sistem mencoba lagi dari awal urutan prioritas pada sisa kata. Sufiks derivasional memiliki pemeriksaan tambahan: secara default, mereka hanya dilepas jika sisa stem adalah kata dasar yang dikenal (kecuali dalam konteks khusus seperti pemrosesan kluster sufiks pada kata berulang).
-*   **Pelepasan Prefiks (`_strip_prefixes_detailed`):**
+*   **Pelepasan Prefiks (`_strip_prefixes_detailed`):** Metode internal `_strip_prefixes_detailed` (dipanggil oleh `_strip_prefixes`) menangani pelepasan prefiks.
     *   Prefiks dicocokkan dari bentuk terpanjang ke terpendek (misalnya, "memper-" sebelum "meN-" atau "per-"). Ini membantu dalam identifikasi prefiks berlapis.
     *   Setelah sebuah prefiks dilepas, sistem memeriksa apakah sisa kata adalah kata dasar. Jika tidak, sistem juga akan mencoba membalikkan perubahan morfofonemik (misalnya, dari "tulis" menjadi "nulis" setelah "meN-" dilepas) dan memeriksa apakah bentuk asli tersebut adalah kata dasar.
     *   Proses ini bisa rekursif untuk menangani prefiks berlapis (misalnya, "dipermainkan" -> "di" + "permainkan" -> "di" + "per" + "mainkan").
+
+Perlu dicatat bahwa penanganan reduplikasi (misalnya, "berkejar-kejaran") juga terintegrasi. Bentuk seperti ini akan diurai oleh `_handle_reduplication` (misalnya, menjadi basis "berkejar", penanda reduplikasi "ulg", dan sufiks "-an" yang menempel pada bagian kedua yang direduplikasi). Basis "berkejar" kemudian akan diproses lebih lanjut oleh strategi S1/S2.
 
 ### Contoh Kasus Ambiguitas
 
@@ -114,12 +156,12 @@ Metode kunci dalam modul ini meliputi:
 
 ### Reconstructor
 
-(Deskripsi akan ditambahkan nanti)
+`Reconstructor` bertugas untuk membangun kembali kata bahasa Indonesia dari string morfem hasil segmentasi. Kelas ini menggunakan aturan morfologi (termasuk alternasi morfofonemik) yang disediakan oleh `MorphologicalRules` dan dapat berkonsultasi dengan `DictionaryManager` untuk memvalidasi akar kata atau propertinya (misalnya, monosilabik) jika diperlukan oleh aturan rekonstruksi tertentu. Proses rekonstruksi melibatkan: penguraian string tersegmentasi, penerapan sufiks derivasional ke akar, penerapan aturan reduplikasi, penerapan sufiks pasca-reduplikasi, penerapan sufiks posesif dan partikel, dan terakhir penerapan prefiks dalam urutan terbalik dengan perubahan morfofonemik yang sesuai.
 
 ### Rules
 
-(Deskripsi akan ditambahkan nanti)
+Komponen `MorphologicalRules` bertanggung jawab untuk memuat, mem-parsing, dan menyediakan akses ke aturan afiks (prefiks, sufiks) dan perubahan morfofonemik terkait dari file konfigurasi JSON (`affix_rules.json`). Aturan-aturan ini diorganisir untuk pencarian dan penerapan yang efisien selama proses segmentasi dan rekonstruksi. Pemuatan file aturan dari dalam paket dijelaskan dalam bagian 'Packaging and Data Access'.
 
 ### Utils
 
-(Deskripsi akan ditambahkan nanti)
+Direktori `utils` berisi modul-modul pembantu. `string_utils.py` menyediakan fungsi dasar seperti `is_vowel` dan `is_consonant`. Modul `alignment.py` mengimplementasikan algoritma Needleman-Wunsch untuk penyelarasan string; fungsionalitas ini tidak digunakan secara aktif dalam logika segmentasi inti V1.0 tetapi ada untuk eksplorasi di masa depan dalam menangani kasus yang lebih kompleks atau ambigu.
