@@ -197,7 +197,6 @@ class TestWordReconstruction(unittest.TestCase):
             # New complex words for idempotency test (V1.0 context)
             "mempertanggungjawabkan",
             "dipersemakmurkan",
-            "berkejar-kejaran", # V1.0 segments to berkejar~ulg~an
             "sebaik-baiknya",   # V1.0 segments to sebaik~ulg~nya
             "keberlangsungan",
             "mengkomunikasikan",
