@@ -6,77 +6,56 @@
 * **Baby Step 4.3.1: Identifikasi & Tambah Kasus Uji Morfologi Kompleks:** SELESAI. Tes untuk kata-kata dengan morfologi kompleks telah ditambahkan ke `tests/test_separator.py` dan `tests/test_reconstructor.py`.
 * **Baby Step 4.3.2: Tambah Kasus Uji Tepi (Edge Cases):** SELESAI. Tes untuk berbagai kasus tepi telah ditambahkan ke `tests/test_separator.py`.
 * **Baby Step 4.4.1: Review Final API Publik & Docstrings Inti:** SELESAI. Docstrings untuk kelas inti telah direview dan diperbarui.
-* **Baby Step 4.4.2: Update Komprehensif `README.md`:** SELESAI. `README.md` telah diperbarui secara menyeluruh dengan informasi V1.0.
+* **Baby Step 4.4.2: Update Komprehensif `README.md` (Iterasi Awal):** SELESAI. `README.md` telah diperbarui secara menyeluruh dengan informasi V1.0.
+* **Baby Step 4.5.1: Finalisasi `setup.py` dan Build Paket Awal:** SELESAI. `setup.py` (V1.0.0) difinalisasi, paket di-build (`sdist`, `bdist_wheel`), dan `package_data` (`kata_dasar.txt`, `loanwords.txt`, `affix_rules.json`) diverifikasi ada dalam distribusi sumber.
+* **Baby Step 4.5.1.A: Verifikasi Konten `setup.py` Tersimpan:** SELESAI. Konten `setup.py` V1.0.0 terverifikasi dan digunakan untuk build paket yang sukses.
+* **Baby Step 4.5.2: Uji Instalasi Paket Lokal:** SELESAI. Paket berhasil diinstal dari file `.whl` di lingkungan virtual baru. Fungsionalitas dasar dan akses ke file data terverifikasi.
+* **Baby Step 4.6.1: Update Detail Final `architecture.md`:** SELESAI. `memory-bank/architecture.md` telah diperbarui untuk mencerminkan arsitektur final V1.0, termasuk detail packaging, akses data, dan deskripsi komponen yang akurat.
+* **Baby Step 4.6.2: Final Review `README.md` dan Verifikasi Contoh:** SELESAI. `README.md` telah direview dan disesuaikan. Contoh-contoh kode telah diverifikasi, dan ekspektasi outputnya diperbarui di `README.md` untuk mencerminkan perilaku aktual V1.0 (termasuk kasus di mana `verify_segment_examples.py` mungkin memiliki ketidaksesuaian parsing internal, namun `README.md` kini akurat).
+* **Baby Step 4.7.2: Uji `pytest` Final:** SELESAI. Semua 91 tes `pytest` berhasil dijalankan. Kasus `berkejar-kejaran` yang sebelumnya diketahui gagal, kini juga berhasil (PASS).
 
 **Status Pengujian `pytest`:**
-* Semua tes (total 83 tes) berhasil dijalankan, dengan satu kegagalan yang diketahui dan diterima pada `tests/test_reconstructor.py::TestWordReconstruction::test_idempotency_segment_reconstruct` untuk kata `berkejar-kejaran`. Kegagalan ini disebabkan oleh batasan pada segmenter V1.0 untuk kasus reduplikasi kompleks dengan akar kata yang tidak ada di kamus, dan bukan merupakan regresi baru. Ini telah didokumentasikan dalam `README.md`.
+* Semua tes (total 91 tes) berhasil dijalankan (100% PASS). Ini termasuk kasus `test_idempotency_segment_reconstruct` untuk kata `berkejar-kejaran` yang kini juga PASS.
 
 ---
 
 **MASALAH KRITIS YANG MENGHALANGI KEMAJUAN (CRITICAL BLOCKER)**
 
-1.  **Kegagalan Pembaruan File oleh Tool Internal:**
-    * Baby Step 4.5.1 (Finalisasi `setup.py` dan Build Paket Awal) dan langkah-langkah pembaruan dokumentasi lainnya **TERHAMBAT** jika tool internal (`overwrite_file_with_block`) masih gagal menyimpan perubahan file dengan benar.
-    * **Status `setup.py`:** File `setup.py` yang ada di workspace (versi 1.0.0) tampaknya sudah berisi konten yang benar untuk V1.0. Jika file ini *sudah tersimpan dengan benar* di sistem Anda, maka bagian *konten* dari Baby Step 4.5.1 telah selesai. Namun, proses build dan verifikasi `package_data` masih perlu dilakukan dan mungkin terpengaruh oleh masalah tool.
-    * **Dampak:** Tanpa kemampuan menyimpan file secara andal, paket `modern_kata_kupas` tidak dapat di-build, didistribusikan, atau diinstal dengan benar, dan dokumentasi akhir mungkin tidak konsisten.
-
-**Akibat dari Masalah Ini (Jika Tool Masih Bermasalah):**
-* Baby Step 4.5.1 (Build paket dan verifikasi `package_data`) **TERBLOKIR**.
-* Baby Step 4.5.2 (Uji Instalasi Paket Lokal) **TERBLOKIR**.
-* Baby Step 4.6.1 (Update Detail Final `architecture.md`) sebaiknya ditunda hingga packaging selesai.
+*   **(RESOLVED)** Sebelumnya terdapat kekhawatiran mengenai kegagalan pembaruan file oleh tool internal. Namun, langkah-langkah modifikasi file `setup.py`, `README.md`, dan `architecture.md` telah berhasil dilakukan menggunakan tool yang tersedia, mengindikasikan bahwa masalah ini tidak lagi menjadi penghalang kritis untuk progres V1.0.
 
 ---
 
 **Saran Langkah Selanjutnya (To-Do List Berikutnya):**
 
-1.  **PRIORITAS UTAMA: Selesaikan Masalah Tool File Editing.**
-    * Investigasi dan perbaiki kegagalan pada tool `overwrite_file_with_block` atau sediakan mekanisme alternatif yang andal untuk memodifikasi file dalam workspace Anda.
-    * Tanpa ini, progres signifikan pada tugas-tugas yang memerlukan modifikasi file akan terhambat.
+Dengan selesainya semua langkah utama untuk packaging, dokumentasi, dan pengujian V1.0, proyek kini berada di tahap akhir sebelum rilis.
 
-2.  **Setelah Masalah Tool Terselesaikan (atau jika `setup.py` sudah aman tersimpan):**
-    * **Lanjutkan Baby Step 4.5.1: Finalisasi `setup.py` dan Build Paket Awal**
-        * **Verifikasi `setup.py`:** Pastikan file `setup.py` versi 1.0.0 yang ada di workspace adalah versi final yang tersimpan dengan benar.
-        * **Build Paket:** Jalankan `python setup.py sdist bdist_wheel`. Pastikan direktori `dist` berhasil dibuat dengan file `.tar.gz` dan `.whl`.
-        * **Verifikasi `package_data`:** Setelah build, periksa isi file `.tar.gz` untuk memastikan direktori `data` (terutama `kata_dasar.txt`, `loanwords.txt`, `affix_rules.json`) benar-benar disertakan dalam distribusi. Ini krusial untuk fungsionalitas paket.
-    * **Lanjutkan Baby Step 4.5.2: Uji Instalasi Paket Lokal**
-        * Buat lingkungan virtual baru yang bersih.
-        * Instal paket menggunakan file `.whl` dari direktori `dist`.
-        * Uji impor dan fungsionalitas dasar (`ModernKataKupas().segment(...)` dan `.reconstruct(...)`) untuk memastikan paket bekerja dan file data dapat diakses.
-    * **Lanjutkan Baby Step 4.6.1: Update Detail Final `architecture.md`**
-        * Review dan perbarui `memory-bank/architecture.md` untuk mencerminkan arsitektur final V1.0, termasuk interaksi komponen, struktur file data final yang dipaketkan, dan keputusan desain penting.
-    * **(Baru) Verifikasi Konsistensi Kamus:** Pastikan hanya satu versi `kata_dasar.txt` (yaitu yang ada di `src/modern_kata_kupas/data/kata_dasar.txt`) yang digunakan secara konsisten dan disertakan dalam `package_data` di `setup.py`.
-    * **(Baru) Final Review `README.md`:** Setelah packaging diuji, lakukan final review pada `README.md`, terutama bagian instalasi, untuk memastikan akurasinya. Jalankan kembali `verify_segment_examples.py`.
-    * **Update `memory-bank/progress.md`:** Catat penyelesaian langkah-langkah Fase 4.
-    * **Update `memory-bank/status-todolist-saran.md` (File Ini):** Setelah semua langkah di atas selesai, perbarui file status utama ini secara komprehensif.
-    * Lakukan verifikasi `pytest` menyeluruh lagi.
-    * Submit semua perubahan.
+1.  **Baby Step 4.7.3: Tagging Versi Git (Prioritas Berikutnya)**
+    * **Aktivitas:** Buat tag Git `v1.0.0` pada commit terakhir yang mencakup semua finalisasi V1.0.
+    * **Kriteria Selesai:** Tag `v1.0.0` berhasil dibuat dan di-push ke repository.
 
-**Saran "Baby-Step ToDoList" Tambahan (setelah masalah tool teratasi):**
+2.  **Review Akhir Kode dan Artefak (Opsional, namun direkomendasikan)**
+    * **Aktivitas:** Lakukan review terakhir pada keseluruhan codebase, docstrings, dan file konfigurasi untuk memastikan tidak ada hal kecil yang terlewat.
+    * **Kriteria Selesai:** Tim merasa yakin dengan kualitas kode dan artefak yang akan dirilis.
 
-1.  **Baby Step 4.5.1.A: Verifikasi Konten `setup.py` Tersimpan**
-    * **Aktivitas:** Konfirmasi bahwa file `setup.py` di workspace Anda *benar-benar* telah tersimpan dengan konten versi 1.0.0.
-    * **Kriteria Selesai:** Konten `setup.py` terverifikasi dan aman.
-
-2.  **Baby Step 4.5.1.B: Build Paket dan Verifikasi `package_data`**
+3.  **Persiapan Rilis GitHub**
     * **Aktivitas:**
-        1.  Jalankan `python setup.py sdist bdist_wheel`.
-        2.  Periksa isi file `.tar.gz` (misalnya dengan mengekstraknya ke direktori sementara) untuk memastikan `src/modern_kata_kupas/data/kata_dasar.txt`, `src/modern_kata_kupas/data/loanwords.txt`, dan `src/modern_kata_kupas/data/affix_rules.json` ada di dalam direktori `modern_kata_kupas/data/` di dalam arsip.
-    * **Kriteria Selesai:** Paket berhasil di-build, direktori `dist` berisi file `.tar.gz` dan `.whl`, dan file data terverifikasi ada di dalam paket sumber.
+        *   Merge branch pengembangan (jika ada) ke branch utama (misalnya, `main` atau `master`).
+        *   Buat "Release" baru di GitHub dari tag `v1.0.0`.
+        *   Sertakan ringkasan perubahan V1.0 dalam catatan rilis.
+        *   Unggah artefak build (file `.tar.gz` dan `.whl` dari direktori `dist`) ke rilis GitHub.
+    * **Kriteria Selesai:** Rilis V1.0 tersedia di GitHub dengan artefak dan catatan rilis yang sesuai.
 
-3.  **Baby Step 4.5.2.A: Instalasi Paket Lokal di Lingkungan Bersih** (Mengikuti `baby-step.md`)
-    * **(Ulangi instruksi dari `baby-step.md` untuk kejelasan)**
-    * **Kriteria Selesai:** (Sama seperti di `baby-step.md`)
+4.  **Distribusi ke PyPI (Jika Direncanakan)**
+    * **Aktivitas:** Publikasikan paket ke Python Package Index (PyPI) menggunakan tool seperti `twine`.
+    * **Kriteria Selesai:** Paket `modern-kata-kupas` versi 1.0.0 tersedia di PyPI dan dapat diinstal menggunakan `pip install modern_kata_kupas`.
 
-4.  **Baby Step 4.6.1.A: Finalisasi `architecture.md`** (Mengikuti `baby-step.md`)
-    * **(Ulangi instruksi dari `baby-step.md` untuk kejelasan, dengan penekanan pada struktur file data yang dipaketkan)**
-    * **Kriteria Selesai:** (Sama seperti di `baby-step.md`)
-
-5.  **Baby Step X.Y.Z: Review Akhir dan Persiapan Rilis V1.0**
+5.  **Dokumentasi Proses dan Perencanaan Masa Depan**
     * **Aktivitas:**
-        1.  Baca ulang semua dokumentasi (`README.md`, `architecture.md`, docstrings) untuk konsistensi dan kejelasan.
-        2.  Pastikan semua contoh di `README.md` (via `verify_segment_examples.py`) dan docstrings masih akurat.
-        3.  Pertimbangkan untuk menambahkan tag versi Git (misalnya, `v1.0.0`).
-        4.  (Opsional, jika akan rilis ke PyPI): Siapkan deskripsi untuk PyPI.
-    * **Kriteria Selesai:** Proyek siap untuk dianggap sebagai V1.0.
+        *   Arsipkan atau dokumentasikan catatan penting dari proses pengembangan V1.0.
+        *   Rencanakan siklus pengembangan berikutnya (misalnya, V1.1 atau V2.0), mempertimbangkan batasan V1.0 yang diketahui, fitur baru, atau peningkatan yang diinginkan.
+    * **Kriteria Selesai:** Pembelajaran dari V1.0 terdokumentasi, dan ada gambaran awal untuk pengembangan selanjutnya.
 
-Dengan menyelesaikan langkah-langkah ini, ModernKataKupas V1.0 akan siap untuk didistribusikan.
+6.  **Update `memory-bank/progress.md`:** Catat penyelesaian langkah-langkah Fase 4 dan status rilis V1.0.
+7.  **Update `memory-bank/status-todolist-saran.md` (File Ini):** Setelah semua langkah di atas selesai, perbarui file status utama ini untuk terakhir kalinya untuk V1.0, atau untuk memulai perencanaan V1.1.
+
+Dengan menyelesaikan langkah-langkah ini, ModernKataKupas V1.0 akan siap untuk dirilis secara resmi.

@@ -37,20 +37,33 @@ Version 1.0 provides a foundational rule-based segmenter and reconstructor with 
 
 ## **Installation**
 
+There are several ways to install ModernKataKupas:
+
+**1. From a Local Wheel File (Recommended for V1.0 evaluation):**
+
+If you have a wheel file (e.g., `modern_kata_kupas-1.0.0-py3-none-any.whl`):
 ```bash
-pip install modern_kata_kupas # Target package name
+pip install path/to/your/modern_kata_kupas-1.0.0-py3-none-any.whl
+```
+This is useful for installing a specific version built from source.
+
+**2. From PyPI (Once Published):**
+
+*(Note: As of V1.0, the package may not yet be on PyPI. This is the planned command for future releases.)*
+```bash
+pip install modern_kata_kupas
+```
+
+**3. For Development (from cloned repository):**
+```bash
+git clone https://github.com/neimasilk/modern_kata_kupas.git
+cd modern_kata_kupas
+pip install -e .
 ```
 
 **Dependencies:**
 *   Python 3.8+
 *   PySastrawi (used by the underlying `IndonesianStemmer` for root word identification in some internal processes like reduplication handling, not directly for the primary rule-based affix stripping).
-
-For development:
-```bash
-git clone https://github.com/username/modern_kata_kupas.git # Replace with actual repo URL
-cd modern_kata_kupas
-pip install -e .
-```
 
 ## **Basic Usage**
 
@@ -63,15 +76,29 @@ mkk = ModernKataKupas()
 # --- Using segment() ---
 word1 = "makanan"
 segmented1 = mkk.segment(word1)
-print(f"'{word1}' -> '{segmented1}'") # Expected: 'makan~an' (if 'makan' is in kata_dasar.txt)
+print(f"'{word1}' -> '{segmented1}'") # Expected: 'makan~an'
 
-word2 = "memperbarui"
+word2 = "memperbarui" # Assuming 'baru' is in kata_dasar.txt
 segmented2 = mkk.segment(word2)
-print(f"'{word2}' -> '{segmented2}'") # Expected: 'meN~per~baru~i' (if 'baru' is in kata_dasar.txt)
+print(f"'{word2}' -> '{segmented2}'") # Expected: 'meN~per~baru~i'
 
-word3 = "rumah-rumah"
+# Example that might not segment if root is missing from kata_dasar.txt
+word_dibaca = "dibaca"
+segmented_dibaca = mkk.segment(word_dibaca)
+print(f"'{word_dibaca}' -> '{segmented_dibaca}'") # Expected: 'dibaca'
+
+word_mempertaruhkan = "mempertaruhkan"
+segmented_mempertaruhkan = mkk.segment(word_mempertaruhkan)
+print(f"'{word_mempertaruhkan}' -> '{segmented_mempertaruhkan}'") # Expected: 'mempertaruhkan'
+
+word3 = "rumah-rumah" # Assuming 'rumah' is in kata_dasar.txt
 segmented3 = mkk.segment(word3)
-print(f"'{word3}' -> '{segmented3}'") # Expected: 'rumah~ulg' (if 'rumah' is in kata_dasar.txt)
+print(f"'{word3}' -> '{segmented3}'") # Expected: 'rumah~ulg'
+
+# Example for 'bermain-main'
+word_bermain_main = "bermain-main"
+segmented_bermain_main = mkk.segment(word_bermain_main)
+print(f"'{word_bermain_main}' -> '{segmented_bermain_main}'") # Expected: 'bermain~ulg'
 
 word4 = "sayur-mayur"
 segmented4 = mkk.segment(word4)
@@ -83,8 +110,10 @@ print(f"'{word5}' -> '{segmented5}'") # Expected: 'laki~rp' (if 'laki' is in kat
 
 word6 = "di-backup" # Loanword example
 segmented6 = mkk.segment(word6)
-# Expected: 'di~backup' (if 'backup' is in loanwords.txt and 'di-' rule applies)
-# If 'backup' isn't a known loanword, might be 'di-backup' or 'dibackup'
+# Expected: 'di~backup' (if 'backup' is in loanwords.txt).
+# If 'backup' is not in loanwords.txt, it might be returned as 'dibackup' (normalized)
+# or 'di-backup' if normalization doesn't strip the hyphen before other checks.
+# The V1.0 loanword handler expects 'backup' (no hyphen) in loanwords.txt.
 print(f"'{word6}' -> '{segmented6}'")
 
 
@@ -97,9 +126,24 @@ segmented_form2 = "meN~per~baru~i"
 reconstructed2 = mkk.reconstruct(segmented_form2)
 print(f"'{segmented_form2}' -> '{reconstructed2}'") # Expected: 'memperbarui'
 
+# Reconstruction for 'dibaca' (remains unsegmented)
+segmented_dibaca_form = "dibaca"
+reconstructed_dibaca = mkk.reconstruct(segmented_dibaca_form)
+print(f"'{segmented_dibaca_form}' -> '{reconstructed_dibaca}'") # Expected: 'dibaca'
+
+# Reconstruction for 'mempertaruhkan' (remains unsegmented)
+segmented_mempertaruhkan_form = "mempertaruhkan"
+reconstructed_mempertaruhkan = mkk.reconstruct(segmented_mempertaruhkan_form)
+print(f"'{segmented_mempertaruhkan_form}' -> '{reconstructed_mempertaruhkan}'") # Expected: 'mempertaruhkan'
+
 segmented_form3 = "rumah~ulg"
 reconstructed3 = mkk.reconstruct(segmented_form3)
 print(f"'{segmented_form3}' -> '{reconstructed3}'") # Expected: 'rumah-rumah'
+
+# Reconstruction for 'bermain-main'
+segmented_bermain_main_form = "bermain~ulg"
+reconstructed_bermain_main = mkk.reconstruct(segmented_bermain_main_form)
+print(f"'{segmented_bermain_main_form}' -> '{reconstructed_bermain_main}'") # Expected: 'bermain-main'
 
 segmented_form4 = "sayur~rs(~mayur)"
 reconstructed4 = mkk.reconstruct(segmented_form4)
@@ -113,7 +157,7 @@ segmented_form6 = "di~backup"
 reconstructed6 = mkk.reconstruct(segmented_form6)
 print(f"'{segmented_form6}' -> '{reconstructed6}'") # Expected: 'dibackup'
 ```
-*Note: Actual segmentation results for words like "makanan", "memperbarui", "dibaca" depend on the contents of `kata_dasar.txt`. If the root word ("makan", "baru", "baca") is not found, the word may be returned unsegmented or only partially segmented.*
+*Note: Actual segmentation results depend on the contents of `kata_dasar.txt` (e.g., for "makan", "baru", "rumah", "laki") and `loanwords.txt` (e.g., for "backup"). If a root word is not found, the word may be returned unsegmented or only partially segmented. For example, "dibaca" and "mempertaruhkan" remain unsegmented if "baca" and "taruh" are not in the dictionary.*
 
 ## **Output Format for `segment()`**
 
@@ -162,7 +206,7 @@ For detailed API information, please refer to the docstrings within the source c
 
 ## **Contributing**
 
-Contributions are welcome! Please report issues, suggest features, or submit pull requests via the project's GitHub repository: [https://github.com/USERNAME/modern_kata_kupas](https://github.com/USERNAME/modern_kata_kupas) (Replace with actual URL).
+Contributions are welcome! Please report issues, suggest features, or submit pull requests via the project's GitHub repository: [https://github.com/neimasilk/modern_kata_kupas](https://github.com/neimasilk/modern_kata_kupas).
 
 Before contributing, please ensure your code adheres to formatting standards (e.g., using Black and Flake8).
 
@@ -176,4 +220,4 @@ Before contributing, please ensure your code adheres to formatting standards (e.
 ## **License**
 
 MIT License
-(c) 2024 [Your Name/Organization]
+(c) 2024 Tim ModernKataKupas

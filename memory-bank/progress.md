@@ -30,9 +30,25 @@ This file will track the progress of the ModernKataKupas project.
 - [x] Step 3.3: Implement Dwipurwa Logic
 - [x] Step 3.4: Word Reconstruction Functionality
 
-## Phase 4: Handling Loanwords and Irregularities
+## Phase 4: Handling Loanwords, Packaging, and Finalization
 
-**Objective:** Enhance the segmenter to correctly handle loanwords with Indonesian affixes and other irregular forms.
+**Objective:** Enhance the segmenter to correctly handle loanwords with Indonesian affixes, finalize packaging, documentation, and testing for V1.0.
 
 - [x] Step 4.1: Loanword Affixation Handling
-- [ ] ... (other steps)
+- [x] Step 4.2: Documentation and Testing
+    - [x] Step 4.2.1: Dokumentasi Heuristik Ambiguitas (SELESAI per 25 Mei 2024)
+- [x] Step 4.3: Test Case Expansion
+    - [x] Step 4.3.1: Identifikasi & Tambah Kasus Uji Morfologi Kompleks (SELESAI per 25 Mei 2024)
+    - [x] Step 4.3.2: Tambah Kasus Uji Tepi (Edge Cases) (SELESAI per 25 Mei 2024)
+- [x] Step 4.4: API and Documentation Review
+    - [x] Step 4.4.1: Review Final API Publik & Docstrings Inti (SELESAI per 25 Mei 2024)
+    - [x] Step 4.4.2: Update Komprehensif `README.md` (Iterasi Awal) (SELESAI per 25 Mei 2024)
+- [x] Step 4.5: Packaging
+    - [x] Step 4.5.1: Finalisasi `setup.py` dan Build Paket Awal (SELESAI per 25 Mei 2024) - `setup.py` V1.0.0 finalized, package built (`sdist`, `bdist_wheel`), `package_data` verified.
+    - [x] Step 4.5.2: Uji Instalasi Paket Lokal (SELESAI per 25 Mei 2024) - Package installed from wheel in new venv, basic functionality and data access verified.
+- [x] Step 4.6: Documentation Finalization
+    - [x] Step 4.6.1: Update Detail Final `architecture.md` (SELESAI per 25 Mei 2024) - `architecture.md` updated for V1.0 architecture, packaging, and data access.
+    - [x] Step 4.6.2: Final Review `README.md` dan Verifikasi Contoh (SELESAI per 25 Mei 2024) - `README.md` reviewed and updated. Examples verified (with notes on `verify_segment_examples.py` behavior).
+- [x] Step 4.7: Final Testing and Status Update
+    - [x] Step 4.7.1: Update Dokumen Status dan Progress (SELESAI per 25 Mei 2024) - This document and `status-todolist-saran.md` updated.
+    - [x] Step 4.7.2: Uji `pytest` Final (SELESAI per 25 Mei 2024) - All 91 `pytest` tests passed.

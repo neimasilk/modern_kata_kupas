@@ -23,7 +23,7 @@ setup(
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     package_data={
-        'modern_kata_kupas': ['data/*.txt', 'data/*.json'],
+        "modern_kata_kupas": ["data/kata_dasar.txt", "data/loanwords.txt", "data/affix_rules.json"],
     },
     install_requires=[
         'PySastrawi>=1.2.0,<2.0.0',
