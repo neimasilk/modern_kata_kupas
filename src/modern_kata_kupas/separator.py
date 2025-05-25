@@ -39,25 +39,37 @@ class ModernKataKupas:
     MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING = 4 # Define minimum stem length for derivational suffix stripping
     MIN_STEM_LENGTH_FOR_PARTICLE = 3 # Define minimum stem length for particle stripping
     def __init__(self, dictionary_path: str = None, rules_file_path: str = None):
-        """
-        Initializes the ModernKataKupas separator with necessary components.
+        """Initializes the ModernKataKupas separator.
 
-        This involves setting up the text normalizer, dictionary manager (for root words
-        and loanwords), morphological rules engine, and the underlying Indonesian stemmer.
-        It also initializes the Reconstructor for word reconstruction capabilities.
+        Sets up the text normalizer, dictionary manager (for root words and
+        loanwords), morphological rules engine, the underlying Indonesian stemmer,
+        and the Reconstructor.
+
+        If `dictionary_path` or `rules_file_path` are not provided, the system
+        attempts to load default packaged files.
 
         Args:
-            dictionary_path (str, optional): Path to a custom root word dictionary file.
-                                             If None, the default packaged dictionary is loaded.
-                                             Defaults to None.
-            rules_file_path (str, optional): Path to a custom morphological rules JSON file.
-                                             If None, the default packaged rules file is loaded.
-                                             Defaults to None.
+            dictionary_path (str, optional): Path to a custom root word dictionary
+                file (one word per line, UTF-8 encoded). If None, the default
+                packaged dictionary is loaded. Defaults to None.
+            rules_file_path (str, optional): Path to a custom morphological rules
+                JSON file. If None, the default packaged rules file is loaded.
+                Defaults to None.
+
+        Raises:
+            DictionaryFileNotFoundError: If a specified `dictionary_path` is invalid
+                and the default dictionary cannot be loaded as a fallback.
+            DictionaryLoadingError: If there's an error parsing the dictionary file.
+            RuleError: If a specified `rules_file_path` is invalid, or the rules
+                       file has an incorrect format, and default rules cannot be
+                       loaded as a fallback.
+            FileNotFoundError: If default packaged files (dictionary/rules) are
+                               missing and no custom paths are provided.
         """
         import importlib
         
         # Constants for default rules file location
-        DEFAULT_DATA_PACKAGE_PATH = 'src.modern_kata_kupas.data' # Corrected path
+        DEFAULT_DATA_PACKAGE_PATH = 'modern_kata_kupas.data' # Path for importlib when src is on sys.path
         DEFAULT_RULES_FILENAME = 'affix_rules.json'
         
         self.normalizer = TextNormalizer()
@@ -101,13 +113,20 @@ class ModernKataKupas:
 
         Args:
             segmented_word (str): A string of morphemes separated by tildes (~),
-                                  e.g., "meN~tulis", "buku~ulg~nya".
+                e.g., "meN~tulis", "buku~ulg~nya".
 
         Returns:
             str: The reconstructed original word. If the input is empty or cannot be
-                 meaningfully reconstructed, the behavior might depend on the
-                 Reconstructor's implementation (e.g., returning an empty string or
-                 the input itself).
+                 meaningfully reconstructed (e.g., root is missing from segmented_word),
+                 it may return an empty string or a partially reconstructed form
+                 depending on the Reconstructor's logic.
+
+        Example:
+            >>> mkk = ModernKataKupas()
+            >>> mkk.reconstruct("meN~tulis")
+            'menulis'
+            >>> mkk.reconstruct("buku~ulg~nya")
+            'buku-bukunya'
         """
         # self.reconstructor is guaranteed by __init__
         return self.reconstructor.reconstruct(segmented_word)
@@ -136,7 +155,17 @@ class ModernKataKupas:
             str: A string representing the segmented morphemes separated by tildes (~).
                  For example, "mempermainkan" might become "meN~per~main~kan".
                  Unsegmentable words or root words are returned as is (normalized).
-                 Returns an empty string if the input word normalizes to an empty string.
+                 Returns an empty string if the input word normalizes to an empty
+                 string (e.g., input is `""` or `"   "`).
+
+        Example:
+            >>> mkk = ModernKataKupas()
+            >>> mkk.segment("makanan")
+            'makan~an'
+            >>> mkk.segment("memperjuangkannya") # Assuming 'juang' is in dictionary
+            'meN~per~juang~kan~nya'
+            >>> mkk.segment("tidakdiketahui") # Assuming 'tahu' is in dictionary
+            'tidak~di~ke~tahu~i'
         """
         # 1. Normalisasi kata
         normalized_word = self.normalizer.normalize_word(word)

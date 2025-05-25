@@ -22,59 +22,89 @@ Modul utama (`separator.py`) yang bertanggung jawab untuk memisahkan kata berimb
 
 ## Penanganan Ambiguitas Dasar (V1.0)
 
-Versi 1.0 dari `ModernKataKupas` memiliki mekanisme heuristik dasar untuk menangani beberapa kasus ambiguitas, meskipun tidak secara eksplisit dirancang untuk menyelesaikan semua jenis ambiguitas secara mendalam. Penanganan ini lebih merupakan hasil dari interaksi aturan yang ada dan prioritas dalam proses segmentasi.
+Versi 1.0 dari `ModernKataKupas` menggunakan pendekatan heuristik untuk menangani beberapa kasus ambiguitas morfologis. Pendekatan ini tidak dirancang untuk menyelesaikan semua jenis ambiguitas secara komprehensif, melainkan merupakan hasil dari interaksi antara urutan penerapan aturan, strategi segmentasi, dan ketersediaan kata dasar dalam kamus.
 
-Berikut adalah analisis bagaimana kata-kata ambigu "beruang" dan "mengetahui" ditangani oleh sistem V1.0, berdasarkan pengujian dengan kamus yang ada (yang mungkin tidak mencakup semua akar kata potensial seperti "uang", "ruang", atau "tahu" dalam setiap skenario pengujian).
+### Strategi Segmentasi Utama
 
-### Kasus: "beruang"
+Sistem menerapkan dua strategi utama untuk menemukan akar kata dan afiks:
 
-*   **Output Aktual (V1.0 dengan kamus uji saat ini):** `beruang`
+1.  **S1 (Prefixes then Suffixes):** Mencoba melepaskan prefiks terlebih dahulu, kemudian sufiks dari sisa kata.
+2.  **S2 (Suffixes then Prefixes):** Mencoba melepaskan sufiks terlebih dahulu, kemudian prefiks dari sisa kata.
+
+### Pemilihan Hasil Segmentasi
+
+Logika pemilihan antara hasil S1 dan S2 adalah sebagai berikut:
+
+*   **Validitas Akar Kata:** Hasil dari sebuah strategi dianggap valid jika akar kata yang dihasilkan ditemukan dalam kamus (`kata_dasar.txt`).
+*   **Prioritas:**
+    1.  Jika kedua strategi (S1 dan S2) menghasilkan akar kata yang valid:
+        *   Sistem akan memilih hasil yang menghasilkan **akar kata terpanjang**.
+        *   Jika panjang akar kata sama, hasil dari S1 (Prefixes then Suffixes) akan lebih diprioritaskan.
+    2.  Jika hanya satu strategi yang menghasilkan akar kata yang valid, hasil dari strategi tersebut akan dipilih.
+    3.  Jika kedua strategi gagal menghasilkan akar kata yang valid (tidak ditemukan di kamus):
+        *   Sistem akan menggunakan `word_to_process` (kata setelah penanganan reduplikasi) sebagai kandidat akar.
+        *   Jika `word_to_process` ini juga tidak ada dalam kamus dan tidak ada afiks yang berhasil dilepaskan, maka kata asli yang telah dinormalisasi akan dikembalikan.
+
+### Pengaruh Kamus (`kata_dasar.txt`)
+
+Kamus kata dasar memainkan peran sentral. Sebuah urutan pelepasan afiks hanya dianggap berhasil jika menghasilkan stem yang terdaftar sebagai kata dasar. Kelengkapan kamus ini secara langsung mempengaruhi kemampuan sistem untuk menyelesaikan ambiguitas.
+
+### Pengaruh Implisit dari Urutan Pelepasan Afiks
+
+Meskipun tidak ada mekanisme eksplisit untuk memilih antara interpretasi afiks yang berbeda (misalnya, apakah "-an" pada "makanan" adalah satu sufiks atau bagian dari konfiks "ke-an"), urutan operasi internal memberikan pengaruh implisit:
+
+*   **Pelepasan Sufiks (`_strip_suffixes`):** Sufiks dilepaskan dalam urutan prioritas:
+    1.  Partikel: `-lah`, `-kah`, `-pun`
+    2.  Posesif: `-ku`, `-mu`, `-nya`
+    3.  Derivasional: `-kan`, `-i`, `-an`
+    Proses ini iteratif; setelah satu sufiks dilepas, sistem mencoba lagi dari awal urutan prioritas pada sisa kata. Sufiks derivasional memiliki pemeriksaan tambahan: secara default, mereka hanya dilepas jika sisa stem adalah kata dasar yang dikenal (kecuali dalam konteks khusus seperti pemrosesan kluster sufiks pada kata berulang).
+*   **Pelepasan Prefiks (`_strip_prefixes_detailed`):**
+    *   Prefiks dicocokkan dari bentuk terpanjang ke terpendek (misalnya, "memper-" sebelum "meN-" atau "per-"). Ini membantu dalam identifikasi prefiks berlapis.
+    *   Setelah sebuah prefiks dilepas, sistem memeriksa apakah sisa kata adalah kata dasar. Jika tidak, sistem juga akan mencoba membalikkan perubahan morfofonemik (misalnya, dari "tulis" menjadi "nulis" setelah "meN-" dilepas) dan memeriksa apakah bentuk asli tersebut adalah kata dasar.
+    *   Proses ini bisa rekursif untuk menangani prefiks berlapis (misalnya, "dipermainkan" -> "di" + "permainkan" -> "di" + "per" + "mainkan").
+
+### Contoh Kasus Ambiguitas
+
+#### Kasus: "beruang"
+
+*   **Kamus Referensi (`src/modern_kata_kupas/data/kata_dasar.txt`):** Tidak mengandung "uang" atau "ruang".
+*   **Output Aktual (V1.0):** `beruang`
 *   **Analisis Heuristik:**
-    1.  **Normalisasi:** Kata "beruang" dinormalisasi menjadi "beruang".
-    2.  **Pengecekan Kata Dasar:** Jika "beruang" ada dalam kamus sebagai kata dasar, maka akan dikembalikan apa adanya.
-    3.  **Penanganan Reduplikasi:** Tidak ada pola reduplikasi yang terdeteksi. `word_to_process` menjadi "beruang".
-    4.  **Strategi Segmentasi (S1: Prefiks dulu, S2: Sufiks dulu):**
-        *   **Pelepasan Prefiks (`_strip_prefixes`):**
-            *   Aturan untuk prefiks "ber-" akan dicoba. Jika "uang" ada dalam kamus (`kata_dasar_set`), maka "ber~uang" akan menjadi kandidat kuat.
-            *   Aturan untuk prefiks "be-" (jika ada dan relevan, misal untuk akar yang dimulai dengan 'r' seperti "ruang") juga bisa dicoba. Jika "ruang" ada dalam kamus, "be~ruang" bisa menjadi kandidat.
-        *   **Pelepasan Sufiks (`_strip_suffixes`):** Tidak ada sufiks yang jelas pada "beruang".
-    5.  **Pemilihan Hasil Terbaik:**
-        *   Jika kedua strategi (S1 dan S2) dijalankan, dan salah satunya menghasilkan segmen yang valid dimana stemnya adalah kata dasar yang dikenal (misalnya, "uang" setelah "ber-" dilepas, atau "ruang" setelah "be-" dilepas), segmen tersebut akan dipilih.
-        *   **Dalam kasus pengujian saat ini (Baby Step 6), kata "uang" dan "ruang" tidak dapat ditambahkan secara reliabel ke `tests/data/test_kata_dasar.txt`. Akibatnya, `is_kata_dasar("uang")` dan `is_kata_dasar("ruang")` akan mengembalikan `False`.**
-        *   Karena tidak ada akar kata yang valid ("uang" atau "ruang") yang ditemukan setelah mencoba melepaskan prefiks "ber-" atau "be-", kedua strategi segmentasi (S1 dan S2) gagal menghasilkan dekomposisi yang valid menjadi afiks + akar kata dikenal.
-        *   Ketika tidak ada segmentasi valid yang ditemukan, dan kata itu sendiri ("beruang") tidak teridentifikasi sebagai kata dasar dalam kamus yang terbatas, sistem akan mengembalikan kata yang sudah dinormalisasi sebagai output akhir. Inilah mengapa outputnya adalah "beruang".
-    *   **Prioritas Heuristik:**
-        *   **Keberadaan dalam Kamus:** Validitas sebuah akar kata setelah pelepasan afiks sangat bergantung pada keberadaannya dalam `kata_dasar_set`.
-        *   **Aturan Prefiks:** Aturan prefiks "ber-" (dan alomorfnya jika ada) akan dicocokkan. Jika `affix_rules.json` mendefinisikan "ber-" sebagai bentuk yang valid dan "be-" sebagai alomorf hanya untuk kondisi tertentu (misalnya, bertemu akar "kerja" menjadi "bekerja"), maka "ber~uang" akan lebih diprioritaskan daripada "be~ruang" jika "uang" adalah akar yang valid.
+    1.  **Normalisasi:** "beruang" -> "beruang".
+    2.  **Cek Kata Dasar Awal:** "beruang" tidak ada di kamus.
+    3.  **Reduplikasi:** Tidak ada. `word_to_process` = "beruang".
+    4.  **Strategi S1 (Prefiks dulu):**
+        *   `_strip_prefixes("beruang")`:
+            *   Mencoba "ber-": sisa "uang". "uang" tidak ada di kamus.
+            *   Mencoba "be-": sisa "ruang". "ruang" tidak ada di kamus.
+            *   Tidak ada prefiks valid yang menghasilkan kata dasar dikenal. Hasil S1: tidak ada akar kata valid.
+    5.  **Strategi S2 (Sufiks dulu):**
+        *   `_strip_suffixes("beruang")`: Tidak ada sufiks yang cocok. Sisa "beruang".
+        *   `_strip_prefixes("beruang")`: Sama seperti S1, tidak menemukan akar kata valid. Hasil S2: tidak ada akar kata valid.
+    6.  **Pemilihan Hasil:** Karena S1 dan S2 gagal, dan "beruang" (sebagai `word_to_process`) tidak ada di kamus, outputnya adalah "beruang" (kata asli yang dinormalisasi).
 
-### Kasus: "mengetahui"
+#### Kasus: "mengetahui"
 
-*   **Output Aktual (V1.0 dengan kamus uji saat ini):** `mengetahui`
+*   **Kamus Referensi (`src/modern_kata_kupas/data/kata_dasar.txt`):** Tidak mengandung "tahu" atau "ketahui".
+*   **Output Aktual (V1.0):** `mengetahui`
 *   **Analisis Heuristik:**
     1.  **Normalisasi:** "mengetahui" -> "mengetahui".
-    2.  **Pengecekan Kata Dasar:** Jika "mengetahui" ada dalam kamus, akan dikembalikan.
-    3.  **Penanganan Reduplikasi:** Tidak ada. `word_to_process` menjadi "mengetahui".
-    4.  **Strategi Segmentasi (S1 dan S2):**
-        *   **Pelepasan Sufiks (`_strip_suffixes`):**
-            *   Sufiks "-i" akan dicoba dilepaskan, menghasilkan "mengetahu".
-        *   **Pelepasan Prefiks (`_strip_prefixes` pada "mengetahu" atau "mengetahui"):**
-            *   Aturan untuk prefiks "meN-" akan dicoba. Alomorf "meng-" mungkin cocok dengan "mengetahui" (jika "etahui" dianggap calon stem) atau "menge-" dengan "mengetahui" (jika "tahui" dianggap calon stem).
-            *   Jika "-i" sudah dilepas menjadi "mengetahu", maka "meN-" (dengan alomorf "meng-" atau "menge-") akan dicoba pada "mengetahu".
-                *   Jika "tahu" adalah kata dasar yang dikenal: `meN~` + `tahu` akan menjadi `mengetahui` (setelah `reverse_morphophonemics` pada "tahu" dari "etahui" jika "meng-" + "etahui" diproses, atau "menge-" + "tahui").
-                *   Jika "ketahui" adalah kata dasar yang dikenal: `meN~` + `ketahui` bisa menjadi `mengetahui`.
-    5.  **Pemilihan Hasil Terbaik:**
-        *   Segmentasi yang paling mungkin dan valid berdasarkan aturan dan kamus adalah `meN~tahu~i`. Ini memerlukan "tahu" sebagai kata dasar yang dikenal.
-        *   **Dalam kasus pengujian saat ini (Baby Step 6), kata "tahu" tidak dapat ditambahkan secara reliabel ke `tests/data/test_kata_dasar.txt`. Akibatnya, `is_kata_dasar("tahu")` akan mengembalikan `False`.**
-        *   Karena akar kata "tahu" tidak ditemukan dalam kamus uji, proses pelepasan afiks "meN-" dan "-i" tidak dapat divalidasi sepenuhnya ke akar yang dikenal.
-        *   Strategi S1 (prefiks dulu) mungkin mencoba `meN-` dari `mengetahui`, menyisakan `etahui`. Jika `etahui` bukan KD, dan pembalikan morfofonemiknya ke `ketahui` atau `tahui` juga bukan KD, maka path ini tidak menghasilkan stem valid.
-        *   Strategi S2 (sufiks dulu) akan melepas `-i` menjadi `mengetahu`. Kemudian prefiks `meN-` dicoba pada `mengetahu`. Jika `tahu` tidak dikenal sebagai KD, maka path ini juga tidak menghasilkan stem valid.
-        *   Ketika tidak ada dekomposisi menjadi afiks + akar kata dikenal yang ditemukan, dan "mengetahui" itu sendiri bukan kata dasar, sistem mengembalikan kata yang sudah dinormalisasi.
-    *   **Prioritas Heuristik:**
-        *   **Validitas Kata Dasar:** Kunci utama adalah pengenalan "tahu" sebagai kata dasar.
-        *   **Urutan Pelepasan Afiks:** Urutan pelepasan sufiks (seperti "-i") dan prefiks (seperti "meN-") serta pemeriksaan kamus pada setiap langkah sangat menentukan.
-        *   **Aturan Alomorf `meN-`:** Aturan untuk "menge-" (jika kata dasar satu suku kata) atau "meng-" (untuk vokal atau k-) akan dievaluasi.
+    2.  **Cek Kata Dasar Awal:** "mengetahui" tidak ada di kamus.
+    3.  **Reduplikasi:** Tidak ada. `word_to_process` = "mengetahui".
+    4.  **Strategi S1 (Prefiks dulu):**
+        *   `_strip_prefixes("mengetahui")`:
+            *   Mencoba "meN-" (alomorf "menge-"): sisa "tahui". "tahui" tidak ada di kamus.
+            *   Mencoba "meN-" (alomorf "meng-"): sisa "etahui". "etahui" tidak ada di kamus.
+            *   Tidak ada prefiks valid yang menghasilkan kata dasar dikenal. Hasil S1: tidak ada akar kata valid.
+    5.  **Strategi S2 (Sufiks dulu):**
+        *   `_strip_suffixes("mengetahui")`: Melepas "-i", sisa "mengetahu".
+        *   `_strip_prefixes("mengetahu")`:
+            *   Mencoba "meN-" (alomorf "menge-"): sisa "tahu". "tahu" tidak ada di kamus.
+            *   Mencoba "meN-" (alomorf "meng-"): sisa "etahu". "etahu" tidak ada di kamus.
+            *   Tidak ada prefiks valid yang menghasilkan kata dasar dikenal. Hasil S2: tidak ada akar kata valid.
+    6.  **Pemilihan Hasil:** Karena S1 dan S2 gagal, dan "mengetahui" (sebagai `word_to_process`) tidak ada di kamus, outputnya adalah "mengetahui".
 
-Secara umum, untuk V1.0, jika sebuah kata ambigu tidak dapat dipecah menjadi kombinasi afiks dan akar kata *yang dikenal dalam kamus saat ini*, maka kata tersebut cenderung dikembalikan dalam bentuk normalisasinya. Kemampuan untuk menangani ambiguitas akan sangat bergantung pada kelengkapan kamus dan kecanggihan aturan pemrioritasan.
+Secara umum, untuk V1.0, jika sebuah kata ambigu tidak dapat dipecah menjadi kombinasi afiks dan akar kata *yang dikenal dalam kamus saat ini*, maka kata tersebut cenderung dikembalikan dalam bentuk normalisasinya. Peningkatan kelengkapan kamus dan pengenalan aturan kontekstual yang lebih canggih akan diperlukan untuk penanganan ambiguitas yang lebih baik di versi mendatang.
 
 Metode kunci dalam modul ini meliputi:
 

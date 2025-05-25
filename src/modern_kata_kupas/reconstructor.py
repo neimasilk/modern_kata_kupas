@@ -15,22 +15,30 @@ class Reconstructor:
     reassemble a word from its components (root, prefixes, suffixes, reduplication markers),
     applying necessary morphophonemic changes in the process.
 
+    Reassembles a complete Indonesian word from a tilde-separated string of its
+    morphemes.
+
+    This class utilizes morphological rules (including morphophonemic alternations)
+    provided by `MorphologicalRules` and may consult `DictionaryManager` for
+    validating roots or properties like monosyllabicity if required by specific
+    reconstruction rules.
+
     Attributes:
-        rules (MorphologicalRules): An instance of MorphologicalRules containing
-                                    the affix rules and morphophonemic rules.
-        dictionary (DictionaryManager): An instance of DictionaryManager for
-                                        validating root words, if needed during reconstruction.
+        rules (MorphologicalRules): An instance of `MorphologicalRules` containing
+            the affix rules and morphophonemic rules necessary for reconstruction.
+        dictionary (DictionaryManager): An instance of `DictionaryManager` for
+            validating root words or checking word properties (e.g., if a root
+            is monosyllabic, which can affect prefix allomorphy).
     """
     def __init__(self, rules: 'MorphologicalRules', dictionary_manager: 'DictionaryManager'):
-        """
-        Initializes the Reconstructor.
+        """Initializes the Reconstructor.
 
         Args:
-            rules (MorphologicalRules): An instance of MorphologicalRules, providing
-                                        access to affix definitions and morphophonemic rules.
-            dictionary_manager (DictionaryManager): An instance of DictionaryManager,
-                                                    used for dictionary lookups (e.g.
-                                                    validating monosyllabic roots).
+            rules (MorphologicalRules): An instance of `MorphologicalRules`,
+                providing access to affix definitions and morphophonemic rules.
+            dictionary_manager (DictionaryManager): An instance of
+                `DictionaryManager`, used for dictionary lookups (e.g.,
+                validating monosyllabic roots for certain prefix changes).
         """
         self.rules = rules
         self.dictionary = dictionary_manager
@@ -41,26 +49,47 @@ class Reconstructor:
 
         The method identifies the root, prefixes, various types of suffixes
         (derivational, particle, possessive, suffixes after reduplication),
-        and reduplication markers including any variants for phonetic change reduplication.
+        and reduplication markers including any variants for phonetic change
+        reduplication.
+
+        The parsing logic prioritizes known affixes and markers. If multiple
+        non-affix parts are present, it attempts to identify the most likely root,
+        defaulting to the first candidate if no dictionary match is found.
 
         Args:
-            segmented_word (str): The segmented word string, e.g., "meN~per~main~kan~lah".
-                                  An empty string or a string without tildes (assumed root)
-                                  are handled gracefully.
+            segmented_word (str): The segmented word string, e.g.,
+                "meN~per~main~kan~lah" or "buku~ulg~nya". An empty string or a
+                string without tildes (assumed to be a root word) are handled.
 
         Returns:
             dict: A dictionary containing the parsed morphemes. Keys include:
-                  "root" (str|None): The identified root word.
-                  "prefixes" (list[str]): List of identified prefixes.
-                  "suffixes_derivational" (list[str]): List of derivational suffixes.
-                  "suffixes_particle" (list[str]): List of particle suffixes.
-                  "suffixes_possessive" (list[str]): List of possessive suffixes.
-                  "suffixes_after_reduplication" (list[str]): Derivational suffixes
-                                                             attached after a reduplication marker.
-                  "redup_marker" (str|None): The reduplication marker ("ulg", "rp", "rs").
-                  "redup_variant" (str|None): The variant part for "rs" (e.g., "mayur").
-                  Returns a dict with None/empty lists if input is empty.
-                  If input has no tildes, "root" is set to the input string.
+                root (str | None): The identified root word.
+                prefixes (list[str]): Identified prefixes.
+                suffixes_derivational (list[str]): Derivational suffixes applied
+                    before reduplication.
+                suffixes_particle (list[str]): Particle suffixes.
+                suffixes_possessive (list[str]): Possessive suffixes.
+                suffixes_after_reduplication (list[str]): Derivational suffixes
+                    applied after a reduplication marker.
+                redup_marker (str | None): The reduplication marker, if present
+                    (e.g., "ulg", "rp", "rs").
+                redup_variant (str | None): The variant part for "rs" type
+                    reduplication (e.g., "mayur" from "sayur~rs(~mayur)").
+                An empty or minimally filled dictionary is returned if the input
+                is empty or unparseable into distinct known morpheme types beyond
+                a root.
+
+        Example:
+            >>> rules_instance = MorphologicalRules() # Assuming default load
+            >>> dict_instance = DictionaryManager() # Assuming default load
+            >>> reconstructor = Reconstructor(rules_instance, dict_instance)
+            >>> reconstructor.parse_segmented_string("meN~per~main~kan~lah")
+            {'root': 'main', 'prefixes': ['meN', 'per'], 'suffixes_derivational': ['kan'], 'suffixes_particle': ['lah'], 'suffixes_possessive': [], 'suffixes_after_reduplication': [], 'redup_marker': None, 'redup_variant': None}
+            >>> reconstructor.parse_segmented_string("buku~ulg~nya")
+            {'root': 'buku', 'prefixes': [], 'suffixes_derivational': [], 'suffixes_particle': [], 'suffixes_possessive': ['nya'], 'suffixes_after_reduplication': [], 'redup_marker': 'ulg', 'redup_variant': None}
+            >>> reconstructor.parse_segmented_string("mobil~ulg~an")
+            {'root': 'mobil', 'prefixes': [], 'suffixes_derivational': [], 'suffixes_particle': [], 'suffixes_possessive': [], 'suffixes_after_reduplication': ['an'], 'redup_marker': 'ulg', 'redup_variant': None}
+
         """
         logging.debug(f"parse_segmented_string CALLED with: '{segmented_word}'")
         result = {
@@ -246,11 +275,26 @@ class Reconstructor:
 
         Args:
             segmented_word (str): A string of morphemes separated by tildes (~),
-                                  e.g., "meN~tulis", "buku~ulg~nya".
+                e.g., "meN~tulis", "buku~ulg~nya".
 
         Returns:
-            str: The reconstructed original word. Returns an empty string if the input
-                 is empty or if the root cannot be identified from parsing.
+            str: The reconstructed original word. Returns an empty string if the
+                input `segmented_word` is empty or if a root word cannot be
+                identified from the parsing process.
+
+        Example:
+            >>> # Assuming mkk is an instance of ModernKataKupas,
+            >>> # which internally uses a Reconstructor.
+            >>> # Direct Reconstructor usage:
+            >>> rules_instance = MorphologicalRules() # default load
+            >>> dict_instance = DictionaryManager() # default load
+            >>> reconstructor = Reconstructor(rules_instance, dict_instance)
+            >>> reconstructor.reconstruct("meN~tulis")
+            'menulis'
+            >>> reconstructor.reconstruct("buku~ulg~nya")
+            'buku-bukunya'
+            >>> reconstructor.reconstruct("meN~per~main~kan~lah")
+            'mempermainkanlah'
         """
         logging.debug(f"Reconstructor.reconstruct CALLED with segmented_word='{segmented_word}'")
         if not segmented_word:
@@ -341,9 +385,19 @@ class Reconstructor:
         Example: prefix_canonical_form="meN", base_word="pukul" -> "memukul"
                  prefix_canonical_form="ber", base_word="ajar" -> "belajar"
         Args:
-            prefix_canonical_form (str): The canonical form of the prefix.
-            base_word (str): The current form of the word to which the prefix is being attached.
-            original_root (str, optional): The original root word from segmentation. Used for specific checks like monosyllabicity.
+            prefix_canonical_form (str): The canonical form of the prefix (e.g.,
+                "meN", "ber").
+            base_word (str): The current form of the word to which the prefix is
+                being attached. This might be the root, or a root already combined
+                with other affixes (e.g., "ajar" or "perjuangkan").
+            original_root (str, optional): The original root word identified during
+                segmentation. This is used for rules that depend on properties of
+                the true root, such as checking for monosyllabicity when "meN-"
+                becomes "menge-". Defaults to None.
+
+        Returns:
+            str: The word formed by attaching the prefix to the base_word,
+                applying relevant morphophonemic changes.
         """
         logging.debug(f"_apply_forward_morphophonemics CALLED with prefix_canonical_form='{prefix_canonical_form}', base_word='{base_word}', original_root='{original_root}'")
 
