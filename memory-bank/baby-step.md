@@ -1,297 +1,254 @@
-# Baby Steps To-Do List untuk Penyelesaian Fase 4 (V1.0)
+# Baby Steps Menuju Penyelesaian ModernKataKupas V1.0 (Lanjutan Fase 4)
 
-**Tujuan Utama Fase 4:** Memfinalisasi fungsionalitas inti, melakukan pengujian komprehensif, menyelesaikan dokumentasi, dan mempersiapkan paket untuk rilis V1.0.
+Dokumen ini berisi langkah-langkah sangat detail (baby steps) untuk menyelesaikan Fase 4 dari proyek ModernKataKupas, dengan fokus pada packaging, pengujian instalasi, dan finalisasi dokumentasi. Langkah-langkah ini dirancang agar jelas dan dapat diikuti oleh junior developer.
 
-**Catatan untuk Developer:**
-* Setiap "Baby Step" dirancang untuk menjadi tugas yang jelas dan dapat dikelola.
-* Fokus pada kualitas dan kelengkapan untuk setiap langkah.
-* Jika ada ketidakjelasan, segera diskusikan sebelum melanjutkan.
-* Pastikan semua perubahan kode disertai dengan tes yang relevan (jika berlaku) dan semua tes berhasil dijalankan sebelum menandai langkah sebagai selesai.
-* Update `memory-bank/progress.md` setelah menyelesaikan setiap "Baby Step" yang berkaitan dengan Rencana Implementasi.
+**Asumsi Penting Sebelum Memulai:**
+1.  **Tool File Editing Berfungsi:** Anda memiliki cara yang andal untuk menyimpan perubahan pada file di workspace Anda (misalnya, `setup.py`, `architecture.md`, dll.). Jika masih ada masalah dengan tool internal (`overwrite_file_with_block`), masalah tersebut harus diselesaikan terlebih dahulu.
+2.  **Kode Telah Di-commit:** Semua perubahan kode terkait fungsionalitas inti V1.0 dan tes unit telah di-commit ke sistem kontrol versi Anda.
+3.  **Lingkungan Pengembangan Siap:** `Python`, `pip`, `setuptools`, `wheel`, dan `virtualenv` (atau `venv`) telah terinstal dan berfungsi dengan baik di lingkungan pengembangan Anda.
 
 ---
 
-## Bagian 1: Finalisasi Penanganan Ambiguitas Dasar (Terkait Langkah 4.2 Rencana Implementasi)
-
-### Baby Step 4.2.1: Dokumentasi Heuristik Ambiguitas V1.0
-
-* **Tujuan:** Mendokumentasikan dengan jelas bagaimana `ModernKataKupas` versi 1.0 saat ini menangani kasus-kasus ambiguitas morfologis dasar tanpa memerlukan perubahan kode. Fokus pada pendeskripsian perilaku *yang sudah ada*.
-* **Aktivitas:**
-    1.  **Identifikasi Heuristik Saat Ini:**
-        * Buka file `src/modern_kata_kupas/separator.py`.
-        * Pelajari kembali logika dalam metode `segment()`, khususnya bagaimana strategi S1 (`_strip_prefixes` lalu `_strip_suffixes`) dan S2 (`_strip_suffixes` lalu `_strip_prefixes`) dieksekusi dan bagaimana hasilnya dipilih jika keduanya menghasilkan segmen yang valid (misalnya, berdasarkan keberadaan kata dasar di kamus, atau jika ada preferensi implisit).
-        * Perhatikan bagaimana kasus seperti "beruang" (`be-ruang` vs `ber-uang`) dan "mengetahui" (`me-N-tahu-i` vs `meng-etahui`) saat ini diproses berdasarkan kamus yang ada (`data/kata_dasar.txt`) dan aturan (`data/affix_rules.json`).
-    2.  **Update `memory-bank/architecture.md`:**
-        * Tambahkan sub-bagian baru (atau perbarui yang sudah ada jika relevan) bernama "Penanganan Ambiguitas Dasar (V1.0)".
-        * Dalam sub-bagian ini, jelaskan secara naratif heuristik yang telah Anda identifikasi. Contoh poin yang perlu dijelaskan:
-            * Bagaimana sistem memutuskan antara dua atau lebih kemungkinan segmentasi yang valid (misalnya, "Apakah ada prioritas antara hasil strategi S1 dan S2?").
-            * Bagaimana keberadaan kata dasar dalam `kata_dasar.txt` mempengaruhi pilihan segmentasi.
-            * Bagaimana urutan pelepasan afiks (prefiks dulu atau sufiks dulu) secara implisit dapat mempengaruhi hasil pada kata-kata tertentu.
-            * Jelaskan perilaku saat ini untuk contoh konkret "beruang" dan "mengetahui", mengacu pada isi kamus pengujian jika perlu (misalnya, "Jika 'uang' ada di kamus dan 'ruang' tidak, maka 'ber-uang' akan lebih diprioritaskan jika memenuhi syarat aturan").
-    3.  **Update `README.md`:**
-        * Tambahkan bagian singkat (mungkin dalam "Fitur Utama" atau "Cara Kerja") yang merangkum pendekatan V1.0 terhadap ambiguitas, mengarahkan pengguna ke `architecture.md` untuk detail lebih lanjut.
-        * Contoh kalimat: "Untuk V1.0, `ModernKataKupas` menggunakan pendekatan heuristik berbasis kamus dan urutan aturan untuk menangani beberapa kasus ambiguitas dasar. Detail lebih lanjut dapat ditemukan dalam dokumentasi arsitektur kami."
-* **Kriteria Selesai:**
-    * Sub-bagian "Penanganan Ambiguitas Dasar (V1.0)" telah ditambahkan/diperbarui di `memory-bank/architecture.md` dengan penjelasan yang jelas dan akurat mengenai heuristik yang ada.
-    * `README.md` memiliki rangkuman singkat tentang penanganan ambiguitas V1.0.
-    * Tidak ada perubahan kode yang dilakukan untuk langkah ini, hanya dokumentasi.
-* **File Terkait untuk Diperbarui:**
-    * `memory-bank/architecture.md`
-    * `README.md`
-* **File Terkait untuk Referensi:**
-    * `src/modern_kata_kupas/separator.py`
-    * `tests/test_separator.py` (terutama `TestSpecificSegmentationCases`)
-    * `src/modern_kata_kupas/data/kata_dasar.txt`
+## Tujuan Utama Fase 4 (Lanjutan):
+* Menyiapkan paket distribusi ModernKataKupas V1.0.
+* Memastikan paket dapat diinstal dan berfungsi dengan benar.
+* Memfinalisasi semua dokumentasi proyek.
 
 ---
 
-## Bagian 2: Pengujian Komprehensif dan Kasus Tepi (Terkait Langkah 4.3 Rencana Implementasi)
+### Baby Step 4.5: Packaging dan Pengujian Instalasi Paket
 
-### Baby Step 4.3.1: Identifikasi & Tambah Kasus Uji Morfologi Kompleks
+#### Baby Step 4.5.1: Finalisasi `setup.py` dan Build Paket Awal
 
-* **Tujuan:** Meningkatkan *robustness* dan cakupan pengujian dengan menambahkan kasus-kasus kata Bahasa Indonesia yang memiliki struktur morfologis yang kompleks.
-* **Aktivitas:**
-    1.  **Riset Kata Kompleks:**
-        * Cari atau buat daftar 5-10 kata Bahasa Indonesia yang melibatkan:
-            * Afiksasi berlapis-lapis (contoh: "mempertanggungjawabkan", "dipersemakmurkan").
-            * Interaksi antara reduplikasi dan afiksasi (contoh: "memerah-merah", "berkejar-kejaran", "sebaik-baiknya").
-            * Konfiks yang mungkin jarang atau rumit (contoh: "keberlangsungan", "kesetiakawanan").
-            * Kombinasi prefiks dan sufiks pada kata serapan yang sudah di-Indonesiakan.
-    2.  **Tentukan Segmentasi yang Diharapkan:** Untuk setiap kata yang diidentifikasi, tentukan secara manual hasil segmentasi yang paling akurat menurut kaidah morfologi Bahasa Indonesia dan kemampuan yang diharapkan dari V1.0 (berdasarkan aturan dan kamus yang ada).
-    3.  **Tambahkan Tes ke `tests/test_separator.py`:**
-        * Buat metode tes baru dalam kelas yang sesuai (misalnya, `TestComplexCases` atau tambahkan ke `TestAffixCombinations`) untuk setiap kata kompleks.
-        * Contoh:
-            ```python
-            def test_segment_mempertanggungjawabkan(self):
-                self.assertEqual(self.separator.segment("mempertanggungjawabkan"), "meN-per-tanggung_jawab-kan") # Sesuaikan dengan output yang diharapkan
-            ```
-    4.  **Tambahkan Tes Idempotensi ke `tests/test_reconstructor.py`:**
-        * Untuk setiap kata kompleks yang berhasil disegmentasi, pastikan `Reconstructor` dapat merekonstruksinya kembali ke bentuk semula.
-        * Contoh:
-            ```python
-            def test_reconstruct_mempertanggungjawabkan(self):
-                original_word = "mempertanggungjawabkan"
-                segmented_word = "meN-per-tanggung_jawab-kan" # Hasil dari separator
-                reconstructed_word = self.reconstructor.reconstruct(segmented_word)
-                self.assertEqual(reconstructed_word, original_word)
-            ```
-    5.  **Jalankan Semua Tes:** Pastikan semua tes, termasuk yang baru ditambahkan, berhasil (`pytest`). Jika ada kegagalan pada kasus baru, analisis apakah ini bug di kode atau ekspektasi yang salah (mungkin memerlukan penyesuaian di `data/affix_rules.json` atau `data/kata_dasar.txt` jika V1.0 diharapkan menanganinya, atau catat sebagai batasan V1.0 jika di luar cakupan).
-* **Kriteria Selesai:**
-    * Minimal 5 kasus uji baru untuk kata-kata morfologi kompleks telah ditambahkan ke `tests/test_separator.py`.
-    * Tes idempotensi yang sesuai telah ditambahkan ke `tests/test_reconstructor.py` untuk kasus-kasus baru tersebut.
-    * Semua tes dalam *suite* pengujian berhasil dijalankan.
-* **File Terkait untuk Diperbarui:**
-    * `tests/test_separator.py`
-    * `tests/test_reconstructor.py`
-* **File Terkait untuk Referensi:**
-    * `src/modern_kata_kupas/separator.py`
-    * `src/modern_kata_kupas/reconstructor.py`
-    * `src/modern_kata_kupas/data/affix_rules.json`
-    * `src/modern_kata_kupas/data/kata_dasar.txt`
-
-### Baby Step 4.3.2: Tambah Kasus Uji Tepi (Edge Cases)
-
-* **Tujuan:** Memastikan aplikasi berperilaku secara wajar dan tidak *crash* ketika menerima input yang tidak umum atau ekstrem (kasus tepi).
-* **Aktivitas:**
-    1.  **Identifikasi Kasus Tepi:** Pertimbangkan input seperti:
-        * String kosong: `""`
-        * String hanya spasi: `"   "`
-        * String hanya tanda baca: `",.!?"`
-        * String dengan angka: `"kata123"`
-        * Kata yang sangat pendek yang bukan kata dasar (misalnya, "a", "b" jika tidak ada di kamus).
-        * Kata yang sangat panjang (misalnya, string dengan 100 karakter tanpa spasi).
-        * Kata dengan karakter non-standar (misalnya, emoji, jika normalizer belum menangani ini secara eksplisit).
-    2.  **Tentukan Perilaku yang Diharapkan:** Untuk setiap kasus tepi, tentukan bagaimana `ModernKataKupas` V1.0 seharusnya merespons. Contoh:
-        * String kosong/spasi: Harus mengembalikan string kosong atau representasi input yang telah dinormalisasi.
-        * Hanya tanda baca: Seharusnya mengembalikan input apa adanya setelah normalisasi (misalnya, jika normalizer menghapus beberapa tanda baca).
-        * Kata sangat panjang/non-standar: Mungkin dikembalikan apa adanya jika tidak ada aturan atau kata dasar yang cocok. Yang penting tidak *crash*.
-    3.  **Tambahkan Tes ke `tests/test_separator.py`:**
-        * Buat metode tes baru dalam kelas yang sesuai (misalnya, `TestEdgeCases`) untuk setiap kasus tepi.
-        * Contoh:
-            ```python
-            def test_segment_empty_string(self):
-                self.assertEqual(self.separator.segment(""), "")
-
-            def test_segment_only_punctuation(self):
-                self.assertEqual(self.separator.segment(",.!?"), ",.!?") # Atau sesuai output normalizer
-            ```
-    4.  **Jalankan Semua Tes:** Pastikan semua tes, termasuk yang baru, berhasil. Jika ada *crash*, perbaiki kode agar lebih tangguh. Jika perilakunya tidak sesuai ekspektasi tapi tidak *crash*, dokumentasikan perilaku tersebut jika dianggap bisa diterima untuk V1.0, atau perbaiki jika dianggap bug.
-* **Kriteria Selesai:**
-    * Minimal 5 kasus uji baru untuk kasus tepi telah ditambahkan ke `tests/test_separator.py`.
-    * Aplikasi tidak *crash* pada input kasus tepi tersebut.
-    * Semua tes dalam *suite* pengujian berhasil dijalankan.
-* **File Terkait untuk Diperbarui:**
-    * `tests/test_separator.py`
-* **File Terkait untuk Referensi:**
-    * `src/modern_kata_kupas/separator.py`
-    * `src/modern_kata_kupas/normalizer.py`
-
----
-
-## Bagian 3: Finalisasi API dan Dokumentasi (Terkait Langkah 4.4 Rencana Implementasi)
-
-### Baby Step 4.4.1: Review Final API Publik & Docstrings Inti
-
-* **Tujuan:** Memastikan bahwa API publik dari `ModernKataKupas` dan komponen intinya jelas, konsisten, mudah digunakan, dan terdokumentasi dengan baik melalui *docstrings*. Ini penting untuk pengguna *library*.
-* **Aktivitas:**
-    1.  **Identifikasi API Publik:** Fokus pada kelas dan metode yang akan digunakan langsung oleh pengguna *library*:
-        * `modern_kata_kupas.ModernKataKupas` (terutama metode `segment()` dan `reconstruct()`).
-        * Mungkin juga metode penting dari `DictionaryManager` atau `MorphologicalRules` jika ada kasus penggunaan di mana pengguna mungkin ingin mengaksesnya secara langsung (meskipun untuk V1.0, interaksi utama mungkin hanya melalui `ModernKataKupas`).
-    2.  **Review Nama Metode dan Parameter:**
-        * Apakah nama metode sudah intuitif dan mencerminkan fungsinya?
-        * Apakah nama parameter sudah jelas?
-        * Apakah tipe data input dan output konsisten dan terdokumentasi?
-        * Apakah ada parameter opsional yang berguna? Apakah nilai *default*-nya sudah sesuai?
-    3.  **Review dan Lengkapi Docstrings:**
-        * Untuk setiap kelas publik dan metode publik:
-            * Pastikan ada *docstring*.
-            * Deskripsi singkat fungsi kelas/metode.
-            * Penjelasan untuk setiap parameter (`Args:`).
-            * Penjelasan untuk nilai kembalian (`Returns:`).
-            * Contoh penggunaan sederhana (`Example:` atau `Examples:` jika relevan dan belum ada di `README.md`).
-            * Jika metode dapat memunculkan *exception* spesifik, sebutkan (`Raises:`).
-        * Gunakan format *docstring* yang konsisten (misalnya, Google Style atau NumPy/SciPy style, pilih salah satu dan terapkan).
-* **Kriteria Selesai:**
-    * Semua metode publik di kelas `ModernKataKupas` (dan kelas inti lainnya yang dianggap publik) telah direview nama dan parameternya.
-    * *Docstrings* untuk kelas dan metode publik tersebut telah dilengkapi dengan deskripsi, argumen, nilai kembalian, dan contoh (jika perlu), sesuai dengan gaya yang konsisten.
-* **File Terkait untuk Diperbarui:**
-    * `src/modern_kata_kupas/separator.py` (untuk kelas `ModernKataKupas`)
-    * `src/modern_kata_kupas/reconstructor.py`
-    * `src/modern_kata_kupas/dictionary_manager.py` (jika ada API publik)
-    * `src/modern_kata_kupas/rules.py` (jika ada API publik)
-* **File Terkait untuk Referensi:**
-    * Panduan gaya docstring (misalnya, [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings))
-
-### Baby Step 4.4.2: Update Komprehensif `README.md`
-
-* **Tujuan:** Menjadikan `README.md` sebagai panduan pengguna utama yang lengkap, akurat, dan mudah dipahami untuk `ModernKataKupas` V1.0.
-* **Aktivitas:**
-    1.  **Bagian Instalasi:**
-        * Pastikan instruksi instalasi jelas dan akurat (akan difinalisasi setelah Baby Step 4.5.1 dan 4.5.2, tapi draf bisa disiapkan). Sertakan perintah `pip install modern_kata_kupas` (atau nama paket final).
-        * Sebutkan dependensi utama jika ada (misalnya, PySastrawi, versi Python yang didukung).
-    2.  **Bagian Penggunaan Dasar (`Usage`):**
-        * Sediakan contoh kode yang jelas untuk mengimpor dan menggunakan `ModernKataKupas.segment()`.
-        * Sediakan contoh kode yang jelas untuk `ModernKataKupas.reconstruct()`.
-        * Gunakan contoh kata yang beragam (sederhana, dengan afiks, dengan reduplikasi, kata serapan) yang menunjukkan kemampuan sistem. Ambil dari `verify_segment_examples.py` atau tes yang ada. Pastikan output contoh di `README.md` sesuai dengan output aktual dari kode V1.0.
-    3.  **Format Output:** Jelaskan dengan jelas format string output dari `segment()` (misalnya, penggunaan `_` untuk kata dasar majemuk, `-` untuk pemisah afiks dan bentuk ulang).
-    4.  **Penjelasan Fitur Utama:** Rangkum fitur-fitur utama V1.0 (misalnya, penanganan berbagai jenis afiks, reduplikasi, kata serapan dasar, normalisasi).
-    5.  **Penanganan Kata OOV (Out-Of-Vocabulary):** Jelaskan bagaimana sistem menangani kata yang tidak dikenali atau tidak dapat disegmentasi (misalnya, dikembalikan apa adanya).
-    6.  **Batasan (Limitations):** Sebutkan secara jujur batasan V1.0 jika ada (misalnya, penanganan ambiguitas yang masih heuristik, belum mendukung semua variasi morfologis yang sangat kompleks).
-    7.  **API Singkat (Opsional):** Jika dirasa perlu, berikan ringkasan singkat metode publik utama dan fungsinya (bisa merujuk ke *docstrings* untuk detail).
-    8.  **Kontribusi:** Jika terbuka untuk kontribusi, tambahkan bagian singkat cara berkontribusi.
-    9.  **Lisensi:** Pastikan lisensi proyek disebutkan.
-    10. **Verifikasi Contoh:** Jalankan `verify_segment_examples.py` lagi setelah memperbarui contoh di `README.md` untuk memastikan konsistensi.
-* **Kriteria Selesai:**
-    * `README.md` telah diperbarui secara komprehensif mencakup semua poin di atas.
-    * Contoh kode di `README.md` akurat dan sesuai dengan perilaku V1.0.
-    * Informasi jelas, mudah dibaca, dan terstruktur dengan baik.
-* **File Terkait untuk Diperbarui:**
-    * `README.md`
-* **File Terkait untuk Referensi:**
-    * `verify_segment_examples.py`
-    * `tests/test_separator.py` (untuk contoh kasus)
-
----
-
-## Bagian 4: Pengemasan untuk Distribusi (Terkait Langkah 4.5 Rencana Implementasi)
-
-### Baby Step 4.5.1: Finalisasi `setup.py` dan Build Paket Awal
-
-* **Tujuan:** Mempersiapkan skrip `setup.py` agar dapat membangun paket Python yang siap didistribusikan dan diinstal melalui `pip`.
-* **Aktivitas:**
-    1.  **Review `setup.py`:**
-        * Pastikan `name` paket sudah benar (misalnya, `modern_kata_kupas`).
-        * Pastikan `version` sudah sesuai untuk V1.0 (misalnya, `1.0.0`).
-        * Pastikan `author`, `author_email`, `description`, `long_description` (mungkin dari `README.md`), `url` (URL GitHub repositori) sudah diisi dengan benar.
-        * Verifikasi `packages=find_packages(where='src')` dan `package_dir={'': 'src'}` jika struktur proyek Anda menggunakan direktori `src`.
-        * **PENTING:** Pastikan `install_requires` mencantumkan semua dependensi eksternal yang dibutuhkan, misalnya `PySastrawi>=1.2.0,<2.0.0` (tentukan rentang versi yang sesuai).
-        * **PENTING:** Pastikan `package_data` sudah benar dikonfigurasi untuk menyertakan semua file data non-kode yang dibutuhkan oleh paket saat runtime, seperti `data/kata_dasar.txt`, `data/loanwords.txt`, dan `data/affix_rules.json`. Contoh:
+* **Tujuan:** Memastikan file `setup.py` sudah benar dan lengkap, kemudian membuat file distribusi paket.
+* **Detail Langkah:**
+    1.  **Buka file `setup.py`**: Lokasi: `setup.py` di root proyek.
+    2.  **Verifikasi Konten `setup.py`**:
+        * Pastikan `version='1.0.0'`.
+        * Pastikan `name='modern_kata_kupas'`.
+        * Pastikan `author` dan `author_email` sudah sesuai.
+        * Pastikan `description` singkat dan jelas.
+        * Pastikan `long_description` mengambil konten dari `README.md`.
+        * Verifikasi `url` menunjuk ke repositori proyek yang benar.
+        * Pastikan `packages=find_packages(where="src")` dan `package_dir={"": "src"}` sudah benar.
+        * **Sangat Penting - `package_data`**: Pastikan entri `package_data` sudah benar dan mencakup semua file data yang dibutuhkan:
             ```python
             package_data={
-                'modern_kata_kupas': ['data/*.txt', 'data/*.json'],
+                "modern_kata_kupas": ["data/kata_dasar.txt", "data/loanwords.txt", "data/affix_rules.json"],
             },
             ```
-        * Pastikan `python_requires` sudah diset (misalnya, `>=3.8`).
-        * Tambahkan `classifiers` yang sesuai (misalnya, status pengembangan, lisensi, topik).
-    2.  **Build Paket:**
-        * Pastikan Anda memiliki `setuptools` dan `wheel` terinstal (`pip install setuptools wheel`).
-        * Dari direktori root proyek (yang berisi `setup.py`), jalankan perintah:
-            ```bash
-            python setup.py sdist bdist_wheel
-            ```
-        * Ini akan membuat direktori `dist` yang berisi file `.tar.gz` (source distribution) dan `.whl` (wheel).
-* **Kriteria Selesai:**
-    * `setup.py` telah direview dan semua metadata serta konfigurasi (terutama `install_requires` dan `package_data`) sudah benar.
-    * Perintah `python setup.py sdist bdist_wheel` berhasil dijalankan dan menghasilkan file paket di direktori `dist`.
-* **File Terkait untuk Diperbarui:**
-    * `setup.py`
-* **File Terkait untuk Referensi:**
-    * `requirements.txt` (untuk daftar dependensi)
-    * [Python Packaging User Guide](https://packaging.python.org/tutorials/packaging-projects/)
+            Ini memastikan file-file tersebut disertakan saat paket diinstal. File-file ini berada di `src/modern_kata_kupas/data/`.
+        * Verifikasi `install_requires` mencantumkan dependensi yang benar (misalnya, `PySastrawi`).
+        * Pastikan `python_requires='>=3.8'` atau versi minimal yang didukung.
+        * Periksa `classifiers` apakah sudah sesuai.
+    3.  **Simpan file `setup.py`** jika ada perubahan.
+    4.  **Buka Terminal atau Command Prompt**: Navigasi ke direktori root proyek ModernKataKupas.
+    5.  **Hapus Direktori Build Lama (Jika Ada)**: Untuk memastikan build yang bersih, hapus direktori `build`, `dist`, dan `src/modern_kata_kupas.egg-info` jika sudah ada dari proses build sebelumnya.
+        * Perintah (opsional, tergantung OS):
+            * Linux/macOS: `rm -rf build dist src/modern_kata_kupas.egg-info`
+            * Windows: `rd /s /q build dist src\modern_kata_kupas.egg-info`
+    6.  **Jalankan Perintah Build Paket**:
+        ```bash
+        python setup.py sdist bdist_wheel
+        ```
+        * `sdist`: Membuat arsip source distribution (misalnya, `.tar.gz`).
+        * `bdist_wheel`: Membuat distribusi wheel (format biner, lebih cepat diinstal, misalnya, `.whl`).
+    7.  **Verifikasi Hasil Build**:
+        * Pastikan tidak ada error selama proses build.
+        * Cek apakah direktori `dist` telah dibuat di root proyek.
+        * Di dalam direktori `dist`, pastikan ada dua file:
+            * Satu file `.tar.gz` (misalnya, `modern_kata_kupas-1.0.0.tar.gz`).
+            * Satu file `.whl` (misalnya, `modern_kata_kupas-1.0.0-py3-none-any.whl`). Nama file wheel bisa sedikit berbeda tergantung platform jika ada ekstensi C, tapi untuk proyek Python murni, biasanya `py3-none-any`).
+* **Kriteria Selesai Baby Step 4.5.1**:
+    * File `setup.py` telah diverifikasi dan kontennya sudah final untuk V1.0.
+    * Perintah build paket berjalan sukses tanpa error.
+    * Direktori `dist` berisi file `.tar.gz` dan `.whl` untuk versi 1.0.0.
 
-### Baby Step 4.5.2: Uji Instalasi Paket Lokal
+#### Baby Step 4.5.1.A: Verifikasi Isi `package_data` dalam Arsip Distribusi
 
-* **Tujuan:** Memverifikasi bahwa paket yang telah di-build pada langkah sebelumnya dapat diinstal dengan benar menggunakan `pip` di lingkungan yang bersih dan fungsionalitas dasarnya berjalan.
-* **Aktivitas:**
-    1.  **Buat Lingkungan Virtual Baru:**
-        * Buat lingkungan virtual Python baru yang bersih (misalnya, menggunakan `venv` atau `conda`).
-        * Aktifkan lingkungan virtual tersebut.
-    2.  **Instal Paket:**
-        * Dari dalam lingkungan virtual yang aktif, instal paket menggunakan file `.whl` yang ada di direktori `dist`. Contoh:
+* **Tujuan:** Memastikan bahwa file-file data (`kata_dasar.txt`, `loanwords.txt`, `affix_rules.json`) benar-benar disertakan dalam arsip source distribution (`.tar.gz`). Ini adalah langkah verifikasi krusial.
+* **Detail Langkah:**
+    1.  **Navigasi ke direktori `dist`**: Buka terminal atau file explorer dan masuk ke direktori `dist` yang baru saja dibuat.
+    2.  **Ekstrak File `.tar.gz`**: Ekstrak file `modern_kata_kupas-1.0.0.tar.gz` ke direktori sementara.
+        * Contoh perintah di Linux/macOS:
             ```bash
-            pip install dist/modern_kata_kupas-1.0.0-py3-none-any.whl # Sesuaikan nama file
+            mkdir temp_sdist_check
+            tar -xzvf modern_kata_kupas-1.0.0.tar.gz -C temp_sdist_check
             ```
-    3.  **Uji Impor dan Fungsi Dasar:**
-        * Buka interpreter Python atau buat skrip Python sederhana di dalam lingkungan virtual tersebut.
-        * Coba impor paket: `from modern_kata_kupas import ModernKataKupas`
-        * Buat instance: `mk = ModernKataKupas()`
-        * Jalankan beberapa contoh segmentasi sederhana:
+        * Di Windows, Anda bisa menggunakan 7-Zip atau alat arsip lainnya.
+    3.  **Periksa Struktur Direktori Hasil Ekstraksi**:
+        * Masuk ke direktori hasil ekstraksi (misalnya, `temp_sdist_check/modern_kata_kupas-1.0.0/`).
+        * Navigasi ke `src/modern_kata_kupas/data/`.
+        * Pastikan ketiga file ini ada di sana: `kata_dasar.txt`, `loanwords.txt`, dan `affix_rules.json`.
+    4.  **Bersihkan Direktori Sementara**: Setelah selesai memeriksa, hapus direktori sementara yang Anda buat (misalnya, `temp_sdist_check`).
+* **Kriteria Selesai Baby Step 4.5.1.A**:
+    * File `.tar.gz` telah diekstrak dan isinya diperiksa.
+    * File `kata_dasar.txt`, `loanwords.txt`, dan `affix_rules.json` terkonfirmasi ada di dalam struktur direktori yang benar (`src/modern_kata_kupas/data/`) dalam arsip source distribution.
+
+#### Baby Step 4.5.2: Uji Instalasi Paket Lokal di Lingkungan Virtual Bersih
+
+* **Tujuan:** Memastikan paket yang telah di-build dapat diinstal dengan benar di lingkungan Python yang bersih dan fungsionalitas dasarnya berjalan.
+* **Detail Langkah:**
+    1.  **Buka Terminal atau Command Prompt Baru**.
+    2.  **Buat Direktori Tes Sementara (Opsional, tapi direkomendasikan)**:
+        * Buat direktori di luar direktori proyek Anda, misalnya `mkk_install_test`.
+        * Navigasi ke direktori `mkk_install_test` tersebut.
+    3.  **Buat Lingkungan Virtual Baru**:
+        ```bash
+        python -m venv .venv_mkk_test
+        ```
+    4.  **Aktifkan Lingkungan Virtual**:
+        * Linux/macOS: `source .venv_mkk_test/bin/activate`
+        * Windows: `.\.venv_mkk_test\Scripts\activate`
+        * Prompt terminal Anda seharusnya berubah, menandakan lingkungan virtual aktif.
+    5.  **Instal Paket Menggunakan File `.whl`**:
+        * Gunakan path absolut atau relatif ke file `.whl` yang ada di direktori `dist` proyek ModernKataKupas Anda.
+        * Contoh (jika Anda berada di `mkk_install_test` dan proyek Anda ada di `../modern_kata_kupas_project`):
+            ```bash
+            pip install ../modern_kata_kupas_project/dist/modern_kata_kupas-1.0.0-py3-none-any.whl
+            ```
+            (Sesuaikan nama file `.whl` jika berbeda).
+    6.  **Verifikasi Instalasi**:
+        * Jalankan `pip list`. Pastikan `modern-kata-kupas` (atau `modern_kata_kupas`, tergantung normalisasi nama oleh pip) muncul dalam daftar paket yang terinstal dengan versi 1.0.0.
+    7.  **Uji Fungsionalitas Dasar (Smoke Test)**:
+        * Buka interpreter Python: `python`
+        * Di dalam interpreter Python, jalankan perintah berikut:
             ```python
-            print(mk.segment("makanan"))
-            print(mk.segment("berlari-lari"))
+            from modern_kata_kupas import ModernKataKupas
+            from modern_kata_kupas.exceptions import WordNotInDictionaryError
+
+            try:
+                mkk = ModernKataKupas() # Ini akan mencoba memuat file data
+                print("Objek ModernKataKupas berhasil dibuat.")
+
+                test_word = "makanan"
+                segmented_word = mkk.segment(test_word)
+                print(f"Segmentasi '{test_word}': {segmented_word}")
+
+                reconstructed_word = mkk.reconstruct(segmented_word)
+                print(f"Rekonstruksi '{segmented_word}': {reconstructed_word}")
+
+                if reconstructed_word == test_word:
+                    print("Tes segmentasi dan rekonstruksi dasar BERHASIL.")
+                else:
+                    print("Tes segmentasi dan rekonstruksi dasar GAGAL.")
+
+            except Exception as e:
+                print(f"Terjadi error saat pengujian: {e}")
+            finally:
+                exit() # Keluar dari interpreter Python
             ```
-        * Verifikasi outputnya sesuai harapan.
-        * Pastikan tidak ada error impor terkait file data (ini akan menguji `package_data`).
-* **Kriteria Selesai:**
-    * Paket berhasil diinstal menggunakan `pip` di lingkungan virtual yang bersih.
-    * Paket dapat diimpor dengan sukses.
-    * Fungsionalitas dasar (membuat instance dan memanggil `segment()` dengan beberapa contoh) berjalan tanpa error dan menghasilkan output yang diharapkan.
-    * Tidak ada error terkait file data yang hilang.
-* **File Terkait untuk Diperbarui:** (Tidak ada perubahan file kode, hanya proses pengujian)
-* **File Terkait untuk Referensi:** File `.whl` dari direktori `dist`.
+    8.  **Deaktivasi Lingkungan Virtual**:
+        ```bash
+        deactivate
+        ```
+    9.  **Bersihkan (Opsional)**: Anda dapat menghapus direktori tes sementara (`mkk_install_test`) jika diinginkan.
+* **Kriteria Selesai Baby Step 4.5.2**:
+    * Lingkungan virtual baru berhasil dibuat dan diaktifkan.
+    * Paket `modern_kata_kupas` berhasil diinstal dari file `.whl` lokal.
+    * `pip list` menunjukkan paket terinstal dengan versi yang benar.
+    * Smoke test di interpreter Python (membuat objek `ModernKataKupas`, melakukan segmentasi dan rekonstruksi dasar) berjalan tanpa error dan menunjukkan bahwa file data berhasil dimuat oleh paket yang terinstal.
+    * Lingkungan virtual berhasil dideaktivasi.
 
 ---
 
-## Bagian 5: Pembaruan Dokumentasi Arsitektur Final (Terkait Langkah 4.6 Rencana Implementasi)
+### Baby Step 4.6: Finalisasi Dokumentasi
 
-### Baby Step 4.6.1: Update Detail Final `architecture.md`
+#### Baby Step 4.6.1: Update Detail Final `architecture.md`
 
-* **Tujuan:** Memastikan dokumen `architecture.md` secara akurat dan komprehensif mencerminkan desain final V1.0 dari `ModernKataKupas`.
-* **Aktivitas:**
-    1.  **Review Keseluruhan Dokumen:** Baca kembali `memory-bank/architecture.md` secara menyeluruh.
-    2.  **Deskripsi Komponen:**
-        * Untuk setiap modul/kelas utama (misalnya, `Separator`, `Reconstructor`, `DictionaryManager`, `MorphologicalRules`, `Normalizer`):
-            * Pastikan deskripsi tanggung jawabnya sudah akurat dan sesuai dengan implementasi final V1.0.
-            * Jelaskan input utama yang diterima dan output utama yang dihasilkan.
-    3.  **Interaksi Antar Komponen:**
-        * Perbarui diagram alur (jika ada) atau deskripsi naratif mengenai bagaimana komponen-komponen utama berinteraksi selama proses segmentasi dan rekonstruksi. Pastikan ini mencerminkan alur kerja aktual dalam kode.
-    4.  **Struktur File Data:**
-        * Jelaskan secara lebih detail (jika belum) struktur dan tujuan dari setiap file data:
-            * `data/kata_dasar.txt`: Formatnya (satu kata per baris), sumber utama, dan bagaimana digunakan.
-            * `data/loanwords.txt`: Formatnya, bagaimana digunakan dalam penanganan kata serapan.
-            * `data/affix_rules.json`: Struktur JSON-nya (misalnya, kunci utama, arti setiap field dalam aturan prefiks/sufiks seperti `allomorphs`, `conditions`, `elision_rules`, `canonical_form`). Ini penting jika orang lain ingin memahami atau memodifikasi aturan.
-    5.  **Keputusan Desain Penting:** Pastikan keputusan desain penting yang diambil selama pengembangan dan mempengaruhi arsitektur V1.0 sudah terdokumentasi (misalnya, keputusan untuk tidak menggunakan alignment eksplisit di V1.0, penggunaan strategi S1/S2).
-    6.  **Konsistensi:** Pastikan terminologi yang digunakan konsisten di seluruh dokumen dan dengan kode serta `README.md`.
-* **Kriteria Selesai:**
-    * `memory-bank/architecture.md` telah diperbarui untuk secara akurat mencerminkan arsitektur final V1.0.
-    * Deskripsi komponen, interaksinya, dan struktur file data sudah jelas dan detail.
-    * Dokumen konsisten dan mudah dipahami.
-* **File Terkait untuk Diperbarui:**
-    * `memory-bank/architecture.md`
-* **File Terkait untuk Referensi:**
-    * Seluruh codebase di `src/modern_kata_kupas/`
-    * `README.md`
+* **Tujuan:** Memastikan dokumen arsitektur mencerminkan status final V1.0, termasuk bagaimana file data dipaketkan dan diakses.
+* **Detail Langkah:**
+    1.  **Buka file `memory-bank/architecture.md`**.
+    2.  **Review Seluruh Konten**: Baca kembali seluruh dokumen untuk memastikan konsistensi dan akurasi dengan kode V1.0.
+    3.  **Tambahkan/Update Informasi Packaging**:
+        * Jelaskan secara singkat bagaimana file data (`kata_dasar.txt`, `loanwords.txt`, `affix_rules.json`) disertakan dalam paket menggunakan `package_data` di `setup.py`.
+        * Jelaskan bagaimana `DictionaryManager` dan `Rules` memuat file-file ini menggunakan `pkgutil.get_data` atau mekanisme serupa untuk mengakses data dari dalam paket yang terinstal.
+    4.  **Review Diagram Arsitektur (Jika Ada)**: Pastikan diagram masih relevan.
+    5.  **Review Penjelasan Komponen**: Pastikan deskripsi setiap komponen (`Separator`, `Reconstructor`, `DictionaryManager`, `Normalizer`, `Rules`) sesuai dengan implementasi final.
+    6.  **Review Penjelasan Alur Kerja (Workflow)**: Pastikan alur kerja segmentasi dan rekonstruksi dijelaskan dengan akurat.
+    7.  **Verifikasi Penjelasan Penanganan Ambiguitas**: Pastikan strategi S1/S2 dan batasan V1.0 terkait ambiguitas (seperti kasus `berkejar-kejaran`) dijelaskan dengan jelas.
+    8.  **Simpan file `architecture.md`**.
+* **Kriteria Selesai Baby Step 4.6.1**:
+    * File `architecture.md` telah direview secara menyeluruh.
+    * Informasi mengenai packaging dan cara akses file data dari dalam paket telah ditambahkan/diperbarui.
+    * Semua bagian dokumen konsisten dengan implementasi V1.0.
+
+#### Baby Step 4.6.2: Final Review `README.md` dan Verifikasi Contoh
+
+* **Tujuan:** Memastikan `README.md` akurat, terutama bagian instalasi dan penggunaan, serta semua contoh kode berfungsi.
+* **Detail Langkah:**
+    1.  **Buka file `README.md`**.
+    2.  **Review Bagian Instalasi**:
+        * Pastikan instruksi instalasi dari PyPI (jika direncanakan akan dirilis) atau dari source/wheel sudah jelas dan akurat. Untuk saat ini, fokus pada instalasi dari wheel lokal yang telah diuji.
+        * Contoh: `pip install modern_kata_kupas` (jika sudah rilis) atau `pip install path/to/your/modern_kata_kupas-1.0.0-py3-none-any.whl`.
+    3.  **Review Bagian Penggunaan (Usage)**:
+        * Pastikan contoh kode untuk segmentasi dan rekonstruksi sederhana dan mudah dimengerti.
+        * Pastikan contoh penggunaan `ModernKataKupas()` dengan parameter custom (misalnya, path kamus custom) juga jelas, jika fitur tersebut didukung dan didokumentasikan. (Untuk V1.0, fokus pada penggunaan default).
+    4.  **Review Bagian Fitur, Batasan, dan Penanganan Ambiguitas**: Pastikan konsisten dengan implementasi V1.0 dan `architecture.md`.
+    5.  **Jalankan Skrip Verifikasi Contoh (Jika Ada)**:
+        * Jika Anda memiliki skrip seperti `verify_segment_examples.py`, jalankan untuk memastikan semua contoh di `README.md` masih menghasilkan output yang diharapkan dengan versi kode saat ini.
+        * Perintah: `python verify_segment_examples.py` (asumsi skrip ini menggunakan paket yang sudah terinstal di lingkungan aktif, atau mengimpor dari source code lokal dengan benar). Idealnya, jalankan ini di lingkungan virtual tempat paket diinstal.
+    6.  **Periksa Semua Tautan (Links)**: Pastikan semua tautan internal dan eksternal masih valid.
+    7.  **Simpan file `README.md`**.
+* **Kriteria Selesai Baby Step 4.6.2**:
+    * File `README.md` telah direview secara menyeluruh.
+    * Bagian instalasi dan penggunaan akurat dan teruji (setidaknya untuk instalasi lokal).
+    * Semua contoh kode di `README.md` (termasuk yang diverifikasi oleh skrip) berfungsi dengan benar.
 
 ---
 
-Dengan menyelesaikan "Baby Steps" yang lebih terperinci ini, diharapkan proses penyelesaian Fase 4 menjadi lebih lancar dan hasilnya lebih berkualitas, bahkan jika dikerjakan oleh junior developer.
+### Baby Step 4.7: Finalisasi dan Persiapan Rilis V1.0 (Opsional, tergantung keputusan rilis)
+
+#### Baby Step 4.7.1: Update Dokumen Status dan Progress
+
+* **Tujuan:** Memastikan semua dokumen pelacakan proyek sudah mutakhir.
+* **Detail Langkah:**
+    1.  **Buka file `memory-bank/status-todolist-saran.md`**.
+    2.  Update status pencapaian dengan semua Baby Steps Fase 4 yang telah selesai.
+    3.  Hapus atau arsipkan bagian "MASALAH KRITIS" jika sudah teratasi.
+    4.  Perbarui "Saran Langkah Selanjutnya" jika ada rencana untuk Fase berikutnya atau perbaikan V1.0.x.
+    5.  **Simpan file `status-todolist-saran.md`**.
+    6.  **Buka file `memory-bank/progress.md`**.
+    7.  Catat penyelesaian Fase 4 dan tanggalnya.
+    8.  **Simpan file `progress.md`**.
+* **Kriteria Selesai Baby Step 4.7.1**:
+    * File `status-todolist-saran.md` dan `progress.md` telah diperbarui untuk mencerminkan penyelesaian Fase 4 (atau langkah-langkah packaging dan dokumentasi).
+
+#### Baby Step 4.7.2: Verifikasi Akhir Semua Tes
+
+* **Tujuan:** Memastikan semua tes unit masih lolos setelah semua perubahan dokumentasi dan packaging.
+* **Detail Langkah:**
+    1.  **Buka Terminal atau Command Prompt**: Navigasi ke direktori root proyek ModernKataKupas.
+    2.  **Aktifkan Lingkungan Virtual Utama Pengembangan Anda** (bukan yang untuk tes instalasi, tetapi yang memiliki semua dev dependencies seperti `pytest`).
+    3.  **Jalankan Semua Tes Unit**:
+        ```bash
+        pytest
+        ```
+    4.  **Verifikasi Hasil Tes**: Pastikan semua tes lolos, kecuali satu kegagalan yang diterima untuk `berkejar-kejaran` (jika belum ada solusi).
+* **Kriteria Selesai Baby Step 4.7.2**:
+    * `pytest` berjalan sukses dan semua tes yang diharapkan lolos telah terkonfirmasi.
+
+#### Baby Step 4.7.3: Tagging Versi di Git (Sangat Direkomendasikan)
+
+* **Tujuan:** Memberi penanda (tag) pada commit spesifik ini sebagai rilis V1.0.0.
+* **Detail Langkah:**
+    1.  **Pastikan Semua Perubahan Sudah Di-commit**: Jalankan `git status` untuk memastikan tidak ada perubahan yang belum di-commit. Commit semua file yang telah diubah (misalnya, `setup.py`, `README.md`, `architecture.md`, `status-todolist-saran.md`, `progress.md`).
+    2.  **Buat Tag Git**:
+        ```bash
+        git tag -a v1.0.0 -m "Version 1.0.0 Release"
+        ```
+        * `-a v1.0.0`: Membuat annotated tag bernama `v1.0.0`.
+        * `-m "Version 1.0.0 Release"`: Pesan untuk tag tersebut.
+    3.  **Push Tag ke Remote Repository (Jika Menggunakan Remote)**:
+        ```bash
+        git push origin v1.0.0
+        ```
+        Atau untuk push semua tag: `git push --tags`
+* **Kriteria Selesai Baby Step 4.7.3**:
+    * Semua perubahan telah di-commit.
+    * Tag `v1.0.0` telah dibuat secara lokal.
+    * (Jika berlaku) Tag telah di-push ke remote repository.
+
+---
+
+Setelah semua baby steps ini selesai, ModernKataKupas V1.0 siap untuk didistribusikan atau digunakan secara internal sebagai versi stabil. Jika ada rencana untuk merilis ke PyPI, akan ada langkah-langkah tambahan terkait pendaftaran akun PyPI, pembuatan token API, dan penggunaan `twine` untuk mengunggah paket.
