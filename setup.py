@@ -28,6 +28,14 @@ setup(
     install_requires=[
         'PySastrawi>=1.2.0,<2.0.0',
     ],
+    extras_require={
+        'experiments': [
+            'python-dotenv>=1.0.0',
+            'openai>=1.0.0',
+            'pandas>=2.0.0',
+            'tqdm>=4.65.0',
+        ],
+    },
     python_requires='>=3.8',
     classifiers=[
         'Development Status :: 5 - Production/Stable',

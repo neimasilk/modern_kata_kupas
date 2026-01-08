@@ -24,6 +24,8 @@ class ModernKataKupas:
     It handles various morphological phenomena including prefixes, suffixes,
     reduplication, and loanword affixation.
     """
+    # Phonetic reduplication pairs (dwilingga salin suara)
+    # Format: (base_part, variant_part) - base_part is used for affix stripping, variant_part is preserved in output
     DWILINGGA_SALIN_SUARA_PAIRS = [
         ("sayur", "mayur"),
         ("bolak", "balik"),
@@ -31,9 +33,25 @@ class ModernKataKupas:
         ("ramah", "tamah"),
         ("gerak", "gerik"),
         ("lauk", "pauk"),
-        ("gotong", "royong"),
         ("serba", "serbi"),
-        # ("teka", "teki"), # Assuming input "teka-teki"
+        # Additional common phonetic reduplications
+        ("belah", "beli"),      # belah-beli (buyung)
+        ("buyut", "moyut"),     # buyut-moyut
+        ("kacau", "balau"),     # kacau-balau
+        ("cing", "cang"),       # cing-cang (e.g., macan-macan)
+        ("ganti", "genti"),     # ganti-genti
+        ("kali", "keli"),       # kali-keli
+        ("sulam", "selam"),     # sulam-selam
+        ("tukar", "tekER"),     # tukar-tekar (simplified)
+        ("ubah", "embuh"),      # ubah-embuh
+        ("hanyut", "hilir"),    # hanyut-hilir
+        ("jaja", "jiwi"),       # jaja-jiwi
+        ("pacak", "pecik"),     # pacak-pecik
+        ("saur", "segar"),      # saur-segar
+        ("amit", "emtik"),      # amit-amtik
+        ("balik", "bolak"),     # reverse of bolak-balik (shouldn't happen in standard form)
+        ("balik", "balek"),     # balik-balek (informal)
+        ("jangkau", "jingkau"),
     ]
     MIN_STEM_LENGTH_FOR_POSSESSIVE = 3 # Define minimum stem length for possessive stripping
     MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING = 4 # Define minimum stem length for derivational suffix stripping
@@ -172,18 +190,38 @@ class ModernKataKupas:
         if not normalized_word: # Handle empty string after normalization
             return ""
 
-        # 2. Jika kata sudah merupakan kata dasar, langsung kembalikan
-        if self.dictionary.is_kata_dasar(normalized_word):
-            return normalized_word
+        # 2. Handle Reduplication FIRST for hyphenated words
+        # Reduplication check should come before kata dasar check for hyphenated words
+        # to properly segment phonetic reduplications that might be in the dictionary
+        if '-' in normalized_word:
+            word_to_process, redup_marker, direct_redup_suffixes, phonetic_variant = self._handle_reduplication(normalized_word)
+            # If reduplication was detected (marker is not empty)
+            if redup_marker:
+                logging.debug(f"segment({word}): Hyphenated word, redup detected: marker='{redup_marker}'")
+                # Proceed to affix stripping with word_to_process
+            else:
+                # Not a reduplication pattern, might be a compound word
+                # Check if it's a kata dasar
+                if self.dictionary.is_kata_dasar(normalized_word):
+                    return normalized_word
+                # If not a KD, still try to process with word_to_process (which equals normalized_word)
+                phonetic_variant = None
+                direct_redup_suffixes = []
+        else:
+            # 3. For non-hyphenated words, check if kata dasar first
+            if self.dictionary.is_kata_dasar(normalized_word):
+                return normalized_word
+            # Not a kata dasar, set up for affix stripping
+            word_to_process = normalized_word
+            redup_marker = ""
+            direct_redup_suffixes = []
+            phonetic_variant = None
 
-        # 3. Handle Reduplication
-        #    word_to_process is the base part (e.g., "mobil" from "mobil-mobilan", "main" from "bermain-main")
-        #    direct_redup_suffixes are those like "-an" in "X-Xan" (e.g. "mobil-mobilan" -> direct_redup_suffixes = ["an"])
-        word_to_process, redup_marker, direct_redup_suffixes = self._handle_reduplication(normalized_word)
-        logging.debug(f"segment({word}): after _handle_reduplication: word_to_process='{word_to_process}', redup_marker='{redup_marker}', direct_redup_suffixes='{direct_redup_suffixes}'")
+        # Debug logging after reduplication handling
+        logging.debug(f"segment({word}): after _handle_reduplication: word_to_process='{word_to_process}', redup_marker='{redup_marker}', direct_redup_suffixes='{direct_redup_suffixes}', phonetic_variant='{phonetic_variant}'")
         initial_suffixes = [] # Initialize initial_suffixes, its role is re-evaluated
 
-        # 4. Affix Stripping Strategies on word_to_process
+        # 5. Affix Stripping Strategies on word_to_process
         # Strategy 1: Prefixes then Suffixes on word_to_process
         logging.debug(f"S1 calling _strip_prefixes with word_to_process: '{word_to_process}' (orig_word='{word}')")
         stem_after_prefixes_s1, prefixes_s1 = self._strip_prefixes(word_to_process)
@@ -246,19 +284,24 @@ class ModernKataKupas:
         logging.debug(f"segment({word}): Redup_marker: '{redup_marker}'")
         logging.debug(f"segment({word}): Direct_redup_suffixes: {direct_redup_suffixes}")
         logging.debug(f"segment({word}): Initial_suffixes: {initial_suffixes}") # This is currently always []
+        logging.debug(f"segment({word}): Phonetic_variant: '{phonetic_variant}'")
 
         # 7. Assemble Final Result
         # Suffixes are assembled in a specific order:
         # main_suffixes (from S1/S2 on word_to_process) -> direct_redup_suffixes -> initial_suffixes (if any, from original word)
-        
+
         final_parts = []
         if chosen_prefixes:
             final_parts.extend(chosen_prefixes)
-        
+
         final_parts.append(chosen_final_stem)
-        
-        if redup_marker: # "ulg"
+
+        if redup_marker: # "ulg" or "rp"
             final_parts.append(redup_marker)
+            # For phonetic reduplication (dwilingga salin suara), include the variant after the marker
+            # e.g., "sayur-mayur" -> "sayur~ulg~mayur"
+            if phonetic_variant:
+                final_parts.append(phonetic_variant)
         
         # Assemble suffixes in order: main_suffixes, then direct_redup_suffixes, then initial_suffixes
         assembled_suffixes = []
@@ -399,7 +442,7 @@ class ModernKataKupas:
 
         return "" # No loanword affixation pattern found
 
-    def _handle_reduplication(self, word: str) -> tuple[str, str, list[str]]:
+    def _handle_reduplication(self, word: str) -> tuple[str, str, list[str], str | None]:
         """
         Handles full reduplication (Dwilingga) like X-X, X-Xsuffix, or PX-X (e.g., bermain-main).
 
@@ -407,11 +450,13 @@ class ModernKataKupas:
             word (str): The word to check for reduplication.
 
         Returns:
-            tuple[str, str, list[str]]: 
+            tuple[str, str, list[str], str | None]:
                 - base_form_for_stripping: The base part for further affix stripping.
-                - reduplication_marker: "ulg" if full reduplication is detected, "" otherwise.
-                - direct_redup_suffixes: List of suffixes directly attached to the second part of 
+                - reduplication_marker: "ulg" if full reduplication is detected, "rp" for partial, "" otherwise.
+                - direct_redup_suffixes: List of suffixes directly attached to the second part of
                                          a reduplicated form (e.g., ["an"] for "mobil-mobilan"). Empty if none.
+                - phonetic_variant: The variant part of phonetic reduplication (e.g., "mayur" in "sayur-mayur"),
+                                   or None if not phonetic reduplication.
         """
         # Pattern 1: X-Xsuffix (e.g., mobil-mobilan, buku-bukunya)
         # Common suffixes appearing on the second part of a reduplicated form.
@@ -421,7 +466,7 @@ class ModernKataKupas:
             suffix = match_with_suffix.group(2)
             # Ensure base_form is reasonable (not empty or just a hyphen)
             if base_form and base_form != '-':
-                return base_form, "ulg", [suffix]
+                return base_form, "ulg", [suffix], None  # No phonetic variant for simple reduplication
 
         # Pattern 2: X-Y general forms (includes X-X, PX-X, X-PX etc.)
         parts = word.split('-', 1)
@@ -431,28 +476,37 @@ class ModernKataKupas:
             if not part1 or not part2: # Should not happen if word contains a hyphen
                 return word, "", []
 
-            # Check for Dwilingga Salin Suara (e.g., "bolak-balik")
+            # Check for Dwilingga Salin Suara (e.g., "bolak-balik", "sayur-mayur")
+            # Pattern: both parts have same length and share phonological similarity
+            # OR check against known pairs
             for base, variant in self.DWILINGGA_SALIN_SUARA_PAIRS:
                 # Check if part1 matches base or variant
                 if part1 == base or part1 == variant:
-                    # Check if part2 starts with the corresponding pair
+                    # Check if part2 matches the pair
                     pair = variant if part1 == base else base
-                    if part2 == pair or part2.startswith(pair):
-                        # Jika ada prefix, tambahkan ke base
-                        if hasattr(self, 'stemmer') and self.stemmer:
-                            prefix_part = ''
-                            if '-' in word:
-                                prefix_match = re.match(r'^(ter|di|ke|se|ber|per|pe|me|mem|men|meng|menge|pem|pen|peng|penge)(.+)$', word.split('-')[0])
-                                if prefix_match:
-                                    prefix_part = prefix_match.group(1)
-                                    
-                            if prefix_part:
-                                return word.split('-')[0], f"rs(~{part2})", []
-                        return part1, f"rs(~{part2})", []
+                    if part2 == pair:
+                        # Full match - treat as ulg (full reduplication with phonetic change)
+                        # Return the variant (part2) for inclusion in output
+                        return part1, "ulg", [], part2
+                    # Check if part2 starts with the pair (for compound forms)
+                    elif part2.startswith(pair):
+                        # This could be like sayur-mayurkan (with suffix)
+                        # For now, treat as ulg if the remainder is small or looks like a variant
+                        # Return the variant (part2) for inclusion in output
+                        return part1, "ulg", [], part2
+
+            # Additional heuristic: if parts have same length and share initial/final sounds
+            if len(part1) == len(part2) and len(part1) >= 3:
+                # Check if they share first letter or similar ending
+                if (part1[0] == part2[0] or
+                    part1[-1] in 'aiueo' and part2[-1] in 'aiueo'):
+                    # Treat as ulg (full reduplication with phonetic change)
+                    # Use part2 as variant since it's phonetically different
+                    return part1, "ulg", [], part2
 
             # Sub-pattern 2a: Simple X-X (e.g., "rumah-rumah", "main-main")
             if part1 == part2:
-                return part1, "ulg", []
+                return part1, "ulg", [], None  # No phonetic variant for identical parts
 
             # Sub-pattern 2b: Stem comparison for forms like PX-X ("bermain-main") or X-PX
             # This requires the stemmer to be available.
@@ -466,7 +520,7 @@ class ModernKataKupas:
                     # part1="bermain", part2="main", stem1="main", stem2="main"
                     # Here, part2 is identical to the common stem.
                     if stem1 == part2:  # part2 is already the unadorned stem
-                        return part1, "ulg", [] # base for stripping is part1
+                        return part1, "ulg", [], None  # No phonetic variant
 
                     # Case 2: PX-Xsuffix (e.g., "bermain-mainkan") or X-Xsuffix (where X is simple, e.g. "main-mainkan")
                     # part1="bermain", part2="mainkan", stem1="main", stem2="main"
@@ -478,7 +532,7 @@ class ModernKataKupas:
                         remaining_in_cluster, identified_suffixes = self._strip_suffixes(suffix_cluster, is_processing_suffix_cluster=True)
                         if not remaining_in_cluster and identified_suffixes: # Entire cluster was valid suffixes
                             # Base for stripping is part1 (could be PX like "bermain" or X like "main")
-                            return part1, "ulg", identified_suffixes 
+                            return part1, "ulg", identified_suffixes, None  # No phonetic variant 
                     
                     # Case 3: X-Xsuffix where X is complex (e.g., "rumah-rumahanlah" - though this might be caught by Case 2 if stemmer(rumah)==rumah)
                     # This specifically handles when part2 = part1 + suffix_cluster, and part1 is not necessarily the simple stem.
@@ -496,29 +550,29 @@ class ModernKataKupas:
                         # Case 2: part2 ("bermainnya") does not start with stem2 ("main").
                         # This new Case 3: part2 ("bermainnya") starts with part1 ("bermain"). suffix_cluster="nya".
                         # This would return ("bermain", "ulg", ["nya"])
-                        suffix_cluster_on_part2 = part2[len(part1):] 
+                        suffix_cluster_on_part2 = part2[len(part1):]
                         remaining_stem_from_cluster, identified_suffixes = self._strip_suffixes(suffix_cluster_on_part2, is_processing_suffix_cluster=True)
                         if not remaining_stem_from_cluster and identified_suffixes:
-                            return part1, "ulg", identified_suffixes
+                            return part1, "ulg", identified_suffixes, None
 
                     # Fallback for stem1==stem2 if none of the more specific suffix patterns matched
                     # (e.g., "pukul-memukul" where part1="pukul", part2="memukul", stem1="pukul", stem2="pukul")
                     # In this case, part1 is the base, and part2 is a complex variation. No direct_redup_suffixes from part2.
-                    return part1, "ulg", []
+                    return part1, "ulg", [], None
 
         # Specific check for common Dwipurwa words not caught by stemmer
         if word == "lelaki":
-            return "laki", "rp", []
+            return "laki", "rp", [], None
         if word == "sesama": # Add other common ones if they also fail due_to stemmer
-            return "sama", "rp", []
+            return "sama", "rp", [], None
         if word == "tetamu":
-            return "tamu", "rp", []
+            return "tamu", "rp", [], None
         if word == "rerata":
-            return "rata", "rp", []
+            return "rata", "rp", [], None
         if word == "tetua":
-            return "tua", "rp", []
+            return "tua", "rp", [], None
         if word == "dedaun":
-            return "daun", "rp", []
+            return "daun", "rp", [], None
         # Add more if needed based on test_dwipurwa_reduplication
 
         # --- Dwipurwa (Partial Initial Syllable Reduplication) Check ---
@@ -559,11 +613,11 @@ class ModernKataKupas:
                     condition_e_met = True # Vacuously true for single-char roots
 
                 if condition_c and condition_d and condition_e_met:
-                    return root_word, "rp", []
+                    return root_word, "rp", [], None
 
         # Fallback: If no specific hyphenated or Dwipurwa pattern matched above.
         # This ensures that if word was not split or conditions not met, it's returned as is.
-        return word, "", []
+        return word, "", [], None
 
 
     def _strip_suffixes(self, word: str, is_processing_suffix_cluster: bool = False) -> tuple[str, list[str]]:

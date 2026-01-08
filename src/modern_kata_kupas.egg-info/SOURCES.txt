@@ -21,6 +21,7 @@ src/modern_kata_kupas/data/kata_dasar.txt
 src/modern_kata_kupas/data/loanwords.txt
 src/modern_kata_kupas/utils/__init__.py
 src/modern_kata_kupas/utils/alignment.py
+src/modern_kata_kupas/utils/deepseek_helper.py
 src/modern_kata_kupas/utils/string_utils.py
 tests/test_dictionary_manager.py
 tests/test_exceptions.py

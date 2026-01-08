@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(more:*)",
+      "Bash(powershell:*)",
+      "Bash(while read -r file)",
+      "Bash(done)",
+      "Bash(sort:*)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(copy:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

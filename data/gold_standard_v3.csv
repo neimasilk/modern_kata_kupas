@@ -1,0 +1,361 @@
+word,gold_segmentation,category,notes,generated_by,system_prediction,agrees,validated
+memperbaiki,meN~per~baik~i,complex_meN,meN + per- + root 'baik' + suffix -i,deepseek,meN~per~baik~i,True,True
+menginterpretasikan,meN~interpretasi~kan,complex_meN,meN + loanword 'interpretasi' + suffix -kan,deepseek,meN~interpretasi~kan,True,True
+menyelenggarakan,meN~selenggara~kan,complex_meN,meN + root 'selenggara' + suffix -kan,deepseek,menyelenggarakan,False,True
+memperhatikan,meN~per~hati~kan,complex_meN,meN + per- + root 'hati' + suffix -kan,deepseek,meN~per~hati~kan,True,True
+mengupload,meN~upload,complex_meN,meN + English loanword 'upload',deepseek,meN~upload,True,True
+mempertahankan,meN~per~tahan~kan,complex_meN,meN + per- + root 'tahan' + suffix -kan,deepseek,meN~per~tahan~kan,True,True
+mengkompilasi,meN~kompilasi,complex_meN,meN + loanword 'kompilasi' from English 'compile',deepseek,meN~kompilasi,True,True
+memperlakukan,meN~per~laku~kan,complex_meN,meN + per- + root 'laku' + suffix -kan,deepseek,meN~per~laku~kan,True,True
+menyelesaikan,meN~selesai~kan,complex_meN,meN + root 'selesai' + suffix -kan,deepseek,menyelesaikan,False,True
+mengedit,meN~edit,complex_meN,meN + English loanword 'edit',deepseek,mengedit,False,True
+memperkenalkan,meN~per~kenal~kan,complex_meN,meN + per- + root 'kenal' + suffix -kan,deepseek,memperkenalkan,False,True
+mengoperasikan,meN~operasi~kan,complex_meN,meN + loanword 'operasi' + suffix -kan,deepseek,meN~operasi~kan,True,True
+mempertanggungjawabkan,meN~per~tanggungjawab~kan,complex_meN,meN + per- + compound root 'tanggungjawab' + suffix -kan,deepseek,mempertanggungjawabkan,False,True
+mengunduh,meN~unduh,complex_meN,meN + root 'unduh' (download),deepseek,meN~unduh,True,True
+memperlihatkan,meN~per~lihat~kan,complex_meN,meN + per- + root 'lihat' + suffix -kan,deepseek,meN~per~lihat~kan,True,True
+menyederhanakan,meN~sederhana~kan,complex_meN,meN + root 'sederhana' + suffix -kan,deepseek,menyederhanakan,False,True
+mengklasifikasikan,meN~klasifikasi~kan,complex_meN,meN + loanword 'klasifikasi' + suffix -kan,deepseek,meN~klasifikasi~kan,True,True
+mempergunakan,meN~per~guna~kan,complex_meN,meN + per- + root 'guna' + suffix -kan,deepseek,meN~per~guna~kan,True,True
+menganalisis,meN~analisis,complex_meN,meN + loanword 'analisis' from Greek/Latin,deepseek,meN~analisis,True,True
+mempertanyakan,meN~per~tanya~kan,complex_meN,meN + per- + root 'tanya' + suffix -kan,deepseek,meN~per~tanya~kan,True,True
+mengoptimalkan,meN~optimal~kan,complex_meN,meN + loanword 'optimal' + suffix -kan,deepseek,meN~optimal~kan,True,True
+memperpanjang,meN~per~panjang,complex_meN,meN + per- + root 'panjang',deepseek,meN~per~panjang,True,True
+menyempurnakan,meN~sempurna~kan,complex_meN,meN + root 'sempurna' + suffix -kan,deepseek,menyempurnakan,False,True
+mengkonfirmasi,meN~konfirmasi,complex_meN,meN + loanword 'konfirmasi' from English 'confirm',deepseek,meN~konfirmasi,True,True
+memperkecil,meN~per~kecil,complex_meN,meN + per- + root 'kecil',deepseek,meN~per~kecil,True,True
+mengimplementasikan,meN~implementasi~kan,complex_meN,meN + loanword 'implementasi' + suffix -kan,deepseek,meN~implementasi~kan,True,True
+memperluas,meN~per~luas,complex_meN,meN + per- + root 'luas',deepseek,meN~per~luas,True,True
+menyusun,meN~susun,complex_meN,meN + root 'susun',deepseek,meN~susun,True,True
+mengorganisasikan,meN~organisasi~kan,complex_meN,meN + loanword 'organisasi' + suffix -kan,deepseek,meN~organisasi~kan,True,True
+memperindah,meN~per~indah,complex_meN,meN + per- + root 'indah',deepseek,meN~per~indah,True,True
+pengaturan,peN~atur~an,complex_peN_an,Root: atur (arrange); root starts with vowel a,deepseek,peN~atur~an,True,True
+pengelolaan,peN~kelola~an,complex_peN_an,Root: kelola (manage); complex root with k→ng assimilation,deepseek,pengelolaan,False,True
+penyusunan,peN~susun~an,complex_peN_an,Root: susun (arrange); root starts with s,deepseek,penyusunan,False,True
+penyempurnaan,peN~sempurna~an,complex_peN_an,Root: sempurna (perfect); complex multi-syllabic root,deepseek,penyempurnaan,False,True
+pengujian,peN~uji~an,complex_peN_an,Root: uji (test); root starts with vowel u,deepseek,pengujian,False,True
+pembebasan,peN~bebas~an,complex_peN_an,Root: bebas (free); root starts with b,deepseek,pembebasan,False,True
+penyaringan,peN~saring~an,complex_peN_an,Root: saring (filter); complex root,deepseek,peN~aring~an,False,True
+pengurangan,peN~kurang~an,complex_peN_an,Root: kurang (reduce); root starts with k,deepseek,pengurangan,False,True
+pembuatan,peN~buat~an,complex_peN_an,Root: buat (make); root starts with b,deepseek,peN~buat~an,True,True
+penyusutan,peN~susut~an,complex_peN_an,Root: susut (shrink); root starts with s,deepseek,peN~usut~an,False,True
+pengendalian,peN~kendali~an,complex_peN_an,Root: kendali (control); complex root with k→ng assimilation,deepseek,pengendalian,False,True
+pembakaran,peN~bakar~an,complex_peN_an,Root: bakar (burn); root starts with b,deepseek,peN~bakar~an,True,True
+penyimpanan,peN~simpan~an,complex_peN_an,Root: simpan (store); root starts with s,deepseek,penyimpanan,False,True
+pengukuran,peN~ukur~an,complex_peN_an,Root: ukur (measure); root starts with vowel u,deepseek,peN~ukur~an,True,True
+pembenahan,peN~benah~an,complex_peN_an,Root: benah (improve); root starts with b,deepseek,pembenahan,False,True
+penyusupan,peN~susup~an,complex_peN_an,Root: susup (infiltrate); complex root,deepseek,penyusupan,False,True
+penggabungan,peN~gabung~an,complex_peN_an,Root: gabung (combine); root starts with g,deepseek,peN~gabung~an,True,True
+pembaruan,peN~baru~an,complex_peN_an,Root: baru (new); root starts with b; academic term for renewal,deepseek,peN~baru~an,True,True
+kekasih-kesayangan,ke~kasih~ulg~sayang~an,compound_reduplication,"Reduplication with affixes: ke-X-X-an pattern, meaning 'beloved ones'",deepseek,kekasih-kesayangan,False,True
+main-mainan,main~ulg~an,compound_reduplication,"Reduplication with suffix -an, meaning 'toys' or 'playing around'",deepseek,main~ulg~an,True,True
+guru-guru murid,guru~ulg murid,compound_reduplication,"Compound phrase with reduplication, meaning 'teachers and students'",deepseek,guru-guru murid,False,True
+bolak-balikkan,bolak~ulg~kan,compound_reduplication,"Reduplication with suffix -kan, meaning 'to flip back and forth'",deepseek,bolak~ulg~balikkan,False,True
+kejadian-kejadian,ke~jadi~an~ulg,compound_reduplication,"Reduplication with ke-X-an affix, meaning 'various events/incidents'",deepseek,ke~jadi~ulg~kejadian~an,False,True
+makan-makanan,makan~ulg~an,compound_reduplication,"Reduplication with suffix -an, meaning 'foods/snacks'",deepseek,makan~ulg~an,True,True
+jalan-jalanan,jalan~ulg~an,compound_reduplication,"Reduplication with suffix -an, meaning 'places to walk/streets'",deepseek,jalan~ulg~an,True,True
+tulis-tulisan,tulis~ulg~an,compound_reduplication,"Reduplication with suffix -an, meaning 'writings/scripts'",deepseek,tulis~ulg~an,True,True
+kecil-kecilan,kecil~ulg~an,compound_reduplication,"Reduplication with suffix -an, meaning 'small-scale/unofficial'",deepseek,kecil~ulg~an,True,True
+suka-sukaan,suka~ulg~an,compound_reduplication,"Reduplication with suffix -an, meaning 'likes/preferences'",deepseek,suka~ulg~an,True,True
+ibu-ibu bapak-bapak,ibu~ulg bapak~ulg,compound_reduplication,"Compound phrase with double reduplication, meaning 'mothers and fathers'",deepseek,ibu-ibu bapak-bapak,False,True
+anak-anak kecil,anak~ulg kecil,compound_reduplication,"Compound phrase with reduplication, meaning 'small children'",deepseek,anak-anak kecil,False,True
+rumah-rumahan,rumah~ulg~an,compound_reduplication,"Reduplication with suffix -an, meaning 'toy houses/model houses'",deepseek,rumah~ulg~an,True,True
+sayur-sayuran,sayur~ulg~an,compound_reduplication,"Reduplication with suffix -an, meaning 'vegetables'",deepseek,sayur~ulg~an,True,True
+buah-buahan,buah~ulg~an,compound_reduplication,"Reduplication with suffix -an, meaning 'fruits'",deepseek,buah~ulg~an,True,True
+lauk-laukan,lauk~ulg~an,compound_reduplication,"Reduplication with suffix -an, meaning 'side dishes'",deepseek,lauk~ulg~an,True,True
+pura-purakan,pura~ulg~kan,compound_reduplication,"Reduplication with suffix -kan, meaning 'to pretend/fake'",deepseek,pura~ulg~kan,True,True
+kakak-adik-adik,kakak adik~ulg,compound_reduplication,"Compound phrase with partial reduplication, meaning 'older sibling and younger siblings'",deepseek,kakak-adik-adik,False,True
+berjalan-jalan,ber~jalan~ulg,compound_reduplication,"Reduplication with ber- prefix, meaning 'to take a walk/stroll'",deepseek,ber~jalan~ulg,True,True
+berlari-lari,ber~lari~ulg,compound_reduplication,"Reduplication with ber- prefix, meaning 'to run around'",deepseek,ber~lari~ulg,True,True
+kebiasaan,ke~biasa~an,confix_ke_an,,existing,,,False
+kebersihan,ke~bersih~an,confix_ke_an,,existing,,,False
+kecantikan,ke~cantik~an,confix_ke_an,,existing,,,False
+kecelakaan,ke~celaka~an,confix_ke_an,,existing,,,False
+kecerdasan,ke~cerdas~an,confix_ke_an,,existing,,,False
+kecintaan,ke~cinta~an,confix_ke_an,,existing,,,False
+kecurian,ke~curi~an,confix_ke_an,,existing,,,False
+kedamaian,ke~damai~an,confix_ke_an,,existing,,,False
+kedatangan,ke~datang~an,confix_ke_an,,existing,,,False
+kedinginan,ke~dingin~an,confix_ke_an,,existing,,,False
+kegagalan,ke~gagal~an,confix_ke_an,,existing,,,False
+kegelapan,ke~gelap~an,confix_ke_an,,existing,,,False
+kegembiraan,ke~gembira~an,confix_ke_an,,existing,,,False
+kehangatan,ke~hangat~an,confix_ke_an,,existing,,,False
+pembukaan,peN~buka~an,confix_peN_an,,existing,,,False
+pengajaran,peN~ajar~an,confix_peN_an,,existing,,,False
+pengetahuan,peN~tahu~an,confix_peN_an,,existing,,,False
+pendidikan,peN~didik~an,confix_peN_an,,existing,,,False
+penggunaan,peN~guna~an,confix_peN_an,,existing,,,False
+pembangunan,peN~bangun~an,confix_peN_an,,existing,,,False
+penyelesaian,peN~selesai~an,confix_peN_an,,existing,,,False
+pengembangan,peN~kembang~an,confix_peN_an,,existing,,,False
+pemeliharaan,peN~elih~an,confix_peN_an,,existing,,,False
+pengawasan,peN~awas~an,confix_peN_an,,existing,,,False
+penelitian,peN~teliti~an,confix_peN_an,,existing,,,False
+pengiriman,peN~kirim~an,confix_peN_an,,existing,,,False
+pembentukan,peN~bentuk~kan,confix_peN_an,,existing,,,False
+pengolahan,peN~olah~an,confix_peN_an,,existing,,,False
+permainan,per~main~an,confix_per_an,,existing,,,False
+perjalanan,per~jalan~an,confix_per_an,,existing,,,False
+perkataan,per~kata~an,confix_per_an,,existing,,,False
+perubahan,per~ubah~an,confix_per_an,,existing,,,False
+pertanyaan,per~tanya~an,confix_per_an,,existing,,,False
+perhiasan,per~hias~an,confix_per_an,,existing,,,False
+perlawanan,per~lawan~an,confix_per_an,,existing,,,False
+peraturan,per~atur~an,confix_per_an,,existing,,,False
+perkawinan,per~kawin~an,confix_per_an,,existing,,,False
+perlindungan,per~lindung~an,confix_per_an,,existing,,,False
+perdagangan,per~dagang~an,confix_per_an,,existing,,,False
+perkumpulan,per~kumpul~an,confix_per_an,,existing,,,False
+perbaikan,per~baik~an,confix_per_an,,existing,,,False
+perkebunan,per~kebun~an,confix_per_an,,existing,,,False
+membuatkan,meN~buat~kan,derivational_suffixes,causative,deepseek,meN~buat~kan,True,True
+menjadikan,meN~jadi~kan,derivational_suffixes,causative,deepseek,meN~jadi~kan,True,True
+membacakan,meN~baca~kan,derivational_suffixes,causative,deepseek,meN~baca~kan,True,True
+menuliskan,meN~tulis~kan,derivational_suffixes,causative,deepseek,menuliskan,False,True
+mengirimkan,meN~kirim~kan,derivational_suffixes,causative,deepseek,mengirimkan,False,True
+menyanyikan,meN~nyanyi~kan,derivational_suffixes,causative,deepseek,meN~anyik~an,False,True
+membelikan,meN~beli~kan,derivational_suffixes,causative,deepseek,meN~belikan,False,True
+memberi,meN~beri~i,derivational_suffixes,stative/result,deepseek,meN~beri,False,True
+menuruti,meN~turut~i,derivational_suffixes,stative/result,deepseek,meN~urut~i,False,True
+mengikuti,meN~ikut~i,derivational_suffixes,stative/result,deepseek,meN~ikut~i,True,True
+mendengari,meN~dengar~i,derivational_suffixes,stative/result,deepseek,meN~dengar~i,True,True
+melihati,meN~lihat~i,derivational_suffixes,stative/result,deepseek,meN~lihat~i,True,True
+menghadapi,meN~hadap~i,derivational_suffixes,stative/result,deepseek,meN~hadap~i,True,True
+menyentuhi,meN~sentuh~i,derivational_suffixes,stative/result,deepseek,menyentuhi,False,True
+keindahan,ke~indah~an,derivational_suffixes,abstract noun,deepseek,ke~indah~an,True,True
+kemerdekaan,ke~merdeka~an,derivational_suffixes,abstract noun,deepseek,kemerdekaan,False,True
+kebahagiaan,ke~bahagia~an,derivational_suffixes,abstract noun,deepseek,ke~bahagia~an,True,True
+kesehatan,ke~sehat~an,derivational_suffixes,abstract noun,deepseek,kesehatan,False,True
+kebijaksanaan,ke~bijaksana~an,derivational_suffixes,abstract noun,deepseek,ke~bijaksana~an,True,True
+alat-alatan,alat~alat~an,derivational_suffixes,instrument/agent,deepseek,alat~ulg~an,False,True
+obat-obatan,obat~obat~an,derivational_suffixes,instrument/agent,deepseek,obat~ulg~an,False,True
+nyanyian,nyanyi~an,derivational_suffixes,instrument/agent,deepseek,nyanyi~an,True,True
+mendownload,meN~download,loanword_affixation,Technology term with meN- prefix,deepseek,meN~download,True,True
+di-posting-kan,di~posting~kan,loanword_affixation,Social media term with di- and -kan affixes,deepseek,di~posting~kan,True,True
+share-kan,share~kan,loanword_affixation,Social media term with -kan suffix,deepseek,share~kan,True,True
+meng-hack,meN~hack,loanword_affixation,Technology term with meN- prefix,deepseek,meng-hack,False,True
+di-screenshot,di~screenshot,loanword_affixation,Technology term with di- prefix,deepseek,di-screenshot,False,True
+meng-edit,meN~edit,loanword_affixation,Technology term with meN- prefix,deepseek,meng-edit,False,True
+like-kan,like~kan,loanword_affixation,Social media term with -kan suffix,deepseek,like~kan,True,True
+comment-kan,comment~kan,loanword_affixation,Social media term with -kan suffix,deepseek,comment-kan,False,True
+meng-presentasikan,meN~presentasi~kan,loanword_affixation,Academic term with meN- and -kan affixes,deepseek,meN~presentasi~kan,True,True
+di-diskusikan,di~diskusi~kan,loanword_affixation,Academic term with di- and -kan affixes,deepseek,di-diskusikan,False,True
+meng-analisis,meN~analisis,loanword_affixation,Academic term with meN- prefix,deepseek,meng-analisis,False,True
+di-research-kan,di~research~kan,loanword_affixation,Academic term with di- and -kan affixes,deepseek,di~research~kan,True,True
+meng-review,meN~review,loanword_affixation,Academic term with meN- prefix,deepseek,meng-review,False,True
+nge-print,nge~print,loanword_affixation,Informal technology term with nge- prefix,deepseek,nge-print,False,True
+nge-chat,nge~chat,loanword_affixation,Informal social media term with nge- prefix,deepseek,nge-chat,False,True
+nge-game,nge~game,loanword_affixation,Informal term with nge- prefix,deepseek,nge-game,False,True
+di-google,di~google,loanword_affixation,Informal technology term with di- prefix,deepseek,di-google,False,True
+meng-scan,meN~scan,loanword_affixation,Technology term with meN- prefix,deepseek,meN~scan,True,True
+di-upload-kan,di~upload~kan,loanword_affixation,Technology term with di- and -kan affixes,deepseek,di~upload~kan,True,True
+meng-stream,meN~stream,loanword_affixation,Technology term with meN- prefix,deepseek,meng-stream,False,True
+subscribe-kan,subscribe~kan,loanword_affixation,Social media term with -kan suffix,deepseek,subscribe~kan,True,True
+meng-debug,meN~debug,loanword_affixation,Technology term with meN- prefix,deepseek,meN~debug,True,True
+di-tweet-kan,di~tweet~kan,loanword_affixation,Social media term with di- and -kan affixes,deepseek,di-tweet-kan,False,True
+meng-konfirmasi,meN~konfirmasi,loanword_affixation,Academic term with meN- prefix,deepseek,meng-konfirmasi,False,True
+di-sintesis-kan,di~sintesis~kan,loanword_affixation,Academic term with di- and -kan affixes,deepseek,di-sintesis-kan,False,True
+nge-vlog,nge~vlog,loanword_affixation,Informal social media term with nge- prefix,deepseek,nge-vlog,False,True
+meng-copy,meN~copy,loanword_affixation,Technology term with meN- prefix,deepseek,meng-copy,False,True
+di-forward-kan,di~forward~kan,loanword_affixation,Technology/social media term with di- and -kan affixes,deepseek,di~forward~kan,True,True
+ambilkanlah,ambil~kan~lah,particle,,existing,,,False
+apakah,apa~kah,particle,,existing,,,False
+bacalah,baca~lah,particle,,existing,,,False
+berjalanlah,ber~jalan~lah,particle,,existing,,,False
+bukankah,bukan~kah,particle,,existing,,,False
+datanglah,datang~lah,particle,,existing,,,False
+dengarkanlah,dengar~kan~lah,particle,,existing,,,False
+diambilpun,di~ambil~pun,particle,,existing,,,False
+duduklah,duduk~lah,particle,,existing,,,False
+gurupun,guru~pun,particle,,existing,,,False
+ikutlah,ikut~lah,particle,,existing,,,False
+ingatkah,ingat~kah,particle,,existing,,,False
+janganlah,jangan~lah,particle,,existing,,,False
+katakanlah,kata~kan~lah,particle,,existing,,,False
+bukuku,buku~ku,possessive,,existing,,,False
+bukumu,buku~mu,possessive,,existing,,,False
+bukunya,buku~nya,possessive,,existing,,,False
+rumahku,rumah~ku,possessive,,existing,,,False
+rumahmu,rumah~mu,possessive,,existing,,,False
+rumahnya,rumah~nya,possessive,,existing,,,False
+mobilku,mobil~ku,possessive,,existing,,,False
+mobilmu,mobil~mu,possessive,,existing,,,False
+mobilnya,mobil~nya,possessive,,existing,,,False
+tasnya,tas~nya,possessive,,existing,,,False
+tasmuku,tas~mu~ku,possessive,,existing,,,False
+tasku,tas~ku,possessive,,existing,,,False
+sepatuku,sepatu~ku,possessive,,existing,,,False
+sepatumu,sepatu~mu,possessive,,existing,,,False
+bermain,ber~main,prefix_ber,,existing,,,False
+berjalan,ber~jalan,prefix_ber,,existing,,,False
+berlari,ber~lari,prefix_ber,,existing,,,False
+berbicara,ber~bicara,prefix_ber,,existing,,,False
+berdiri,ber~diri,prefix_ber,,existing,,,False
+berhenti,ber~henti,prefix_ber,,existing,,,False
+berpikir,ber~pikir,prefix_ber,,existing,,,False
+berkata,ber~kata,prefix_ber,,existing,,,False
+berangkat,ber~angkat,prefix_ber,,existing,,,False
+berubah,ber~ubah,prefix_ber,,existing,,,False
+berhitung,ber~hitung,prefix_ber,,existing,,,False
+bernyanyi,ber~nyanyi,prefix_ber,,existing,,,False
+berdansa,ber~dansa,prefix_ber,,existing,,,False
+berolahraga,ber~olahraga,prefix_ber,,existing,,,False
+memperbarui,meN~per~baru~i,prefix_combinations,"meN + per- (agentive, transitive): to renew/update something",deepseek,meN~per~baru~i,True,True
+mendirikan,meN~di~diri~kan,prefix_combinations,meN + di- (passive with meN-): to establish/build something,deepseek,mendirikan,False,True
+mendapatkan,meN~di~dapat~kan,prefix_combinations,meN + di- (passive with meN-): to obtain/get something,deepseek,meN~dapat~kan,False,True
+menduduki,meN~di~duduk~i,prefix_combinations,meN + di- (passive with meN-): to occupy a position/place,deepseek,meN~duduk~i,False,True
+mendengarkan,meN~di~dengar~kan,prefix_combinations,meN + di- (passive with meN-): to listen to something,deepseek,meN~dengar~kan,False,True
+mendukung,meN~di~dukung,prefix_combinations,meN + di- (passive with meN-): to support something,deepseek,meN~dukung,False,True
+kebersamaan,ke~ber~sama~an,prefix_combinations,ke- + ber- (state/condition): togetherness,deepseek,ke~ber~sama~an,True,True
+kebersahajaan,ke~ber~sahaja~an,prefix_combinations,ke- + ber- (state/condition): simplicity/modesty,deepseek,ke~ber~sahaja~an,True,True
+kebersyukuran,ke~ber~syukur~an,prefix_combinations,ke- + ber- (state/condition): gratitude,deepseek,ke~ber~syukur~an,True,True
+kebersinambungan,ke~ber~sinambung~an,prefix_combinations,ke- + ber- (state/condition): continuity,deepseek,ke~ber~sinambung~an,True,True
+terperinci,ter~per~inci,prefix_combinations,ter- + per- (superlative): most detailed,deepseek,ter~perinci,False,True
+terpercaya,ter~per~caya,prefix_combinations,ter- + per- (superlative): most trustworthy,deepseek,ter~percaya,False,True
+terperangkap,ter~per~angkap,prefix_combinations,ter- + per- (superlative): most trapped/caught,deepseek,ter~perangkap,False,True
+terperhatikan,ter~per~hati~kan,prefix_combinations,ter- + per- (superlative): most noticed,deepseek,ter~per~hati~kan,True,True
+terperdaya,ter~per~daya,prefix_combinations,ter- + per- (superlative): most deceived,deepseek,ter~per~daya,True,True
+mendiami,meN~di~diam~i,prefix_combinations,meN + di- (passive with meN-): to inhabit/live in,deepseek,meN~di~ami,False,True
+mendatangkan,meN~di~datang~kan,prefix_combinations,meN + di- (passive with meN-): to bring/cause something,deepseek,meN~datang~kan,False,True
+terperiksa,ter~per~iksa,prefix_combinations,ter- + per- (superlative): most examined,deepseek,ter~periksa,False,True
+terperanjat,ter~per~anjat,prefix_combinations,ter- + per- (superlative): most startled,deepseek,ter~peranjat,False,True
+memperjuangkan,meN~per~juang~kan,prefix_combinations,"meN + per- (agentive, transitive): to fight for something",deepseek,meN~per~juang~kan,True,True
+mendekati,meN~di~dekat~i,prefix_combinations,meN + di- (passive with meN-): to approach something,deepseek,meN~dekat~i,False,True
+dimakan,di~makan,prefix_di,,existing,,,False
+dibaca,di~baca,prefix_di,,existing,,,False
+ditulis,di~tulis,prefix_di,,existing,,,False
+dibuka,di~buka,prefix_di,,existing,,,False
+ditutup,di~tutup,prefix_di,,existing,,,False
+dibeli,di~beli,prefix_di,,existing,,,False
+dijual,di~jual,prefix_di,,existing,,,False
+dibawa,di~bawa,prefix_di,,existing,,,False
+dikirim,di~kirim,prefix_di,,existing,,,False
+menulis,meN~tulis,prefix_meN,,existing,,,False
+membaca,meN~baca,prefix_meN,,existing,,,False
+mengajar,meN~ajar,prefix_meN,,existing,,,False
+menyanyi,meN~nyanyi,prefix_meN,,existing,,,False
+mengecat,meN~cat,prefix_meN,,existing,,,False
+melepas,meN~lepas,prefix_meN,,existing,,,False
+menanam,meN~tanam,prefix_meN,,existing,,,False
+memasak,meN~masak,prefix_meN,,existing,,,False
+menggambar,meN~gambar,prefix_meN,,existing,,,False
+menyapu,meN~sapu,prefix_meN,,existing,,,False
+mengetik,meN~ketik,prefix_meN,,existing,,,False
+melompat,meN~lompat,prefix_meN,,existing,,,False
+menari,meN~tari,prefix_meN,,existing,,,False
+memotong,meN~potong,prefix_meN,,existing,,,False
+mengirim,meN~kirim,prefix_meN,,existing,,,False
+menyebut,meN~sebut,prefix_meN,,existing,,,False
+mengejar,meN~kejar,prefix_meN,,existing,,,False
+melukis,meN~lukis,prefix_meN,,existing,,,False
+menangkap,meN~tangkap,prefix_meN,,existing,,,False
+terbang,ter~bang,prefix_ter,,existing,,,False
+tertawa,ter~tawa,prefix_ter,,existing,,,False
+terima,terima,prefix_ter,,existing,,,False
+terang,terang,prefix_ter,,existing,,,False
+terus,terus,prefix_ter,,existing,,,False
+terakhir,ter~akhir,prefix_ter,,existing,,,False
+terbuka,ter~buka,prefix_ter,,existing,,,False
+tertutup,ter~tutup,prefix_ter,,existing,,,False
+terlalu,ter~lalu,prefix_ter,,existing,,,False
+lelaki,laki~rp,reduplication_partial,,existing,,,False
+sesama,se~sama,reduplication_partial,,existing,,,False
+tetangga,tetangga,reduplication_partial,,existing,,,False
+leluhur,luhur~rp,reduplication_partial,,existing,,,False
+sesepuh,se~sepuh,reduplication_partial,,existing,,,False
+tetua,tua~rp,reduplication_partial,,existing,,,False
+lelatu,latu~rp,reduplication_partial,,existing,,,False
+sesaji,se~saji,reduplication_partial,,existing,,,False
+tetumbuhan,tumbuh~ul~an,reduplication_partial,,existing,,,False
+bolak-balik,bolak~ulg~balik,reduplication_phonetic,,existing,,,False
+sayur-mayur,sayur~ulg~sayur,reduplication_phonetic,,existing,,,False
+lauk-pauk,lauk~ulg~pauk,reduplication_phonetic,,existing,,,False
+gerak-gerik,gerak~ulg~gerik,reduplication_phonetic,,existing,,,False
+serba-serbi,serba~ulg~serbi,reduplication_phonetic,,existing,,,False
+ramah-tamah,ramah~tamah,reduplication_phonetic,,existing,,,False
+hutan-belantara,hutan~belantara,reduplication_phonetic,,existing,,,False
+lambat-laun,lambat~ulg~laun,reduplication_phonetic,,existing,,,False
+tua-bangka,tua~bangka,reduplication_phonetic,,existing,,,False
+mainan,main~an,suffix_an,,existing,,,False
+makanan,makan~an,suffix_an,,existing,,,False
+minuman,minum~an,suffix_an,,existing,,,False
+pakaian,pakaian,suffix_an,,existing,,,False
+tulisan,tulis~an,suffix_an,,existing,,,False
+bacaan,baca~an,suffix_an,,existing,,,False
+ajaran,ajar~an,suffix_an,,existing,,,False
+kiriman,kirim~an,suffix_an,,existing,,,False
+pandangan,pandang~an,suffix_an,,existing,,,False
+pendengaran,peN~dengar~an,suffix_an,,existing,,,False
+permainan,per~main~an,suffix_an,,existing,,,False
+perjalanan,per~jalan~an,suffix_an,,existing,,,False
+perkataan,per~kata~an,suffix_an,,existing,,,False
+pertanyaan,per~tanya~an,suffix_an,,existing,,,False
+perasaan,per~rasa~an,suffix_an,,existing,,,False
+penglihatan,peN~lihat~an,suffix_an,,existing,,,False
+pengetahuan,peN~tahu~an,suffix_an,,existing,,,False
+pendidikan,peN~didik~an,suffix_an,,existing,,,False
+pembelajaran,peN~ajar~an,suffix_an,,existing,,,False
+mempermainkannya,meN~per~main~kan~nya,suffix_combinations,meN- (causative) + per- (intensive) + main (root) + -kan (causative) + -nya (third person possessive/definite),deepseek,meN~per~main~kan~nya,True,True
+mengirimmu,meN~kirim~mu,suffix_combinations,meN- (active) + kirim (root) + -mu (second person possessive),deepseek,meN~kirim~mu,True,True
+dijualannya,di~jual~an~nya,suffix_combinations,di- (passive) + jual (root) + -an (nominalizer) + -nya (third person possessive/definite),deepseek,di~jual~an~nya,True,True
+kebersihanku,ke~bersih~an~ku,suffix_combinations,ke- (nominalizer) + bersih (root) + -an (nominalizer) + -ku (first person possessive),deepseek,kebersihanku,False,True
+menyelesaikannya,meN~selesai~kan~nya,suffix_combinations,meN- (active) + selesai (root) + -kan (causative) + -nya (third person possessive/definite),deepseek,menyelesaikannya,False,True
+membacakannya,meN~baca~kan~nya,suffix_combinations,meN- (active) + baca (root) + -kan (causative) + -nya (third person possessive/definite),deepseek,meN~baca~kan~nya,True,True
+menulisku,meN~tulis~ku,suffix_combinations,meN- (active) + tulis (root) + -ku (first person possessive),deepseek,meN~tulis~ku,True,True
+membelinya,meN~beli~nya,suffix_combinations,meN- (active) + beli (root) + -nya (third person possessive/definite),deepseek,meN~beli~nya,True,True
+mengatakannya,meN~kata~kan~nya,suffix_combinations,meN- (active) + kata (root) + -kan (causative) + -nya (third person possessive/definite),deepseek,meN~atak~an~nya,False,True
+membukakannya,meN~buka~kan~nya,suffix_combinations,meN- (active) + buka (root) + -kan (causative) + -nya (third person possessive/definite),deepseek,meN~buka~kan~nya,True,True
+menyanyikannya,meN~nyanyi~kan~nya,suffix_combinations,meN- (active) + nyanyi (root) + -kan (causative) + -nya (third person possessive/definite),deepseek,meN~anyik~an~nya,False,True
+mengajarku,meN~ajar~ku,suffix_combinations,meN- (active) + ajar (root) + -ku (first person possessive),deepseek,meN~ajar~ku,True,True
+menyuruhmu,meN~suruh~mu,suffix_combinations,meN- (active) + suruh (root) + -mu (second person possessive),deepseek,meN~suruh~mu,True,True
+membantunya,meN~bantu~nya,suffix_combinations,meN- (active) + bantu (root) + -nya (third person possessive/definite),deepseek,meN~bantu~nya,True,True
+pengajaranku,peng~ajar~an~ku,suffix_combinations,peng- (agent nominalizer) + ajar (root) + -an (nominalizer) + -ku (first person possessive),deepseek,peN~ajar~an~ku,False,True
+permainanlah,per~main~an~lah,suffix_combinations,per- (intensive) + main (root) + -an (nominalizer) + -lah (emphasis particle),deepseek,per~main~an~lah,True,True
+kebahagiaankah,ke~bahagia~an~kah,suffix_combinations,ke- (nominalizer) + bahagia (root) + -an (nominalizer) + -kah (interrogative particle),deepseek,ke~bahagia~an~kah,True,True
+kekayaanku,ke~kaya~an~ku,suffix_combinations,ke- (nominalizer) + kaya (root) + -an (nominalizer) + -ku (first person possessive),deepseek,ke~kaya~an~ku,True,True
+kebodohanmu,ke~bodoh~an~mu,suffix_combinations,ke- (nominalizer) + bodoh (root) + -an (nominalizer) + -mu (second person possessive),deepseek,ke~bodoh~an~mu,True,True
+kecantikannya,ke~cantik~an~nya,suffix_combinations,ke- (nominalizer) + cantik (root) + -an (nominalizer) + -nya (third person possessive/definite),deepseek,ke~cantik~an~nya,True,True
+kebanggaanlah,ke~bangga~an~lah,suffix_combinations,ke- (nominalizer) + bangga (root) + -an (nominalizer) + -lah (emphasis particle),deepseek,ke~bangga~an~lah,True,True
+kebingungankah,ke~bingung~an~kah,suffix_combinations,ke- (nominalizer) + bingung (root) + -an (nominalizer) + -kah (interrogative particle),deepseek,ke~bingung~an~kah,True,True
+pembelajaranmu,pem~belajar~an~mu,suffix_combinations,pem- (process nominalizer) + belajar (root) + -an (nominalizer) + -mu (second person possessive),deepseek,peN~ber~ajar~an~mu,False,True
+penjualannya,pen~jual~an~nya,suffix_combinations,pen- (agent nominalizer) + jual (root) + -an (nominalizer) + -nya (third person possessive/definite),deepseek,peN~jual~an~nya,True,True
+pembacaanlah,pem~baca~an~lah,suffix_combinations,pem- (process nominalizer) + baca (root) + -an (nominalizer) + -lah (emphasis particle),deepseek,peN~baca~an~lah,False,True
+penulisanmu,pen~tulis~an~mu,suffix_combinations,pen- (process nominalizer) + tulis (root) + -an (nominalizer) + -mu (second person possessive),deepseek,penulisanmu,False,True
+permainanku,per~main~an~ku,suffix_combinations,per- (intensive) + main (root) + -an (nominalizer) + -ku (first person possessive),deepseek,per~main~an~ku,True,True
+perjalanannya,per~jalan~an~nya,suffix_combinations,per- (intensive) + jalan (root) + -an (nominalizer) + -nya (third person possessive/definite),deepseek,per~jalan~an~nya,True,True
+perubahanlah,per~ubah~an~lah,suffix_combinations,per- (intensive) + ubah (root) + -an (nominalizer) + -lah (emphasis particle),deepseek,per~ubah~an~lah,True,True
+pertanyaankah,per~tanya~an~kah,suffix_combinations,per- (intensive) + tanya (root) + -an (nominalizer) + -kah (interrogative particle),deepseek,per~tanya~an~kah,True,True
+rumahi,rumah~i,suffix_i,,existing,,,False
+bukui,buku~i,suffix_i,,existing,,,False
+mejai,meN~jadi~i,suffix_i,,existing,,,False
+kursii,kursi~i,suffix_i,,existing,,,False
+pintui,pintu~i,suffix_i,,existing,,,False
+jendelai,jendela~i,suffix_i,,existing,,,False
+lantaii,lantai~i,suffix_i,,existing,,,False
+dindingi,dinding~i,suffix_i,,existing,,,False
+atapi,tapi~a,suffix_i,,existing,,,False
+tanami,tana~i,suffix_i,,existing,,,False
+sirami,siram~i,suffix_i,,existing,,,False
+pupuki,pupuk~i,suffix_i,,existing,,,False
+potongi,potong~i,suffix_i,,existing,,,False
+jahiti,jahit~i,suffix_i,,existing,,,False
+makanan,makan~an,suffix_kan,,existing,,,False
+minuman,minum~an,suffix_kan,,existing,,,False
+bacakan,baca~kan,suffix_kan,,existing,,,False
+tuliskan,tulis~kan,suffix_kan,,existing,,,False
+dengarkan,dengar~kan,suffix_kan,,existing,,,False
+lihatkan,lihat~kan,suffix_kan,,existing,,,False
+belikan,beli~kan,suffix_kan,,existing,,,False
+jualkan,jual~kan,suffix_kan,,existing,,,False
+kirimkan,kirim~kan,suffix_kan,,existing,,,False
+terimakan,terima~kan,suffix_kan,,existing,,,False
+berikan,beri~kan,suffix_kan,,existing,,,False
+ambilkan,ambil~kan,suffix_kan,,existing,,,False
+bawakan,bawa~kan,suffix_kan,,existing,,,False
+taruhkan,taruh~kan,suffix_kan,,existing,,,False
+simpanan,simpan~an,suffix_kan,,existing,,,False
+bukakan,buka~kan,suffix_kan,,existing,,,False
+tutupkan,tutup~kan,suffix_kan,,existing,,,False
+masukkan,meN~masuk~kan,suffix_kan,,existing,,,False
+keluarkan,keluar~kan,suffix_kan,,existing,,,False
