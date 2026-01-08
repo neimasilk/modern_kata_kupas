@@ -52,3 +52,35 @@ This file will track the progress of the ModernKataKupas project.
 - [x] Step 4.7: Final Testing and Status Update
     - [x] Step 4.7.1: Update Dokumen Status dan Progress (SELESAI per 25 Mei 2024) - This document and `status-todolist-saran.md` updated.
     - [x] Step 4.7.2: Uji `pytest` Final (SELESAI per 25 Mei 2024) - All 91 `pytest` tests passed.
+- [x] Step 4.8: Release v1.0.0 (SELESAI per 8 Jan 2025)
+    - [x] Step 4.8.1: Tagging Git v1.0.0 - Tag `v1.0.0` dibuat dan di-push ke repository.
+    - [x] Step 4.8.2: Build Package dengan Perubahan Terbaru - Package rebuilt dengan `setup.py sdist bdist_wheel`.
+    - [x] Step 4.8.3: Update Dokumentasi Rilis - Progress log dan status document diupdate.
+
+---
+
+## Phase 5: Post-Release V1.0 (Perencanaan Masa Depan)
+
+**Objective:** Perbaikan pasca-rilis dan pengembangan fitur untuk versi selanjutnya.
+
+### Langkah Selanjutnya (V1.1 atau V2.0):
+
+- [ ] Step 5.1: GitHub Release Formal
+    - [ ] Buat Release di GitHub dengan tag v1.0.0
+    - [ ] Upload artefak build (.tar.gz dan .whl) ke release
+
+- [ ] Step 5.2: PyPI Publishing
+    - [ ] Setup PyPI API token
+    - [ ] Upload package ke PyPI menggunakan `twine upload dist/*`
+
+- [ ] Step 5.3: Post-Release Improvements (V1.1)
+    - [ ] Analisis feedback dari pengguna
+    - [ ] Perbaiki edge cases yang ditemukan
+    - [ ] Tambahkan lebih banyak kata dasar (jika perlu)
+    - [ ] Optimasi performa
+
+- [ ] Step 5.4: Future Enhancements (V2.0)
+    - [ ] Context-aware stemming (menggunakan konteks kalimat)
+    - [ ] Machine learning assisted disambiguation
+    - [ ] Support untuk dialek/regional Bahasa Indonesia
+    - [ ] API endpoint untuk web service
