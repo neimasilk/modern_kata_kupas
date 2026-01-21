@@ -1,0 +1,77 @@
+# ModernKataKupas Configuration File
+# This file contains configurable parameters for word segmentation
+
+# Minimum stem length requirements for different types of suffix stripping
+min_stem_lengths:
+  # Minimum length for possessive suffix stripping (-ku, -mu, -nya)
+  possessive: 3
+
+  # Minimum length for derivational suffix stripping (-kan, -i, -an)
+  derivational: 4
+
+  # Minimum length for particle suffix stripping (-lah, -kah, -pun, -tah)
+  particle: 3
+
+# Phonetic reduplication pairs (dwilingga salin suara)
+# Format: base_part -> variant_part
+# Example: sayur-mayur, bolak-balik
+dwilingga_salin_suara_pairs:
+  - base: "sayur"
+    variant: "mayur"
+  - base: "bolak"
+    variant: "balik"
+  - base: "warna"
+    variant: "warni"
+  - base: "ramah"
+    variant: "tamah"
+  - base: "gerak"
+    variant: "gerik"
+  - base: "lauk"
+    variant: "pauk"
+  - base: "serba"
+    variant: "serbi"
+  - base: "belah"
+    variant: "beli"
+  - base: "buyut"
+    variant: "moyut"
+  - base: "kacau"
+    variant: "balau"
+  - base: "cing"
+    variant: "cang"
+  - base: "ganti"
+    variant: "genti"
+  - base: "kali"
+    variant: "keli"
+  - base: "sulam"
+    variant: "selam"
+  - base: "tukar"
+    variant: "tekER"
+  - base: "ubah"
+    variant: "embuh"
+  - base: "hanyut"
+    variant: "hilir"
+  - base: "jaja"
+    variant: "jiwi"
+  - base: "pacak"
+    variant: "pecik"
+  - base: "saur"
+    variant: "segar"
+  - base: "amit"
+    variant: "emtik"
+  - base: "balik"
+    variant: "bolak"
+  - base: "balik"
+    variant: "balek"
+  - base: "jangkau"
+    variant: "jingkau"
+
+# Feature flags
+features:
+  # Enable loanword affixation handling
+  enable_loanword_affixation: true
+
+  # Enable reduplication detection and segmentation
+  enable_reduplication: true
+
+  # Enable morphophonemic segmentation rules
+  enable_morphophonemic_rules: true

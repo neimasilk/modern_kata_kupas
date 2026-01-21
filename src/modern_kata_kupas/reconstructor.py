@@ -1,5 +1,6 @@
 import re
 import logging
+from typing import Dict, List, Optional, Any
 from .rules import MorphologicalRules
 from .dictionary_manager import DictionaryManager
 from .stemmer_interface import IndonesianStemmer
@@ -50,7 +51,7 @@ class Reconstructor:
         self.dictionary = dictionary_manager
         self.stemmer = stemmer
 
-    def parse_segmented_string(self, segmented_word: str) -> dict:
+    def parse_segmented_string(self, segmented_word: str) -> Dict[str, Any]:
         """
         Parses a tilde-separated segmented word string into its morphemic components.
 
@@ -241,7 +242,7 @@ class Reconstructor:
         logging.debug(f"parse_segmented_string: Returning parsed result: {result}")
         return result
 
-    def _apply_reduplication_reconstruction(self, stem: str, marker: str, variant: str = None, suffixes_after_reduplication: list[str] = None, stem_second_part_for_suffix: bool = False) -> str:
+    def _apply_reduplication_reconstruction(self, stem: str, marker: str, variant: Optional[str] = None, suffixes_after_reduplication: Optional[List[str]] = None, stem_second_part_for_suffix: bool = False) -> str:
         if not stem: # Should not happen if called correctly
             return ""
 
@@ -418,7 +419,7 @@ class Reconstructor:
         # A word is considered monosyllabic if it has one vowel sound AND is in the dictionary.
         return vowel_count == 1 and self.dictionary.is_kata_dasar(word)
 
-    def _apply_forward_morphophonemics(self, prefix_canonical_form: str, base_word: str, original_root: str = None) -> str:
+    def _apply_forward_morphophonemics(self, prefix_canonical_form: str, base_word: str, original_root: Optional[str] = None) -> str:
         """
         Applies forward morphophonemic rules for a given prefix and base word.
         Example: prefix_canonical_form="meN", base_word="pukul" -> "memukul"

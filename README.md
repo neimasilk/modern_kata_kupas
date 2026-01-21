@@ -159,6 +159,155 @@ print(f"'{segmented_form6}' -> '{reconstructed6}'") # Expected: 'dibackup'
 ```
 *Note: Actual segmentation results depend on the contents of `kata_dasar.txt` (e.g., for "makan", "baru", "rumah", "laki") and `loanwords.txt` (e.g., for "backup"). If a root word is not found, the word may be returned unsegmented or only partially segmented. For example, "dibaca" and "mempertaruhkan" remain unsegmented if "baca" and "taruh" are not in the dictionary.*
 
+## **CLI Usage**
+
+ModernKataKupas provides a command-line interface (`mkk`) for quick segmentation and reconstruction tasks.
+
+**Basic Commands:**
+
+```bash
+# Segment a single word
+mkk segment "mempertaruhkan"
+# Output: mempertaruhkan → meN~per~taruh~kan
+
+# Reconstruct from segmented form
+mkk reconstruct "meN~tulis"
+# Output: meN~tulis → menulis
+
+# Get help
+mkk --help
+mkk segment --help
+```
+
+**Batch Processing:**
+
+```bash
+# Create input file
+echo "menulis" > words.txt
+echo "membaca" >> words.txt
+echo "mempertaruhkan" >> words.txt
+
+# Segment all words in file
+mkk segment-file words.txt
+
+# Save output to file
+mkk segment-file words.txt -o output.txt
+
+# Output in different formats
+mkk segment-file words.txt --format json
+mkk segment-file words.txt --format csv
+```
+
+**Custom Configuration:**
+
+```bash
+# Use custom dictionary
+mkk --dictionary /path/to/custom_dict.txt segment "kata"
+
+# Use custom rules
+mkk --rules /path/to/custom_rules.json segment "kata"
+
+# Use custom configuration
+mkk --config /path/to/custom_config.yaml segment "kata"
+```
+
+**JSON Output:**
+
+```bash
+mkk segment "menulis" --format json
+# Output: {"word": "menulis", "segmented": "meN~tulis"}
+```
+
+## **Configuration**
+
+ModernKataKupas supports configuration via YAML files for customizing behavior without modifying code.
+
+**Configuration File Structure:**
+
+```yaml
+# config.yaml
+min_stem_lengths:
+  possessive: 3      # Minimum stem length for -ku, -mu, -nya
+  derivational: 4    # Minimum stem length for -kan, -i, -an
+  particle: 3        # Minimum stem length for -lah, -kah, -pun
+
+dwilingga_salin_suara_pairs:
+  - base: "sayur"
+    variant: "mayur"
+  - base: "bolak"
+    variant: "balik"
+  # Add more pairs as needed
+
+features:
+  enable_loanword_affixation: true
+  enable_reduplication: true
+  enable_morphophonemic_rules: true
+```
+
+**Using Custom Configuration:**
+
+```python
+from modern_kata_kupas import ModernKataKupas
+
+# Load with custom config
+mkk = ModernKataKupas(config_path="/path/to/config.yaml")
+
+# Or use default packaged config
+mkk = ModernKataKupas()  # Uses built-in config.yaml
+```
+
+## **Development Setup**
+
+For contributors and developers:
+
+**Install Development Dependencies:**
+
+```bash
+# Clone repository
+git clone https://github.com/neimasilk/modern_kata_kupas.git
+cd modern_kata_kupas
+
+# Install in editable mode with dev dependencies
+pip install -e ".[dev]"
+```
+
+**Run Tests:**
+
+```bash
+# Run all tests
+pytest tests/
+
+# Run with coverage
+pytest --cov=modern_kata_kupas --cov-report=html tests/
+
+# View coverage report
+open htmlcov/index.html
+```
+
+**Code Quality:**
+
+```bash
+# Run type checking
+mypy src/modern_kata_kupas
+
+# Run linter
+flake8 src/modern_kata_kupas
+
+# Format code
+black src/modern_kata_kupas
+
+# Run all checks (pre-commit)
+pre-commit run --all-files
+```
+
+**CI/CD:**
+
+This project uses GitHub Actions for continuous integration:
+- Automated testing on Python 3.8, 3.9, 3.10, 3.11
+- Code coverage reporting
+- Code quality checks (mypy, flake8, black)
+- CLI functionality tests
+
 ## **Output Format for `segment()`**
 
 The `segment()` method returns a string where morphemes are separated by a tilde (`~`).
@@ -190,8 +339,12 @@ When `segment()` encounters a word:
 
 For detailed API information, please refer to the docstrings within the source code.
 
-*   **`ModernKataKupas(dictionary_path: Optional[str] = None, rules_file_path: Optional[str] = None)`**
-    *   Initializes the segmenter. `dictionary_path` allows specifying a custom root word list, and `rules_file_path` a custom rules JSON. Defaults to packaged files if not provided.
+*   **`ModernKataKupas(dictionary_path: Optional[str] = None, rules_file_path: Optional[str] = None, config_path: Optional[str] = None)`**
+    *   Initializes the segmenter.
+    *   `dictionary_path`: Custom root word list (one word per line, UTF-8).
+    *   `rules_file_path`: Custom morphological rules JSON file.
+    *   `config_path`: Custom configuration YAML file (min stem lengths, reduplication pairs, feature flags).
+    *   All parameters default to packaged files if not provided.
 *   **`ModernKataKupas.segment(word: str) -> str`**
     *   Segments an Indonesian word into its morphemes.
     *   Returns a tilde-separated string of morphemes.

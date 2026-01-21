@@ -1,4 +1,12 @@
 PySastrawi<2.0.0,>=1.2.0
+PyYAML>=6.0
+
+[dev]
+pytest>=7.0.0
+pytest-cov>=4.0.0
+mypy>=1.0.0
+black>=23.0.0
+flake8>=6.0.0
 
 [experiments]
 python-dotenv>=1.0.0

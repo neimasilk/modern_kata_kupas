@@ -23,17 +23,30 @@ setup(
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     package_data={
-        "modern_kata_kupas": ["data/kata_dasar.txt", "data/loanwords.txt", "data/affix_rules.json"],
+        "modern_kata_kupas": ["data/kata_dasar.txt", "data/loanwords.txt", "data/affix_rules.json", "data/config.yaml"],
     },
     install_requires=[
         'PySastrawi>=1.2.0,<2.0.0',
+        'PyYAML>=6.0',
     ],
     extras_require={
+        'dev': [
+            'pytest>=7.0.0',
+            'pytest-cov>=4.0.0',
+            'mypy>=1.0.0',
+            'black>=23.0.0',
+            'flake8>=6.0.0',
+        ],
         'experiments': [
             'python-dotenv>=1.0.0',
             'openai>=1.0.0',
             'pandas>=2.0.0',
             'tqdm>=4.65.0',
+        ],
+    },
+    entry_points={
+        'console_scripts': [
+            'mkk=modern_kata_kupas.cli:main',
         ],
     },
     python_requires='>=3.8',
