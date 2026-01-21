@@ -5,6 +5,7 @@ Modul untuk memisahkan kata berimbuhan menjadi kata dasar dan afiksnya.
 import re
 import os
 import logging
+from typing import Optional, Tuple, List
 
 from .normalizer import TextNormalizer
 from .dictionary_manager import DictionaryManager
@@ -12,8 +13,7 @@ from .rules import MorphologicalRules
 from .stemmer_interface import IndonesianStemmer
 from .utils.alignment import align
 from .reconstructor import Reconstructor # Added import
-
-MIN_STEM_LENGTH_FOR_POSSESSIVE = 3 # Panjang minimal kata dasar untuk pemisahan sufiks posesif
+from .config_loader import ConfigLoader # Added import
 
 class ModernKataKupas:
     """
@@ -24,39 +24,8 @@ class ModernKataKupas:
     It handles various morphological phenomena including prefixes, suffixes,
     reduplication, and loanword affixation.
     """
-    # Phonetic reduplication pairs (dwilingga salin suara)
-    # Format: (base_part, variant_part) - base_part is used for affix stripping, variant_part is preserved in output
-    DWILINGGA_SALIN_SUARA_PAIRS = [
-        ("sayur", "mayur"),
-        ("bolak", "balik"),
-        ("warna", "warni"),
-        ("ramah", "tamah"),
-        ("gerak", "gerik"),
-        ("lauk", "pauk"),
-        ("serba", "serbi"),
-        # Additional common phonetic reduplications
-        ("belah", "beli"),      # belah-beli (buyung)
-        ("buyut", "moyut"),     # buyut-moyut
-        ("kacau", "balau"),     # kacau-balau
-        ("cing", "cang"),       # cing-cang (e.g., macan-macan)
-        ("ganti", "genti"),     # ganti-genti
-        ("kali", "keli"),       # kali-keli
-        ("sulam", "selam"),     # sulam-selam
-        ("tukar", "tekER"),     # tukar-tekar (simplified)
-        ("ubah", "embuh"),      # ubah-embuh
-        ("hanyut", "hilir"),    # hanyut-hilir
-        ("jaja", "jiwi"),       # jaja-jiwi
-        ("pacak", "pecik"),     # pacak-pecik
-        ("saur", "segar"),      # saur-segar
-        ("amit", "emtik"),      # amit-amtik
-        ("balik", "bolak"),     # reverse of bolak-balik (shouldn't happen in standard form)
-        ("balik", "balek"),     # balik-balek (informal)
-        ("jangkau", "jingkau"),
-    ]
-    MIN_STEM_LENGTH_FOR_POSSESSIVE = 3 # Define minimum stem length for possessive stripping
-    MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING = 4 # Define minimum stem length for derivational suffix stripping
-    MIN_STEM_LENGTH_FOR_PARTICLE = 3 # Define minimum stem length for particle stripping
-    def __init__(self, dictionary_path: str = None, rules_file_path: str = None):
+
+    def __init__(self, dictionary_path: Optional[str] = None, rules_file_path: Optional[str] = None, config_path: Optional[str] = None):
         """Initializes the ModernKataKupas separator.
 
         Sets up the text normalizer, dictionary manager (for root words and
@@ -73,6 +42,10 @@ class ModernKataKupas:
             rules_file_path (str, optional): Path to a custom morphological rules
                 JSON file. If None, the default packaged rules file is loaded.
                 Defaults to None.
+            config_path (str, optional): Path to a custom configuration YAML file.
+                If None, the default packaged config.yaml is loaded. Configuration
+                includes min stem lengths, reduplication pairs, and feature flags.
+                Defaults to None.
 
         Raises:
             DictionaryFileNotFoundError: If a specified `dictionary_path` is invalid
@@ -85,11 +58,22 @@ class ModernKataKupas:
                                missing and no custom paths are provided.
         """
         import importlib
-        
+
         # Constants for default rules file location
         DEFAULT_DATA_PACKAGE_PATH = 'modern_kata_kupas.data' # Path for importlib when src is on sys.path
         DEFAULT_RULES_FILENAME = 'affix_rules.json'
-        
+
+        # Load configuration
+        self.config = ConfigLoader(config_path=config_path)
+
+        # Load min stem lengths from config
+        self.MIN_STEM_LENGTH_FOR_POSSESSIVE = self.config.get_min_stem_length('possessive')
+        self.MIN_STEM_LENGTH_FOR_DERIVATIONAL_SUFFIX_STRIPPING = self.config.get_min_stem_length('derivational')
+        self.MIN_STEM_LENGTH_FOR_PARTICLE = self.config.get_min_stem_length('particle')
+
+        # Load reduplication pairs from config
+        self.DWILINGGA_SALIN_SUARA_PAIRS = self.config.get_dwilingga_pairs()
+
         self.normalizer = TextNormalizer()
         self.dictionary = DictionaryManager(dictionary_path=dictionary_path)
         self.stemmer = IndonesianStemmer()
@@ -442,7 +426,7 @@ class ModernKataKupas:
 
         return "" # No loanword affixation pattern found
 
-    def _handle_reduplication(self, word: str) -> tuple[str, str, list[str], str | None]:
+    def _handle_reduplication(self, word: str) -> Tuple[str, str, List[str], Optional[str]]:
         """
         Handles full reduplication (Dwilingga) like X-X, X-Xsuffix, or PX-X (e.g., bermain-main).
 
@@ -620,7 +604,7 @@ class ModernKataKupas:
         return word, "", [], None
 
 
-    def _strip_suffixes(self, word: str, is_processing_suffix_cluster: bool = False) -> tuple[str, list[str]]:
+    def _strip_suffixes(self, word: str, is_processing_suffix_cluster: bool = False) -> Tuple[str, List[str]]:
         current_word = str(word)
         stripped_suffixes_in_stripping_order = []
 
@@ -715,7 +699,7 @@ class ModernKataKupas:
              return vowel_count == 1
         return False # Default
 
-    def _strip_prefixes(self, original_word_for_prefix_stripping: str) -> tuple[str, list[str]]:
+    def _strip_prefixes(self, original_word_for_prefix_stripping: str) -> Tuple[str, List[str]]:
         """
         Memisahkan prefiks dari kata menggunakan _strip_prefixes_detailed.
         """
@@ -730,7 +714,7 @@ class ModernKataKupas:
 
         return self._strip_prefixes_detailed(current_word, [])
 
-    def _strip_prefixes_detailed(self, word_to_strip: str, accumulated_prefixes: list[str]) -> tuple[str, list[str]]:
+    def _strip_prefixes_detailed(self, word_to_strip: str, accumulated_prefixes: List[str]) -> Tuple[str, List[str]]:
         """
         Implementasi rekursif (atau iteratif yang dimodelkan secara rekursif) untuk pelepasan prefiks.
         """
