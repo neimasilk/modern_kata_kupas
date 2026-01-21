@@ -3,6 +3,8 @@
 Modul untuk normalisasi teks dalam ModernKataKupas.
 """
 
+from typing import Any
+
 class TextNormalizer:
     """
     Provides methods for normalizing text, specifically Indonesian words.
@@ -11,7 +13,7 @@ class TextNormalizer:
     and removing common trailing punctuation. Internal hyphens are preserved.
     """
 
-    def normalize_word(self, word: str) -> str:
+    def normalize_word(self, word: Any) -> str:
         """
         Normalizes a given word according to defined rules.
 

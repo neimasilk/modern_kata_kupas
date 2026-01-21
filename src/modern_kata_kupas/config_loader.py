@@ -8,9 +8,9 @@ import logging
 from typing import Dict, List, Tuple, Any, Optional
 
 try:
-    import yaml
+    import yaml # type: ignore[import-untyped]
 except ImportError:
-    yaml = None  # type: ignore
+    yaml = None
 
 # Default configuration (fallback if YAML not available or file not found)
 DEFAULT_CONFIG = {
@@ -130,7 +130,7 @@ class ConfigLoader:
         Returns:
             int: Minimum stem length.
         """
-        return self.config.get("min_stem_lengths", {}).get(suffix_type, 3)
+        return int(self.config.get("min_stem_lengths", {}).get(suffix_type, 3))
 
     def get_dwilingga_pairs(self) -> List[Tuple[str, str]]:
         """
@@ -152,7 +152,7 @@ class ConfigLoader:
         Returns:
             bool: True if enabled, False otherwise.
         """
-        return self.config.get("features", {}).get(feature_name, True)
+        return bool(self.config.get("features", {}).get(feature_name, True))
 
     def get(self, key: str, default: Any = None) -> Any:
         """

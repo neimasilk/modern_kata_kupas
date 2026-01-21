@@ -27,6 +27,8 @@ class IndonesianStemmer:
             word (str): The word to be stemmed.
 
         Returns:
-            str: The stemmed (root) form of the input word.
+            str: The root word (kata dasar).
         """
-        return self._stemmer.stem(word)
+        if self._stemmer:
+            return str(self._stemmer.stem(word))
+        return word

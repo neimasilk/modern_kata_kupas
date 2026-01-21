@@ -100,7 +100,7 @@ class Reconstructor:
 
         """
         logging.debug(f"parse_segmented_string CALLED with: '{segmented_word}'")
-        result = {
+        result: Dict[str, Any] = {
             "root": None,
             "prefixes": [],
             "suffixes_derivational": [],
@@ -142,7 +142,7 @@ class Reconstructor:
         # Restore the original_rs_segment if placeholder is present
         for i, p in enumerate(parts):
             if p == rs_placeholder:
-                parts[i] = original_rs_segment # Restore "rs(~mayur)"
+                parts[i] = str(original_rs_segment) # Restore "rs(~mayur)"
 
         if segmented_word == "sayur~rs(~mayur)":
             logging.debug(f"parse_segmented_string: Input for 'sayur~rs(~mayur)': '{segmented_word}'")
@@ -406,7 +406,7 @@ class Reconstructor:
             logging.debug(f"Reconstructor.reconstruct:   After prefix '{prefix_morpheme}', current_form: '{current_form}'")
 
         logging.debug(f"Reconstructor.reconstruct: Final reconstructed form for '{segmented_word}': '{current_form}'")
-        return current_form
+        return str(current_form)
 
     def _is_monosyllabic_heuristic(self, word: str) -> bool:
         """

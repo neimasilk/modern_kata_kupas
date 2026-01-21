@@ -100,7 +100,7 @@ class ModernKataKupas:
                     if not self.rules.prefix_rules and not self.rules.suffix_rules:
                         logging.warning("Final fallback for rule loading resulted in empty rules.")
                     else:
-                        logging.info(f"Rules loaded via MorphologicalRules default constructor (rules.py AFFIX_RULES_PATH: {self.rules.rules_file_path}).")
+                        logging.info("Rules loaded via MorphologicalRules default constructor (using internal default path).")
         
         # Initialize Reconstructor
         self.reconstructor = Reconstructor(rules=self.rules, dictionary_manager=self.dictionary, stemmer=self.stemmer)
@@ -210,7 +210,7 @@ class ModernKataKupas:
 
         # Debug logging after reduplication handling
         logging.debug(f"segment({word}): after _handle_reduplication: word_to_process='{word_to_process}', redup_marker='{redup_marker}', direct_redup_suffixes='{direct_redup_suffixes}', phonetic_variant='{phonetic_variant}'")
-        initial_suffixes = [] # Initialize initial_suffixes, its role is re-evaluated
+        initial_suffixes: List[str] = [] # Initialize initial_suffixes, its role is re-evaluated
 
         # 5. Affix Stripping Strategies on word_to_process
         # Strategy 1: Prefixes then Suffixes on word_to_process
@@ -399,10 +399,11 @@ class ModernKataKupas:
                 # Try with prefix + suffix
                 matching_suffix_rules = self.rules.get_matching_suffix_rules(base_after_prefix)
                 for s_rule in matching_suffix_rules:
-                    s_form_on_word = s_rule.get("original_pattern") 
+                    s_form_on_word = s_rule.get("original_pattern")
+                    if not s_form_on_word: continue
                     s_form_clean = s_form_on_word.lstrip('-') 
                     
-                    if not s_form_on_word or not base_after_prefix.endswith(s_form_on_word):
+                    if not base_after_prefix.endswith(s_form_on_word):
                         continue
 
                     loanword_candidate = base_after_prefix[:-len(s_form_on_word)]
@@ -415,10 +416,9 @@ class ModernKataKupas:
         matching_suffix_rules = self.rules.get_matching_suffix_rules(processed_word) # Use processed_word
         for s_rule in matching_suffix_rules:
             s_form_on_word = s_rule.get("original_pattern")
+            if not s_form_on_word: continue
             s_form_clean = s_form_on_word.lstrip('-')
             
-            if not s_form_on_word: continue
-
             base_candidate = processed_word[:-len(s_form_on_word)] # Use processed_word
             if not base_candidate: continue
 

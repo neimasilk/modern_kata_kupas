@@ -3,6 +3,8 @@
 Modul untuk custom exceptions yang digunakan dalam library ModernKataKupas.
 """
 
+from typing import Optional
+
 class ModernKataKupasError(Exception):
     """Kelas dasar untuk semua exception di ModernKataKupas."""
     pass
@@ -41,7 +43,7 @@ class WordNotInDictionaryError(DictionaryError): # Inherits from the MKK-specifi
     Attributes:
         word (str): The word that was not found.
     """
-    def __init__(self, word: str, message: str = None):
+    def __init__(self, word: str, message: Optional[str] = None):
         """
         Initializes the WordNotInDictionaryError.
 

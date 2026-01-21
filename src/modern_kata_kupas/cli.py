@@ -6,7 +6,7 @@ Command-line interface for ModernKataKupas.
 import sys
 import argparse
 import json
-from typing import List, Optional
+from typing import List, Optional, Any
 from .separator import ModernKataKupas
 
 
@@ -71,7 +71,7 @@ def batch_segment(mkk: ModernKataKupas, input_file: str, output_file: Optional[s
         print(f"Error reading input file: {e}", file=sys.stderr)
         sys.exit(1)
 
-    results = []
+    results: List[Any] = []
     for word in words:
         segmented = mkk.segment(word)
         if format_output == 'json':
@@ -85,7 +85,7 @@ def batch_segment(mkk: ModernKataKupas, input_file: str, output_file: Optional[s
     if format_output == 'json':
         output_text = json.dumps(results, ensure_ascii=False, indent=2)
     else:
-        output_text = '\n'.join(results)
+        output_text = '\n'.join([str(r) for r in results])
 
     # Write output
     if output_file:

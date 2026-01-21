@@ -122,6 +122,7 @@ class MorphologicalRules:
                 self._parse_rules_from_content(file_content, f"package:{DEFAULT_RULES_PACKAGE_PATH}/{DEFAULT_RULES_FILENAME}")
             else:
                 # Muat dari file path yang diberikan
+                assert rules_file_path is not None # Ensure rules_file_path is not None for mypy
                 logging.info(f"MorphologicalRules: Loading rules from explicit path: {rules_file_path}")
                 if not os.path.exists(rules_file_path):
                     raise FileNotFoundError(f"File aturan yang ditentukan secara eksplisit tidak ditemukan: {rules_file_path}")
@@ -516,7 +517,7 @@ class MorphologicalRules:
                     # maka tambahkan karakter tersebut ke awal stem_after_strip.
                     # Tidak perlu memeriksa apakah stem_after_strip sudah dimulai dengan char_to_restore,
                     # karena diasumsikan stem_after_strip adalah hasil *setelah* peluluhan.
-                    return char_to_restore + stem_after_strip
+                    return str(char_to_restore) + stem_after_strip
                 else:
                     # Alomorf cocok, tetapi tidak ada peluluhan yang perlu dibalik menurut aturan ini.
                     return stem_after_strip

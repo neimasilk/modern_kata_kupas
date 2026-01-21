@@ -2,7 +2,15 @@
 
 ## Recent Updates
 
-### 2026-01-21: Fix Critical Bug & Logic Improvements
+### 2026-01-21 (Part 2): Code Quality Improvements
+- **Fixed `mypy` Errors**: Resolved all 38 type hint errors across the codebase.
+    - Updated `config_loader.py` with correct type casting and stubs ignore.
+    - Fixed return types in `stemmer_interface.py` and `reconstructor.py`.
+    - Added safety assertions in `rules.py` for file paths.
+    - Corrected type annotations in `cli.py` and `separator.py`.
+- **Verified Stability**: All 94 existing tests passed after refactoring for type safety.
+
+### 2026-01-21 (Part 1): Fix Critical Bug & Logic Improvements
 - **Fixed `ValueError` in `segment()`**: Resolved a crash caused by `_handle_reduplication` returning an incorrect number of values for hyphenated words.
 - **Improved Reduplication Logic**:
     - Implemented dedicated `_handle_dwipurwa` method for partial reduplication in non-hyphenated words (e.g., *lelaki*).
@@ -25,6 +33,6 @@
 - Tagged `v1.0.0`.
 
 ## Pending Tasks
-- Fix remaining `mypy` type hint errors (approx. 38 errors).
 - Add unit tests for `cli.py` and `config_loader.py`.
+- Bump version to v1.0.1.
 - Perform comprehensive review of `kata_dasar.txt` to remove potentially confusing entries.
