@@ -13,7 +13,7 @@ def read_readme():
 
 setup(
     name='modern_kata_kupas',
-    version='1.0.0',
+    version='1.0.1',
     author='Tim ModernKataKupas',
     author_email='kontak@modernkatakupas.id', # Placeholder email
     description='Modern Indonesian Morphological Separator and Reconstructor for V1.0',
