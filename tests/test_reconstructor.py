@@ -199,7 +199,7 @@ class TestWordReconstruction(unittest.TestCase):
             "dipersemakmurkan",
             "sebaik-baiknya",   # V1.0 segments to sebaik~ulg~nya
             "keberlangsungan",
-            "mengkomunikasikan",
+            "mengomunikasikan",
             "ketidakadilan",
         ]
         

@@ -64,6 +64,8 @@ dwilingga_salin_suara_pairs:
     variant: "balek"
   - base: "jangkau"
     variant: "jingkau"
+  - base: "gotong"
+    variant: "royong"
 
 # Feature flags
 features:

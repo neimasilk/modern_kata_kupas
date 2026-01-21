@@ -316,9 +316,8 @@ def test_dwilingga_salin_suara_reduplication():
     assert mkk.segment("bolak-balikan") == "bolak~rs(~balikan)"
 
     # Test a case that looks like Salin Suara but isn't in the list
-    assert mkk.segment("corat-coret") == "corat-coret" # Adjusted based on actual implementation behavior
-                                                    # If "corat" is a KD, it could also be "corat~ulg" if "coret" is stemmed to "corat".
-                                                    # Given current logic, if not X-X, it's "coratcoret".
+    # "corat-coret" is now detected by the heuristic (same length, start with 'c', end with 't')
+    assert mkk.segment("corat-coret") == "corat~rs(~coret)"
 
 
 class TestSpecificSegmentationCases(unittest.TestCase): # Renamed class
@@ -585,41 +584,33 @@ class TestComplexMorphology(unittest.TestCase):
 
     def test_segment_dipersemakmurkan(self):
         """Test segmentasi 'dipersemakmurkan'."""
-        # Root: "makmur" (not in default kata_dasar.txt)
-        # Expected V1.0: "dipersemakmurkan" due to "semakmur" not being KD for "-kan" stripping,
-        # and subsequent failure of S1/S2 to find a KD.
-        self.assertEqual(self.mkk.segment("dipersemakmurkan"), "dipersemakmurkan")
+        # Root: "makmur" (IS in default kata_dasar.txt)
+        # Result: "di~per~se~makmur~kan"
+        self.assertEqual(self.mkk.segment("dipersemakmurkan"), "di~per~se~makmur~kan")
 
     def test_segment_berkejar_kejaran(self):
         """Test segmentasi 'berkejar-kejaran'."""
-        # Root: "kejar" (not in default kata_dasar.txt)
-        # word_to_process="berkejar", redup_marker="ulg", direct_redup_suffixes=["an"]
-        # S1/S2 on "berkejar" will result in "kejar" (not KD).
-        # chosen_final_stem for "berkejar" part becomes "berkejar" (word_to_process of that part).
-        # chosen_prefixes=[], chosen_main_suffixes=[] for "berkejar" part.
-        # Result: "berkejar~ulg~an"
-        self.assertEqual(self.mkk.segment("berkejar-kejaran"), "berkejar~ulg~an")
+        # Root: "kejar" (IS in default kata_dasar.txt)
+        # Result: "ber~kejar~ulg~an"
+        self.assertEqual(self.mkk.segment("berkejar-kejaran"), "ber~kejar~ulg~an")
 
     def test_segment_sebaik_baiknya(self):
         """Test segmentasi 'sebaik-baiknya'."""
-        # Root: "baik" (not in default kata_dasar.txt)
-        # word_to_process="sebaik", redup_marker="ulg", direct_redup_suffixes=["nya"]
-        # S1/S2 on "sebaik" will result in "baik" (not KD).
-        # chosen_final_stem for "sebaik" part becomes "sebaik".
-        # Result: "sebaik~ulg~nya"
-        self.assertEqual(self.mkk.segment("sebaik-baiknya"), "sebaik~ulg~nya")
+        # Root: "baik" (IS in default kata_dasar.txt)
+        # Result: "se~baik~ulg~nya"
+        self.assertEqual(self.mkk.segment("sebaik-baiknya"), "se~baik~ulg~nya")
 
     def test_segment_keberlangsungan(self):
         """Test segmentasi 'keberlangsungan'."""
-        # Root: "langsung" (not in default kata_dasar.txt)
-        # Expected V1.0: "keberlangsungan"
-        self.assertEqual(self.mkk.segment("keberlangsungan"), "keberlangsungan")
+        # Root: "langsung" (IS in default kata_dasar.txt)
+        # Result: "ke~ber~langsung~an"
+        self.assertEqual(self.mkk.segment("keberlangsungan"), "ke~ber~langsung~an")
 
     def test_segment_mengkomunikasikan(self):
         """Test segmentasi 'mengkomunikasikan'."""
-        # Root: "komunikasi" (not in default kata_dasar.txt, not default loanword)
-        # Expected V1.0: "mengkomunikasikan"
-        self.assertEqual(self.mkk.segment("mengkomunikasikan"), "mengkomunikasikan")
+        # Root: "komunikasi" (IS in default kata_dasar.txt)
+        # Result: "meN~komunikasi~kan"
+        self.assertEqual(self.mkk.segment("mengkomunikasikan"), "meN~komunikasi~kan")
 
     def test_segment_ketidakadilan(self):
         """Test segmentasi 'ketidakadilan'."""

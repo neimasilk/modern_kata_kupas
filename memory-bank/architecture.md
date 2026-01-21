@@ -97,13 +97,18 @@ Meskipun tidak ada mekanisme eksplisit untuk memilih antara interpretasi afiks y
     1.  Partikel: `-lah`, `-kah`, `-pun`
     2.  Posesif: `-ku`, `-mu`, `-nya`
     3.  Derivasional: `-kan`, `-i`, `-an`
-    Proses ini iteratif; setelah satu sufiks dilepas, sistem mencoba lagi dari awal urutan prioritas pada sisa kata. Sufiks derivasional memiliki pemeriksaan tambahan: secara default, mereka hanya dilepas jika sisa stem adalah kata dasar yang dikenal (kecuali dalam konteks khusus seperti pemrosesan kluster sufiks pada kata berulang).
+    Proses ini iteratif; setelah satu sufiks dilepas, sistem mencoba lagi dari awal urutan prioritas pada sisa kata. Sufiks derivasional memiliki pemeriksaan tambahan: secara default, mereka hanya dilepas jika sisa stem adalah kata dasar yang dikenal (kecuali dalam konteks khusus seperti pemrosesan kluster sufiks pada kata berulang atau jika mode "aggressive stripping" diaktifkan secara implisit).
 *   **Pelepasan Prefiks (`_strip_prefixes_detailed`):** Metode internal `_strip_prefixes_detailed` (dipanggil oleh `_strip_prefixes`) menangani pelepasan prefiks.
     *   Prefiks dicocokkan dari bentuk terpanjang ke terpendek (misalnya, "memper-" sebelum "meN-" atau "per-"). Ini membantu dalam identifikasi prefiks berlapis.
-    *   Setelah sebuah prefiks dilepas, sistem memeriksa apakah sisa kata adalah kata dasar. Jika tidak, sistem juga akan mencoba membalikkan perubahan morfofonemik (misalnya, dari "tulis" menjadi "nulis" setelah "meN-" dilepas) dan memeriksa apakah bentuk asli tersebut adalah kata dasar.
-    *   Proses ini bisa rekursif untuk menangani prefiks berlapis (misalnya, "dipermainkan" -> "di" + "permainkan" -> "di" + "per" + "mainkan").
+    *   **Urutan Pengecekan:**
+        1.  **Reverse Morphophonemics First:** Sistem memprioritaskan pengecekan apakah membalikkan perubahan morfofonemik menghasilkan kata dasar (misal: "menyapu" -> "meN-" + "sapu"). Ini mencegah kesalahan segmentasi pada kata yang sisa potongannya kebetulan ada di kamus (misal: "menyapu" -> "meN-" + "apu", di mana "apu" ada di kamus tapi bukan akar yang benar).
+        2.  **Direct KD Check:** Jika reverse morphophonemics tidak menghasilkan KD, sistem mengecek apakah sisa kata langsung adalah KD.
+        3.  **Recursive Check:** Jika bukan KD, sistem mencoba mengupas lagi secara rekursif (untuk prefiks berlapis).
+        4.  **Partial Strip Fallback:** Jika semua gagal, sistem menerima pelepasan prefiks "sementara" untuk memungkinkan strategi S1 mencoba mengupas sufiks dari sisa kata tersebut (penting untuk kata seperti "dilemparkan").
 
-Perlu dicatat bahwa penanganan reduplikasi (misalnya, "berkejar-kejaran") juga terintegrasi. Bentuk seperti ini akan diurai oleh `_handle_reduplication` (misalnya, menjadi basis "berkejar", penanda reduplikasi "ulg", dan sufiks "-an" yang menempel pada bagian kedua yang direduplikasi). Basis "berkejar" kemudian akan diproses lebih lanjut oleh strategi S1/S2.
+Perlu dicatat bahwa penanganan reduplikasi kini memiliki dua jalur:
+1.  **Reduplikasi dengan Tanda Hubung (`_handle_reduplication`):** Menangani Dwilingga (X-X), Dwilingga Salin Suara (X-Y, misal *sayur-mayur*), dan bentuk berimbuhan.
+2.  **Dwipurwa (`_handle_dwipurwa`):** Menangani reduplikasi sebagian suku kata awal pada kata tanpa tanda hubung (misal: *lelaki*, *sesama*).
 
 ### Contoh Kasus Ambiguitas
 

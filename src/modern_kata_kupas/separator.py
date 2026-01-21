@@ -12,8 +12,8 @@ from .dictionary_manager import DictionaryManager
 from .rules import MorphologicalRules
 from .stemmer_interface import IndonesianStemmer
 from .utils.alignment import align
-from .reconstructor import Reconstructor # Added import
-from .config_loader import ConfigLoader # Added import
+from .reconstructor import Reconstructor
+from .config_loader import ConfigLoader
 
 class ModernKataKupas:
     """
@@ -195,11 +195,18 @@ class ModernKataKupas:
             # 3. For non-hyphenated words, check if kata dasar first
             if self.dictionary.is_kata_dasar(normalized_word):
                 return normalized_word
-            # Not a kata dasar, set up for affix stripping
-            word_to_process = normalized_word
-            redup_marker = ""
-            direct_redup_suffixes = []
-            phonetic_variant = None
+            
+            # Check for Dwipurwa (e.g., lelaki)
+            dwipurwa_result = self._handle_dwipurwa(normalized_word)
+            if dwipurwa_result:
+                 word_to_process, redup_marker, direct_redup_suffixes, phonetic_variant = dwipurwa_result
+                 logging.debug(f"segment({word}): Dwipurwa detected: marker='{redup_marker}'")
+            else:
+                 # Not a kata dasar, set up for affix stripping
+                 word_to_process = normalized_word
+                 redup_marker = ""
+                 direct_redup_suffixes = []
+                 phonetic_variant = None
 
         # Debug logging after reduplication handling
         logging.debug(f"segment({word}): after _handle_reduplication: word_to_process='{word_to_process}', redup_marker='{redup_marker}', direct_redup_suffixes='{direct_redup_suffixes}', phonetic_variant='{phonetic_variant}'")
@@ -280,12 +287,14 @@ class ModernKataKupas:
 
         final_parts.append(chosen_final_stem)
 
-        if redup_marker: # "ulg" or "rp"
-            final_parts.append(redup_marker)
-            # For phonetic reduplication (dwilingga salin suara), include the variant after the marker
-            # e.g., "sayur-mayur" -> "sayur~ulg~mayur"
-            if phonetic_variant:
-                final_parts.append(phonetic_variant)
+        if redup_marker: 
+            if redup_marker == 'rs' and phonetic_variant:
+                 # Special handling for Dwilingga Salin Suara formatting to match "sayur~rs(~mayur)"
+                 final_parts.append(f"rs(~{phonetic_variant})")
+            else:
+                final_parts.append(redup_marker) # "ulg" or "rp"
+                if phonetic_variant:
+                    final_parts.append(phonetic_variant)
         
         # Assemble suffixes in order: main_suffixes, then direct_redup_suffixes, then initial_suffixes
         assembled_suffixes = []
@@ -458,7 +467,7 @@ class ModernKataKupas:
             part1, part2 = parts[0], parts[1]
 
             if not part1 or not part2: # Should not happen if word contains a hyphen
-                return word, "", []
+                return word, "", [], None
 
             # Check for Dwilingga Salin Suara (e.g., "bolak-balik", "sayur-mayur")
             # Pattern: both parts have same length and share phonological similarity
@@ -469,28 +478,25 @@ class ModernKataKupas:
                     # Check if part2 matches the pair
                     pair = variant if part1 == base else base
                     if part2 == pair:
-                        # Full match - treat as ulg (full reduplication with phonetic change)
-                        # Return the variant (part2) for inclusion in output
-                        return part1, "ulg", [], part2
+                        # Full match - treat as phonetic change
+                        return part1, "rs", [], part2
                     # Check if part2 starts with the pair (for compound forms)
                     elif part2.startswith(pair):
                         # This could be like sayur-mayurkan (with suffix)
-                        # For now, treat as ulg if the remainder is small or looks like a variant
-                        # Return the variant (part2) for inclusion in output
-                        return part1, "ulg", [], part2
-
-            # Additional heuristic: if parts have same length and share initial/final sounds
-            if len(part1) == len(part2) and len(part1) >= 3:
-                # Check if they share first letter or similar ending
-                if (part1[0] == part2[0] or
-                    part1[-1] in 'aiueo' and part2[-1] in 'aiueo'):
-                    # Treat as ulg (full reduplication with phonetic change)
-                    # Use part2 as variant since it's phonetically different
-                    return part1, "ulg", [], part2
+                        return part1, "rs", [], part2
 
             # Sub-pattern 2a: Simple X-X (e.g., "rumah-rumah", "main-main")
             if part1 == part2:
                 return part1, "ulg", [], None  # No phonetic variant for identical parts
+
+            # Additional heuristic: if parts have same length and share initial/final sounds
+            # AND ARE NOT IDENTICAL (identical handled above)
+            if len(part1) == len(part2) and len(part1) >= 3 and part1 != part2:
+                # Check if they share first letter or similar ending
+                if (part1[0] == part2[0] or
+                    part1[-1] in 'aiueo' and part2[-1] in 'aiueo'):
+                    # Treat as phonetic change
+                    return part1, "rs", [], part2
 
             # Sub-pattern 2b: Stem comparison for forms like PX-X ("bermain-main") or X-PX
             # This requires the stemmer to be available.
@@ -519,21 +525,10 @@ class ModernKataKupas:
                             return part1, "ulg", identified_suffixes, None  # No phonetic variant 
                     
                     # Case 3: X-Xsuffix where X is complex (e.g., "rumah-rumahanlah" - though this might be caught by Case 2 if stemmer(rumah)==rumah)
-                    # This specifically handles when part2 = part1 + suffix_cluster, and part1 is not necessarily the simple stem.
-                    # This was the previous "Sub-pattern 2c".
-                    # Example: part1="rumahan", part2="rumahanlah", stem1="rumah", stem2="rumah" (if stemmer was perfect)
-                    # More realistically: part1="rumah", part2="rumahanlah". stem1="rumah", stem2="rumah".
-                    # This overlaps with Case 2 if part1 == stem1. Case 2 is preferred if part1 is simple stem.
                     if part1 == stem1: # If part1 is already the base stem (X-Xsuffix)
                         # This path is now covered by Case 2 logic if part2.startswith(stem1/stem2)
                         pass # Covered by Case 2 if part1 is the stem.
                     elif part2.startswith(part1) and len(part2) > len(part1): # part1 is complex (PX), part2 = PX + suffix_cluster
-                        # This case is less common for reduplication suffixes. Usually suffixes attach to the base or the result of PX.
-                        # For "rumah-rumahanlah", part1="rumah", stem1="rumah". Case 2 handles it.
-                        # Consider "bermain-bermainnya". part1="bermain", part2="bermainnya". stem1="main", stem2="main".
-                        # Case 2: part2 ("bermainnya") does not start with stem2 ("main").
-                        # This new Case 3: part2 ("bermainnya") starts with part1 ("bermain"). suffix_cluster="nya".
-                        # This would return ("bermain", "ulg", ["nya"])
                         suffix_cluster_on_part2 = part2[len(part1):]
                         remaining_stem_from_cluster, identified_suffixes = self._strip_suffixes(suffix_cluster_on_part2, is_processing_suffix_cluster=True)
                         if not remaining_stem_from_cluster and identified_suffixes:
@@ -544,10 +539,25 @@ class ModernKataKupas:
                     # In this case, part1 is the base, and part2 is a complex variation. No direct_redup_suffixes from part2.
                     return part1, "ulg", [], None
 
+        # Fallback: If no specific hyphenated pattern matched above.
+        return word, "", [], None
+
+    def _handle_dwipurwa(self, word: str) -> Optional[Tuple[str, str, List[str], Optional[str]]]:
+        """
+        Handles Dwipurwa (Partial Initial Syllable Reduplication) checks for non-hyphenated words.
+        e.g. lelaki, sesama, tetamu.
+        
+        Args:
+            word (str): The word to check.
+            
+        Returns:
+            Optional[Tuple[str, str, List[str], Optional[str]]]:
+                Result tuple if Dwipurwa detected, else None.
+        """
         # Specific check for common Dwipurwa words not caught by stemmer
         if word == "lelaki":
             return "laki", "rp", [], None
-        if word == "sesama": # Add other common ones if they also fail due_to stemmer
+        if word == "sesama": 
             return "sama", "rp", [], None
         if word == "tetamu":
             return "tamu", "rp", [], None
@@ -560,10 +570,9 @@ class ModernKataKupas:
         # Add more if needed based on test_dwipurwa_reduplication
 
         # --- Dwipurwa (Partial Initial Syllable Reduplication) Check ---
-        # This check is placed after hyphen-based checks as Dwipurwa usually doesn't involve hyphens.
         if hasattr(self, 'stemmer') and self.stemmer:
             root_word = self.stemmer.get_root_word(word)
-            logging.debug(f"_handle_reduplication({word}): Dwipurwa check - word='{word}', stemmer_root='{root_word}'")
+            logging.debug(f"_handle_dwipurwa({word}): Dwipurwa check - word='{word}', stemmer_root='{root_word}'")
 
             # Primary conditions for Dwipurwa
             prefix_candidate = ""
@@ -571,38 +580,30 @@ class ModernKataKupas:
                 prefix_candidate = word[:-len(root_word)]
 
                 # Heuristic Conditions for Dwipurwa (e.g., lelaki -> laki, sesama -> sama)
-            # A: len(prefix_candidate) == 2
-            # B: len(root_word) >= 1
-            # C: prefix_candidate[0] == root_word[0]
-            # D: prefix_candidate[1] == 'e'
-            # E: if len(root_word) >= 2, root_word[1] is a vowel; if len(root_word) == 1, met.
-            
-            condition_a = (len(prefix_candidate) == 2)
-            condition_b = (len(root_word) >= 1)
+                # A: len(prefix_candidate) == 2
+                # B: len(root_word) >= 1
+                
+                condition_a = (len(prefix_candidate) == 2)
+                condition_b = (len(root_word) >= 1)
 
-            if condition_a and condition_b: # Proceed only if A and B are met
-                condition_c = (prefix_candidate[0] == root_word[0])
-                condition_d = (prefix_candidate[1] == 'e')
+                if condition_a and condition_b: # Proceed only if A and B are met
+                    condition_c = (prefix_candidate[0] == root_word[0])
+                    condition_d = (prefix_candidate[1] == 'e')
 
-                condition_e_met = False
-                vowels = ['a', 'i', 'u', 'e', 'o']
-                if len(root_word) >= 2:
-                    # --- Start of diagnostic change for condition_e_met ---
-                    if root_word == "laki" and root_word[1].lower() == 'a': # Specific for laki
-                        condition_e_met = True
-                    elif root_word != "laki" and root_word[1].lower() in vowels: # Original for others
-                        condition_e_met = True
-                    # --- End of diagnostic change for condition_e_met ---
-                elif len(root_word) == 1:
-                    condition_e_met = True # Vacuously true for single-char roots
+                    condition_e_met = False
+                    vowels = ['a', 'i', 'u', 'e', 'o']
+                    if len(root_word) >= 2:
+                        if root_word == "laki" and root_word[1].lower() == 'a': # Specific for laki
+                            condition_e_met = True
+                        elif root_word != "laki" and root_word[1].lower() in vowels: # Original for others
+                            condition_e_met = True
+                    elif len(root_word) == 1:
+                        condition_e_met = True 
 
-                if condition_c and condition_d and condition_e_met:
-                    return root_word, "rp", [], None
-
-        # Fallback: If no specific hyphenated or Dwipurwa pattern matched above.
-        # This ensures that if word was not split or conditions not met, it's returned as is.
-        return word, "", [], None
-
+                    if condition_c and condition_d and condition_e_met:
+                        return root_word, "rp", [], None
+        
+        return None
 
     def _strip_suffixes(self, word: str, is_processing_suffix_cluster: bool = False) -> Tuple[str, List[str]]:
         current_word = str(word)
@@ -741,18 +742,18 @@ class ModernKataKupas:
                 if not canonical_prefix: 
                     continue
 
-                # Option 1: If stem_candidate is directly a KD
-                if self.dictionary.is_kata_dasar(stem_candidate):
-                    new_prefixes = accumulated_prefixes + [canonical_prefix]
-                    logging.debug(f"_strip_prefixes_detailed: '{prefix_form}' stripped from '{word_to_strip}', '{stem_candidate}' is KD. Finalizing.")
-                    return stem_candidate, new_prefixes
-
-                # Option 2: If reversing morphophonemics on stem_candidate yields a KD
+                # Option 1 (Swapped): If reversing morphophonemics on stem_candidate yields a KD
                 potential_original_stem = self.rules.reverse_morphophonemics(prefix_form, canonical_prefix, stem_candidate)
                 if potential_original_stem != stem_candidate and self.dictionary.is_kata_dasar(potential_original_stem):
                     new_prefixes = accumulated_prefixes + [canonical_prefix]
                     logging.debug(f"_strip_prefixes_detailed: '{prefix_form}' (canon: {canonical_prefix}) stripped from '{word_to_strip}', reverse_morpho to '{potential_original_stem}' (KD). Finalizing.")
                     return potential_original_stem, new_prefixes
+
+                # Option 2 (Swapped): If stem_candidate is directly a KD
+                if self.dictionary.is_kata_dasar(stem_candidate):
+                    new_prefixes = accumulated_prefixes + [canonical_prefix]
+                    logging.debug(f"_strip_prefixes_detailed: '{prefix_form}' stripped from '{word_to_strip}', '{stem_candidate}' is KD. Finalizing.")
+                    return stem_candidate, new_prefixes
 
                 # Option 3: Recursively strip from stem_candidate (the surface form after stripping prefix_form)
                 # This handles layered prefixes (e.g., di-per-oleh, mem-per-mainkan)
@@ -794,7 +795,7 @@ class ModernKataKupas:
         """
         Helper method to apply morphophonemic segmentation rules (stub).
         """
-        pass # Stub implementation
+        return "" # Stub implementation
 
 # Example usage (can be removed or commented out later)
 if __name__ == '__main__':
@@ -806,6 +807,3 @@ if __name__ == '__main__':
         # print(f"Segmenting 'makanan': {mkk.segment('makanan')}") # This will work with the current stub
     except Exception as e:
         print(f"Error instantiating ModernKataKupas: {e}")
-
-# The reconstruct method was here due to an indentation error. 
-# It has been moved into the ModernKataKupas class.
