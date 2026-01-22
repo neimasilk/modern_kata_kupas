@@ -39,6 +39,45 @@
 - All tests passing.
 - Tagged `v1.0.0`.
 
-## Pending Tasks
-- Perform comprehensive review of `kata_dasar.txt` to remove potentially confusing entries.
-- Publish v1.0.1 to GitHub and PyPI.
+### 2026-01-22: Comprehensive Documentation Created
+- **Documentation**: Created detailed step-by-step guides for all next steps
+  - `panduan-langkah-selanjutnya.md`: Priority 1 - Release & Distribution (PyPI, GitHub Release)
+  - `panduan-prioritas-2-dictionary.md`: Priority 2 - Dictionary curation and expansion
+  - `panduan-prioritas-3-testing.md`: Priority 3 - Test coverage & CI/CD setup
+  - `panduan-prioritas-4-5-future.md`: Priority 4 & 5 - Future features (v1.1, v2.0)
+  - `README-panduan.md`: Master index and quick start guide
+- **Target Audience**: Junior programmers with detailed baby steps
+- **Content**: Commands, expected outputs, troubleshooting, checklists
+- **Roadmap**: Clear timeline from v1.0.1 → v1.1 → v2.0
+
+## Pending Tasks (Prioritized)
+
+### Priority 1: URGENT - Release v1.0.1 (Week 1)
+- Build distribution packages (wheel & sdist)
+- Create CHANGELOG.md
+- Create GitHub Release with tag v1.0.1
+- Publish to PyPI (TestPyPI testing → Production)
+- Update README and documentation
+
+### Priority 2: IMPORTANT - Dictionary Curation (Week 1-2)
+- Perform comprehensive review of `kata_dasar.txt` to remove false positives
+- Expand `loanwords.txt` with modern tech/social media vocabulary
+- Add regression tests for dictionary changes
+- Document all changes in DICTIONARY_CHANGELOG.md
+
+### Priority 3: MAINTENANCE - Testing & CI/CD (Week 2-3)
+- Improve test coverage to >90%
+- Setup GitHub Actions for automated testing
+- Configure Codecov for coverage tracking
+- Setup pre-commit hooks for code quality
+
+### Priority 4: ENHANCEMENT - v1.1 Features (Month 1-2)
+- Performance optimization (Trie, caching)
+- Better error handling and logging
+- CLI enhancements (progress bar, interactive mode)
+
+### Priority 5: RESEARCH - v2.0 Features (Month 3-6)
+- Machine learning disambiguation
+- REST API server
+- Dialect support
+- Comprehensive benchmarking
