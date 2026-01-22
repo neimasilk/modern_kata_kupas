@@ -82,25 +82,31 @@ class ModernKataKupas:
         if rules_file_path:
             self.rules = MorphologicalRules(rules_file_path=rules_file_path)
         else:
+            # Refactored to use MorphologicalRules default loading (which uses read_text/files internally)
+            # to avoid DeprecationWarning from importlib.resources.path
+            rules_loaded = False
             try:
-                with importlib.resources.path(DEFAULT_DATA_PACKAGE_PATH, DEFAULT_RULES_FILENAME) as default_rules_path:
-                    self.rules = MorphologicalRules(rules_file_path=str(default_rules_path))
-                    logging.info(f"Loaded rules via importlib: {str(default_rules_path)}")
-            except (FileNotFoundError, TypeError, ModuleNotFoundError) as e:
-                logging.warning(f"Failed to load rules via importlib.resources: {e}. Trying os.path fallback.")
+                self.rules = MorphologicalRules() # Attempts default load
+                # Check if rules were actually loaded (MorphologicalRules might return empty on failure)
+                if self.rules.prefix_rules or self.rules.suffix_rules:
+                    logging.info("Rules loaded via MorphologicalRules default mechanism.")
+                    rules_loaded = True
+                else:
+                    logging.warning("MorphologicalRules returned empty rules. Triggering fallback.")
+            except Exception as e:
+                logging.warning(f"Failed to load rules via MorphologicalRules default: {e}. Triggering fallback.")
+            
+            if not rules_loaded:
+                logging.info("Attempting os.path fallback for rules.")
                 base_dir = os.path.dirname(os.path.abspath(__file__))
                 default_rules_path_rel = os.path.join(base_dir, "data", DEFAULT_RULES_FILENAME)
                 if os.path.exists(default_rules_path_rel):
                     self.rules = MorphologicalRules(rules_file_path=default_rules_path_rel)
                     logging.info(f"Loaded rules via os.path: {default_rules_path_rel}")
                 else:
-                    logging.warning(f"Default rules file not found via importlib or os.path ('{default_rules_path_rel}'). Attempting final fallback to MorphologicalRules default.")
-                    self.rules = MorphologicalRules() # This will use AFFIX_RULES_PATH from rules.py
-                    # Check if the final fallback loaded anything
-                    if not self.rules.prefix_rules and not self.rules.suffix_rules:
-                        logging.warning("Final fallback for rule loading resulted in empty rules.")
-                    else:
-                        logging.info("Rules loaded via MorphologicalRules default constructor (using internal default path).")
+                    logging.warning(f"Default rules file not found via os.path ('{default_rules_path_rel}'). Using empty rules.")
+                    if not hasattr(self, 'rules'): # Ensure self.rules exists even if empty
+                        self.rules = MorphologicalRules() # Empty rules
         
         # Initialize Reconstructor
         self.reconstructor = Reconstructor(rules=self.rules, dictionary_manager=self.dictionary, stemmer=self.stemmer)

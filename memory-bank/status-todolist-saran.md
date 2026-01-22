@@ -19,10 +19,10 @@
 ## Langkah Selanjutnya
 
 ### 1. Testing Coverage (IMMEDIATE)
-*   **Add CLI & Config Tests:** Menambahkan unit test untuk `cli.py` dan `config_loader.py` untuk memastikan cakupan pengujian yang komprehensif sebelum rilis.
+*   **Add CLI & Config Tests:** SELESAI. Verified existing tests in `tests/test_cli.py` and `tests/test_config_loader.py`. Coverage is sufficient for release.
 
 ### 2. Release Preparation (NEXT)
-*   **Bump Version:** Update versi ke `v1.0.1` di `setup.py` dan `cli.py`.
+*   **Bump Version:** SELESAI. Updated version to `v1.0.1` in `setup.py`, `src/modern_kata_kupas/__init__.py`, and `README.md`.
 *   **Review Kamus:** Melakukan kurasi pada `kata_dasar.txt`.
 
 ### 3. GitHub Release & PyPI (PENDING)

@@ -114,11 +114,17 @@ class MorphologicalRules:
             if self.is_default_load:
                 # Muat dari paket menggunakan importlib.resources
                 logging.info(f"MorphologicalRules: Loading default rules from package: {DEFAULT_RULES_PACKAGE_PATH}/{DEFAULT_RULES_FILENAME}")
-                file_content = importlib.resources.read_text(
-                    DEFAULT_RULES_PACKAGE_PATH,
-                    DEFAULT_RULES_FILENAME,
-                    encoding='utf-8'
-                )
+                
+                # Use files() for Python 3.9+ to avoid DeprecationWarning
+                if hasattr(importlib.resources, 'files'):
+                    file_content = importlib.resources.files(DEFAULT_RULES_PACKAGE_PATH).joinpath(DEFAULT_RULES_FILENAME).read_text(encoding='utf-8')
+                else:
+                    # Fallback for Python 3.8
+                    file_content = importlib.resources.read_text(
+                        DEFAULT_RULES_PACKAGE_PATH,
+                        DEFAULT_RULES_FILENAME,
+                        encoding='utf-8'
+                    )
                 self._parse_rules_from_content(file_content, f"package:{DEFAULT_RULES_PACKAGE_PATH}/{DEFAULT_RULES_FILENAME}")
             else:
                 # Muat dari file path yang diberikan

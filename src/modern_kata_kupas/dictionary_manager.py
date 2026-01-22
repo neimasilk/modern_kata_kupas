@@ -177,11 +177,16 @@ class DictionaryManager:
         """Memuat kamus default yang dikemas dengan library."""
         try:
             import importlib.resources
-            file_content = importlib.resources.read_text(
-                self.DEFAULT_DICT_PACKAGE_PATH,
-                self.DEFAULT_DICT_FILENAME,
-                encoding='utf-8'
-            )
+            # Use files() for Python 3.9+ to avoid DeprecationWarning
+            if hasattr(importlib.resources, 'files'):
+                file_content = importlib.resources.files(self.DEFAULT_DICT_PACKAGE_PATH).joinpath(self.DEFAULT_DICT_FILENAME).read_text(encoding='utf-8')
+            else:
+                # Fallback for Python 3.8
+                file_content = importlib.resources.read_text(
+                    self.DEFAULT_DICT_PACKAGE_PATH,
+                    self.DEFAULT_DICT_FILENAME,
+                    encoding='utf-8'
+                )
             self._load_words_from_iterable(file_content.splitlines(), is_loanword_list=False)
         except FileNotFoundError as e:
             raise DictionaryFileNotFoundError(
@@ -203,11 +208,16 @@ class DictionaryManager:
         """Memuat daftar kata serapan default yang dikemas dengan library."""
         try:
             import importlib.resources
-            file_content = importlib.resources.read_text(
-                self.DEFAULT_DICT_PACKAGE_PATH,
-                self.DEFAULT_LOANWORD_FILENAME,
-                encoding='utf-8'
-            )
+            # Use files() for Python 3.9+ to avoid DeprecationWarning
+            if hasattr(importlib.resources, 'files'):
+                file_content = importlib.resources.files(self.DEFAULT_DICT_PACKAGE_PATH).joinpath(self.DEFAULT_LOANWORD_FILENAME).read_text(encoding='utf-8')
+            else:
+                # Fallback for Python 3.8
+                file_content = importlib.resources.read_text(
+                    self.DEFAULT_DICT_PACKAGE_PATH,
+                    self.DEFAULT_LOANWORD_FILENAME,
+                    encoding='utf-8'
+                )
             self._load_words_from_iterable(file_content.splitlines(), is_loanword_list=True)
             logging.info(f"DictionaryManager: Successfully loaded {len(self.loanwords_set)} loanwords from default list.")
         except FileNotFoundError:

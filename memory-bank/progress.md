@@ -2,6 +2,13 @@
 
 ## Recent Updates
 
+### 2026-01-22: Release Preparation v1.0.1
+- **Version Bump**: Updated version to `v1.0.1` across `setup.py`, `__init__.py`, `cli.py`, and `README.md`.
+- **Code Quality**: Resolved `DeprecationWarning`s from `importlib.resources` by implementing a compatible fallback mechanism for Python 3.9+ vs older versions.
+- **Documentation**: Updated `README.md` to reflect the new version status.
+- **Verification**: Verified existing test suite (including CLI and Config tests) passes with `pytest --cov`.
+- **Memory Bank**: Updated status and progress logs.
+
 ### 2026-01-21 (Part 2): Code Quality Improvements
 - **Fixed `mypy` Errors**: Resolved all 38 type hint errors across the codebase.
     - Updated `config_loader.py` with correct type casting and stubs ignore.
@@ -33,6 +40,5 @@
 - Tagged `v1.0.0`.
 
 ## Pending Tasks
-- Add unit tests for `cli.py` and `config_loader.py`.
-- Bump version to v1.0.1.
 - Perform comprehensive review of `kata_dasar.txt` to remove potentially confusing entries.
+- Publish v1.0.1 to GitHub and PyPI.

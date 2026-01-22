@@ -1,12 +1,12 @@
-# **ModernKataKupas - Indonesian Morphological Separator (V1.0)**
+# **ModernKataKupas - Indonesian Morphological Separator (V1.0.1)**
 
 ## **Overview**
 
 ModernKataKupas is a Python library for the morphological separation of Indonesian words. It breaks down words into their constituent morphemes: root word, prefixes, suffixes, and reduplication markers. This rule-based tool aims to enhance Natural Language Processing (NLP) tasks by providing linguistically informed sub-word units, particularly useful for applications working with Indonesian text.
 
-## **V1.0 Status**
+## **V1.0.1 Status**
 
-Version 1.0 provides a foundational rule-based segmenter and reconstructor with the following capabilities:
+Version 1.0.1 provides a foundational rule-based segmenter and reconstructor with the following capabilities:
 
 *   **Text Normalization:** Input words are normalized (lowercase, whitespace stripping, common trailing punctuation removal).
 *   **Prefix Segmentation:**
@@ -39,17 +39,17 @@ Version 1.0 provides a foundational rule-based segmenter and reconstructor with 
 
 There are several ways to install ModernKataKupas:
 
-**1. From a Local Wheel File (Recommended for V1.0 evaluation):**
+**1. From a Local Wheel File (Recommended for V1.0.1 evaluation):**
 
-If you have a wheel file (e.g., `modern_kata_kupas-1.0.0-py3-none-any.whl`):
+If you have a wheel file (e.g., `modern_kata_kupas-1.0.1-py3-none-any.whl`):
 ```bash
-pip install path/to/your/modern_kata_kupas-1.0.0-py3-none-any.whl
+pip install path/to/your/modern_kata_kupas-1.0.1-py3-none-any.whl
 ```
 This is useful for installing a specific version built from source.
 
 **2. From PyPI (Once Published):**
 
-*(Note: As of V1.0, the package may not yet be on PyPI. This is the planned command for future releases.)*
+*(Note: As of V1.0.1, the package may not yet be on PyPI. This is the planned command for future releases.)*
 ```bash
 pip install modern_kata_kupas
 ```
@@ -328,11 +328,11 @@ When `segment()` encounters a word:
 5.  If the remaining stem is NOT in `kata_dasar.txt`, the system may try loanword affixation rules if the stem is found in `loanwords.txt`.
 6.  If no segmentation rule can be successfully applied to find a known root word (either from `kata_dasar.txt` or `loanwords.txt` via loanword handling), the word is typically returned in its normalized form.
 
-## **Limitations (V1.0)**
+## **Limitations (V1.0.1)**
 
-*   **Ambiguitas:** While V1.0 includes basic heuristics for ambiguity (see [Architecture Documentation](memory-bank/architecture.md#penanganan-ambiguitas-dasar-v10)), it may not always choose the most linguistically accurate segmentation in highly ambiguous cases.
+*   **Ambiguitas:** While V1.0.1 includes basic heuristics for ambiguity (see [Architecture Documentation](memory-bank/architecture.md#penanganan-ambiguitas-dasar-v10)), it may not always choose the most linguistically accurate segmentation in highly ambiguous cases.
 *   **Ketergantungan Kamus:** The quality of segmentation heavily depends on the comprehensiveness of the root word dictionary (`kata_dasar.txt`) and the loanword list (`loanwords.txt`). Roots not present in these files may lead to suboptimal segmentation or words being returned unsegmented.
-*   **Kompleksitas Morfologis:** V1.0 may not yet support all rare or highly complex morphological variations and affix combinations found in Indonesian.
+*   **Kompleksitas Morfologis:** V1.0.1 may not yet support all rare or highly complex morphological variations and affix combinations found in Indonesian.
 *   **Idempotency:** For some complex words involving reduplication and unknown roots, the `reconstruct(segment(word))` cycle may not perfectly return the original normalized word due to simplifications in the segmented representation. For example, `segment("berkejar-kejaran")` might yield `berkejar~ulg~an`, which reconstructs to `berkejar-berkejaran`.
 
 ## **API Reference (Key Methods)**
