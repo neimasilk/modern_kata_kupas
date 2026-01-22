@@ -144,21 +144,14 @@ class Reconstructor:
             if p == rs_placeholder:
                 parts[i] = str(original_rs_segment) # Restore "rs(~mayur)"
 
-        if segmented_word == "sayur~rs(~mayur)":
-            logging.debug(f"parse_segmented_string: Input for 'sayur~rs(~mayur)': '{segmented_word}'")
-            logging.debug(f"parse_segmented_string: Temp word for splitting for 'sayur~rs(~mayur)': '{temp_word_for_splitting}'")
-            logging.debug(f"parse_segmented_string: Parts after split and restore for 'sayur~rs(~mayur)': {parts}")
-            
         root_candidates = []
         previous_part_was_redup_marker = False
 
         for part_idx, part in enumerate(parts):
             logging.debug(f"parse_segmented_string: Processing part '{part}' from {parts}")
             current_part_is_redup_marker = False
-            if segmented_word == "sayur~rs(~mayur)": # Keep this specific detail log if needed for this case
-                logging.debug(f"parse_segmented_string (sayur~rs(~mayur)): Current part: '{part}', startswith('rs('): {part.startswith('rs(')}, endswith(')'): {part.endswith(')')}")
-            
-            if not part: # Handle cases like "~~" or trailing/leading "~"
+
+            if not part:  # Handle cases like "~~" or trailing/leading "~"
                 previous_part_was_redup_marker = False # Reset if empty part
                 continue
 
@@ -330,9 +323,6 @@ class Reconstructor:
         parsed_morphemes = self.parse_segmented_string(segmented_word)
         logging.debug(f"Reconstructor.reconstruct: Parsed morphemes: {parsed_morphemes}")
 
-        if segmented_word == "sayur~rs(~mayur)": # Keep this specific detail log if needed for this case
-            logging.debug(f"Reconstructor.reconstruct (sayur~rs(~mayur)): Parsed morphemes: {parsed_morphemes}")
-            
         current_form = parsed_morphemes.get("root", "")
         logging.debug(f"Reconstructor.reconstruct: Initial current_form (root): '{current_form}'")
 

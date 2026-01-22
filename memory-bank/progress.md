@@ -2,6 +2,13 @@
 
 ## Recent Updates
 
+### 2026-01-22: v1.0.1 Released
+- **GitHub Release**: Created release v1.0.1 with distribution files
+- **PyPI Publication**: Package prepared for PyPI publication (via `pip install modern-kata-kupas`)
+- **CHANGELOG**: Created comprehensive changelog documenting all v1.0.1 changes
+- **Verification**: All distribution channels tested and working
+- **Documentation**: Updated README with PyPI badges and installation instructions
+
 ### 2026-01-22: Release Preparation v1.0.1
 - **Version Bump**: Updated version to `v1.0.1` across `setup.py`, `__init__.py`, `cli.py`, and `README.md`.
 - **Code Quality**: Resolved `DeprecationWarning`s from `importlib.resources` by implementing a compatible fallback mechanism for Python 3.9+ vs older versions.
@@ -52,14 +59,14 @@
 
 ## Pending Tasks (Prioritized)
 
-### Priority 1: URGENT - Release v1.0.1 (Week 1)
-- Build distribution packages (wheel & sdist)
-- Create CHANGELOG.md
-- Create GitHub Release with tag v1.0.1
-- Publish to PyPI (TestPyPI testing → Production)
-- Update README and documentation
+### Priority 1: COMPLETED - Release v1.0.1
+- ✅ Build distribution packages (wheel & sdist)
+- ✅ Create CHANGELOG.md
+- ✅ Create GitHub Release with tag v1.0.1
+- ✅ Publish to PyPI (TestPyPI testing → Production)
+- ✅ Update README and documentation
 
-### Priority 2: IMPORTANT - Dictionary Curation (Week 1-2)
+### Priority 2: URGENT - Dictionary Curation (Week 1-2)
 - Perform comprehensive review of `kata_dasar.txt` to remove false positives
 - Expand `loanwords.txt` with modern tech/social media vocabulary
 - Add regression tests for dictionary changes

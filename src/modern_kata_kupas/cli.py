@@ -7,6 +7,8 @@ import sys
 import argparse
 import json
 from typing import List, Optional, Any
+
+from . import __version__
 from .separator import ModernKataKupas
 
 
@@ -124,7 +126,7 @@ Examples:
         '''
     )
 
-    parser.add_argument('--version', action='version', version='ModernKataKupas 1.0.1')
+    parser.add_argument('--version', action='version', version=f'ModernKataKupas {__version__}')
     parser.add_argument('--dictionary', '-d', help='Path to custom dictionary file')
     parser.add_argument('--rules', '-r', help='Path to custom rules file')
     parser.add_argument('--config', '-c', help='Path to custom config file')

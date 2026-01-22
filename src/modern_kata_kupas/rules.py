@@ -1,17 +1,14 @@
 import json
 import os
-import importlib.resources # Added import
-import logging # Added import
-from typing import List, Dict, Any, Tuple, Optional, Union # Pastikan Optional atau Union diimpor
+import importlib.resources
+import logging
+from typing import List, Dict, Any, Optional
+
+from .exceptions import RuleError
 
 # Konstanta untuk path file default menggunakan importlib.resources
 DEFAULT_RULES_PACKAGE_PATH = "modern_kata_kupas.data"
 DEFAULT_RULES_FILENAME = "affix_rules.json"
-
-# Definisikan RuleError di sini jika belum ada global
-class RuleError(Exception):
-    """Custom exception for errors during rule loading or processing."""
-    pass
 
 class Rule:
     """
@@ -41,17 +38,6 @@ class RemoveSuffixRule(Rule):
             # Logika kondisi bisa ditambahkan di sini jika self.condition tidak None
             return word[:-len(self.pattern)]
         return word
-
-class RemovePrefixRule(Rule): # Contoh jika ada aturan prefix
-    """
-    Aturan untuk menghapus prefiks.
-    """
-    def apply(self, word: str) -> str:
-        if word.startswith(self.pattern):
-            # Logika kondisi bisa ditambahkan di sini jika self.condition tidak None
-            return word[len(self.pattern):]
-        return word
-
 
 class MorphologicalRules:
     """

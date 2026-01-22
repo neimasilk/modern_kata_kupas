@@ -3,11 +3,31 @@
 Modul untuk memisahkan kata berimbuhan menjadi kata dasar dan afiksnya.
 """
 import re
-import os
 import logging
+from dataclasses import dataclass
 from typing import Optional, Tuple, List
 
 from .normalizer import TextNormalizer
+
+
+@dataclass
+class StrategyResult:
+    """Result from a segmentation strategy (S1 or S2)."""
+    stem: str
+    prefixes: List[str]
+    suffixes: List[str]
+    is_valid_root: bool
+
+
+@dataclass
+class ReduplicationInfo:
+    """Information about reduplication detected in a word."""
+    word_to_process: str
+    marker: str  # "ulg", "rp", "rs", or ""
+    suffixes: List[str]
+    phonetic_variant: Optional[str]
+
+
 from .dictionary_manager import DictionaryManager
 from .rules import MorphologicalRules
 from .stemmer_interface import IndonesianStemmer
@@ -175,194 +195,211 @@ class ModernKataKupas:
             >>> mkk.segment("tidakdiketahui") # Assuming 'tahu' is in dictionary
             'tidak~di~ke~tahu~i'
         """
-        # 1. Normalisasi kata
+        # 1. Normalize the word
         normalized_word = self.normalizer.normalize_word(word)
-        if not normalized_word: # Handle empty string after normalization
+        if not normalized_word:
             return ""
 
-        # 2. Handle Reduplication FIRST for hyphenated words
-        # Reduplication check should come before kata dasar check for hyphenated words
-        # to properly segment phonetic reduplications that might be in the dictionary
-        if '-' in normalized_word:
-            word_to_process, redup_marker, direct_redup_suffixes, phonetic_variant = self._handle_reduplication(normalized_word)
-            # If reduplication was detected (marker is not empty)
-            if redup_marker:
-                logging.debug(f"segment({word}): Hyphenated word, redup detected: marker='{redup_marker}'")
-                # Proceed to affix stripping with word_to_process
-            else:
-                # Not a reduplication pattern, might be a compound word
-                # Check if it's a kata dasar
-                if self.dictionary.is_kata_dasar(normalized_word):
-                    return normalized_word
-                # If not a KD, still try to process with word_to_process (which equals normalized_word)
-                phonetic_variant = None
-                direct_redup_suffixes = []
-        else:
-            # 3. For non-hyphenated words, check if kata dasar first
-            if self.dictionary.is_kata_dasar(normalized_word):
-                return normalized_word
-            
-            # Check for Dwipurwa (e.g., lelaki)
-            dwipurwa_result = self._handle_dwipurwa(normalized_word)
-            if dwipurwa_result:
-                 word_to_process, redup_marker, direct_redup_suffixes, phonetic_variant = dwipurwa_result
-                 logging.debug(f"segment({word}): Dwipurwa detected: marker='{redup_marker}'")
-            else:
-                 # Not a kata dasar, set up for affix stripping
-                 word_to_process = normalized_word
-                 redup_marker = ""
-                 direct_redup_suffixes = []
-                 phonetic_variant = None
+        # 2. Detect reduplication and check if already a root word
+        redup_info = self._detect_reduplication(normalized_word, word)
 
-        # Debug logging after reduplication handling
-        logging.debug(f"segment({word}): after _handle_reduplication: word_to_process='{word_to_process}', redup_marker='{redup_marker}', direct_redup_suffixes='{direct_redup_suffixes}', phonetic_variant='{phonetic_variant}'")
-        initial_suffixes: List[str] = [] # Initialize initial_suffixes, its role is re-evaluated
+        # Early return if the word is a root word with no reduplication
+        if (redup_info.word_to_process == normalized_word and
+                not redup_info.marker and
+                self.dictionary.is_kata_dasar(normalized_word)):
+            return normalized_word
 
-        # 5. Affix Stripping Strategies on word_to_process
-        # Strategy 1: Prefixes then Suffixes on word_to_process
-        logging.debug(f"S1 calling _strip_prefixes with word_to_process: '{word_to_process}' (orig_word='{word}')")
-        stem_after_prefixes_s1, prefixes_s1 = self._strip_prefixes(word_to_process)
-        final_stem_s1, suffixes_s1_from_base = self._strip_suffixes(stem_after_prefixes_s1)
-        is_s1_valid_root = self.dictionary.is_kata_dasar(final_stem_s1)
-        logging.debug(f"segment({word}): S1 result: final_stem='{final_stem_s1}', prefixes={prefixes_s1}, suffixes={suffixes_s1_from_base}, is_valid={is_s1_valid_root}")
+        word_to_process = redup_info.word_to_process
+        logging.debug(
+            f"segment({word}): after reduplication detection: "
+            f"word_to_process='{word_to_process}', marker='{redup_info.marker}'"
+        )
 
-        # Strategy 2: Suffixes then Prefixes on word_to_process
-        stem_after_suffixes_s2, suffixes_s2_from_base = self._strip_suffixes(word_to_process)
-        logging.debug(f"S2 calling _strip_prefixes with stem_after_suffixes_s2: '{stem_after_suffixes_s2}' (orig_word='{word}')")
-        final_stem_s2, prefixes_s2 = self._strip_prefixes(stem_after_suffixes_s2)
-        is_s2_valid_root = self.dictionary.is_kata_dasar(final_stem_s2)
-        logging.debug(f"segment({word}): S2 result: final_stem='{final_stem_s2}', prefixes={prefixes_s2}, suffixes={suffixes_s2_from_base}, is_valid={is_s2_valid_root}")
-        
-        # 6. Determine Best Result from strategies
-        chosen_final_stem = None
-        chosen_prefixes = []
-        chosen_main_suffixes = [] # These are suffixes stripped from word_to_process
+        # 3. Apply dual segmentation strategies
+        s1 = self._apply_strategy(word_to_process, prefix_first=True)
+        s2 = self._apply_strategy(word_to_process, prefix_first=False)
 
-        if is_s1_valid_root and is_s2_valid_root:
-            if len(final_stem_s1) >= len(final_stem_s2):
-                chosen_final_stem = final_stem_s1
-                chosen_prefixes = prefixes_s1
-                chosen_main_suffixes = suffixes_s1_from_base
-            else:
-                chosen_final_stem = final_stem_s2
-                chosen_prefixes = prefixes_s2
-                chosen_main_suffixes = suffixes_s2_from_base
-        elif is_s1_valid_root:
-            chosen_final_stem = final_stem_s1
-            chosen_prefixes = prefixes_s1
-            chosen_main_suffixes = suffixes_s1_from_base
-        elif is_s2_valid_root:
-            chosen_final_stem = final_stem_s2
-            chosen_prefixes = prefixes_s2
-            chosen_main_suffixes = suffixes_s2_from_base
-        else:
-            # If neither strategy yielded a valid root for word_to_process,
-            # consider word_to_process itself as the stem for this part.
-            # This is important if word_to_process is already a base word (e.g. "main" from "bermain-main")
-            # or if it's an unanalyzable stem after reduplication handling.
-            if self.dictionary.is_kata_dasar(word_to_process):
-                 chosen_final_stem = word_to_process
-            # If word_to_process is NOT a KD, and no strategy worked, then it's possible
-            # that the original word was not correctly segmented or is an unknown base.
-            # In this scenario, if redup_marker is present, we might still want to show it.
-            # If no redup_marker, and no initial_suffixes, then likely it's just normalized_word.
-            else: # word_to_process is not a KD, and strategies failed
-                chosen_final_stem = word_to_process # Fallback to word_to_process
-                                                # Prefixes/suffixes remain empty for this part.
-        
-        # If after all this, chosen_final_stem is still None (e.g. if word_to_process was empty, though unlikely here)
-        # or if chosen_final_stem is not a KD and no affixes found at all, we might revert.
-        # However, the logic above ensures chosen_final_stem is at least word_to_process.
-        
-        # Debug prints for chosen components
-        logging.debug(f"segment({word}): Chosen final_stem: '{chosen_final_stem}'")
-        logging.debug(f"segment({word}): Chosen prefixes: {chosen_prefixes}")
-        logging.debug(f"segment({word}): Chosen main_suffixes: {chosen_main_suffixes}")
-        logging.debug(f"segment({word}): Redup_marker: '{redup_marker}'")
-        logging.debug(f"segment({word}): Direct_redup_suffixes: {direct_redup_suffixes}")
-        logging.debug(f"segment({word}): Initial_suffixes: {initial_suffixes}") # This is currently always []
-        logging.debug(f"segment({word}): Phonetic_variant: '{phonetic_variant}'")
+        logging.debug(f"segment({word}): S1={s1}, S2={s2}")
 
-        # 7. Assemble Final Result
-        # Suffixes are assembled in a specific order:
-        # main_suffixes (from S1/S2 on word_to_process) -> direct_redup_suffixes -> initial_suffixes (if any, from original word)
+        # 4. Choose the best result
+        chosen_stem, chosen_prefixes, chosen_suffixes = self._choose_best_strategy(
+            s1, s2, word_to_process
+        )
 
-        final_parts = []
-        if chosen_prefixes:
-            final_parts.extend(chosen_prefixes)
+        logging.debug(
+            f"segment({word}): chosen_stem='{chosen_stem}', "
+            f"prefixes={chosen_prefixes}, suffixes={chosen_suffixes}"
+        )
 
-        final_parts.append(chosen_final_stem)
+        # 5. Try loanword affixation if stem is not a known root word
+        if not self.dictionary.is_kata_dasar(chosen_stem):
+            loanword_result = self._handle_loanword_affixation(normalized_word)
+            if loanword_result:
+                logging.debug(f"segment({word}): Using loanword segmentation: '{loanword_result}'")
+                return loanword_result
 
-        if redup_marker: 
-            if redup_marker == 'rs' and phonetic_variant:
-                 # Special handling for Dwilingga Salin Suara formatting to match "sayur~rs(~mayur)"
-                 final_parts.append(f"rs(~{phonetic_variant})")
-            else:
-                final_parts.append(redup_marker) # "ulg" or "rp"
-                if phonetic_variant:
-                    final_parts.append(phonetic_variant)
-        
-        # Assemble suffixes in order: main_suffixes, then direct_redup_suffixes, then initial_suffixes
-        assembled_suffixes = []
-        if chosen_main_suffixes:
-            assembled_suffixes.extend(chosen_main_suffixes)
-        if direct_redup_suffixes:
-            assembled_suffixes.extend(direct_redup_suffixes)
-        if initial_suffixes: # Suffixes from initial strip (e.g. -lah) - currently, this will be empty
-            assembled_suffixes.extend(initial_suffixes)
-        
-        if assembled_suffixes:
-             final_parts.extend(assembled_suffixes)
-        
-        logging.debug(f"segment({word}): final_parts before join: {final_parts}")
-            
-        valid_parts = [part for part in final_parts if part] 
-        result_str = '~'.join(valid_parts)
-        logging.debug(f"segment({word}): result_str: '{result_str}'")
+        # 6. Assemble the final result
+        result_str = self._assemble_result(
+            chosen_stem, chosen_prefixes, chosen_suffixes, redup_info
+        )
+        logging.debug(f"segment({word}): assembled result_str='{result_str}'")
 
-        # 8. Return Logic
-        # Condition 1: No effective segmentation occurred
-        is_effectively_unchanged = (not chosen_prefixes and 
-                                    not redup_marker and 
-                                    not assembled_suffixes and # Check assembled_suffixes instead of individual lists
-                                    chosen_final_stem == normalized_word)
+        # 7. Determine if any meaningful segmentation occurred
+        assembled_suffixes = chosen_suffixes + redup_info.suffixes
+        is_unchanged = (
+            not chosen_prefixes and
+            not redup_info.marker and
+            not assembled_suffixes and
+            chosen_stem == normalized_word
+        )
 
-        # 8. Loanword Affixation Handling
-        # If the best stem we found after regular S1/S2 strategies (chosen_final_stem) 
-        # is not a recognized kata_dasar, then it's potentially an OOV word,
-        # which might be an affixed loanword.
-        if not self.dictionary.is_kata_dasar(chosen_final_stem):
-            # Pass the original normalized_word to the loanword handler,
-            # as it contains the full form needed for loanword affix stripping.
-            loanword_segmentation = self._handle_loanword_affixation(normalized_word)
-            if loanword_segmentation:
-                # If loanword handling provides a valid segmentation, use it.
-                logging.debug(f"segment({word}): Using loanword segmentation: '{loanword_segmentation}'")
-                return loanword_segmentation
-
-        # 9. Return Logic (original return logic adjusted)
+        # 8. Return appropriate result
         if not result_str:
-            logging.debug(f"segment({word}): EMPTY result_str! Returning normalized_word: '{normalized_word}'")
-            return normalized_word
-            
-        if is_effectively_unchanged:
-            logging.debug(f"segment({word}): IS_EFFECTIVELY_UNCHANGED! Returning normalized_word: '{normalized_word}'")
+            logging.debug(f"segment({word}): Empty result, returning normalized_word")
             return normalized_word
 
-        # If the result string is identical to normalized_word, but the word is NOT a KD, 
-        # it implies no segmentation was found or was truly effective.
+        if is_unchanged:
+            logging.debug(f"segment({word}): No effective segmentation, returning normalized_word")
+            return normalized_word
+
         if result_str == normalized_word and not self.dictionary.is_kata_dasar(normalized_word):
-             logging.debug(f"segment({word}): RESULT_IS_NORMALIZED_AND_NOT_KD! Returning normalized_word: '{normalized_word}'")
-             return normalized_word
-        
-        # Additional check: if the process resulted in a stem that is not a KD, and no affixes were found,
-        # then it's likely an unsegmentable word.
-        if not self.dictionary.is_kata_dasar(chosen_final_stem) and not chosen_prefixes and not assembled_suffixes and not redup_marker:
-            logging.debug(f"segment({word}): FINAL_STEM_NOT_KD_AND_NO_AFFIXES! Returning normalized_word: '{normalized_word}'")
+            logging.debug(f"segment({word}): Result equals input but not a KD, returning normalized_word")
             return normalized_word
 
-        logging.debug(f"segment({word}): Returning final result_str: '{result_str}'")
+        if (not self.dictionary.is_kata_dasar(chosen_stem) and
+                not chosen_prefixes and not assembled_suffixes and not redup_info.marker):
+            logging.debug(f"segment({word}): Stem not KD and no affixes, returning normalized_word")
+            return normalized_word
+
+        logging.debug(f"segment({word}): Returning final result: '{result_str}'")
         return result_str
+
+    def _detect_reduplication(self, normalized_word: str, original_word: str) -> ReduplicationInfo:
+        """
+        Detects and processes reduplication patterns in a word.
+
+        Args:
+            normalized_word: The normalized form of the word.
+            original_word: The original input word (for logging).
+
+        Returns:
+            ReduplicationInfo containing the word to process and reduplication details.
+        """
+        if '-' in normalized_word:
+            word_to_process, marker, suffixes, variant = self._handle_reduplication(normalized_word)
+            if marker:
+                logging.debug(f"segment({original_word}): Hyphenated word, redup detected: marker='{marker}'")
+            else:
+                if self.dictionary.is_kata_dasar(normalized_word):
+                    return ReduplicationInfo(normalized_word, "", [], None)
+                variant = None
+                suffixes = []
+            return ReduplicationInfo(word_to_process, marker, suffixes, variant)
+
+        # Non-hyphenated word
+        if self.dictionary.is_kata_dasar(normalized_word):
+            return ReduplicationInfo(normalized_word, "", [], None)
+
+        # Check for Dwipurwa
+        dwipurwa_result = self._handle_dwipurwa(normalized_word)
+        if dwipurwa_result:
+            word_to_process, marker, suffixes, variant = dwipurwa_result
+            logging.debug(f"segment({original_word}): Dwipurwa detected: marker='{marker}'")
+            return ReduplicationInfo(word_to_process, marker, suffixes, variant)
+
+        return ReduplicationInfo(normalized_word, "", [], None)
+
+    def _apply_strategy(self, word: str, prefix_first: bool) -> StrategyResult:
+        """
+        Applies a single segmentation strategy.
+
+        Args:
+            word: The word to segment.
+            prefix_first: If True, strip prefixes then suffixes. Otherwise, reverse.
+
+        Returns:
+            StrategyResult with the stem, affixes, and validity.
+        """
+        if prefix_first:
+            stem_after_first, prefixes = self._strip_prefixes(word)
+            final_stem, suffixes = self._strip_suffixes(stem_after_first)
+        else:
+            stem_after_first, suffixes = self._strip_suffixes(word)
+            final_stem, prefixes = self._strip_prefixes(stem_after_first)
+
+        is_valid = self.dictionary.is_kata_dasar(final_stem)
+        return StrategyResult(final_stem, prefixes, suffixes, is_valid)
+
+    def _choose_best_strategy(
+        self, s1: StrategyResult, s2: StrategyResult, word_to_process: str
+    ) -> Tuple[str, List[str], List[str]]:
+        """
+        Chooses the best result between two segmentation strategies.
+
+        Args:
+            s1: Result from Strategy 1 (prefix-first).
+            s2: Result from Strategy 2 (suffix-first).
+            word_to_process: The original word being processed (fallback).
+
+        Returns:
+            Tuple of (chosen_stem, chosen_prefixes, chosen_suffixes).
+        """
+        if s1.is_valid_root and s2.is_valid_root:
+            if len(s1.stem) >= len(s2.stem):
+                return s1.stem, s1.prefixes, s1.suffixes
+            return s2.stem, s2.prefixes, s2.suffixes
+        elif s1.is_valid_root:
+            return s1.stem, s1.prefixes, s1.suffixes
+        elif s2.is_valid_root:
+            return s2.stem, s2.prefixes, s2.suffixes
+        else:
+            # Fallback: use word_to_process as stem if it's a KD, otherwise as-is
+            if self.dictionary.is_kata_dasar(word_to_process):
+                return word_to_process, [], []
+            return word_to_process, [], []
+
+    def _assemble_result(
+        self,
+        stem: str,
+        prefixes: List[str],
+        main_suffixes: List[str],
+        redup_info: ReduplicationInfo
+    ) -> str:
+        """
+        Assembles the final segmented string from components.
+
+        Args:
+            stem: The root word.
+            prefixes: List of prefixes.
+            main_suffixes: List of main suffixes.
+            redup_info: Reduplication information.
+
+        Returns:
+            The assembled tilde-separated string.
+        """
+        parts: List[str] = []
+
+        if prefixes:
+            parts.extend(prefixes)
+
+        parts.append(stem)
+
+        if redup_info.marker:
+            if redup_info.marker == 'rs' and redup_info.phonetic_variant:
+                parts.append(f"rs(~{redup_info.phonetic_variant})")
+            else:
+                parts.append(redup_info.marker)
+                if redup_info.phonetic_variant:
+                    parts.append(redup_info.phonetic_variant)
+
+        # Assemble suffixes
+        if main_suffixes:
+            parts.extend(main_suffixes)
+        if redup_info.suffixes:
+            parts.extend(redup_info.suffixes)
+
+        valid_parts = [p for p in parts if p]
+        return '~'.join(valid_parts)
 
     def _handle_loanword_affixation(self, word: str) -> str:
         """
@@ -796,12 +833,6 @@ class ModernKataKupas:
         # If no prefix could be stripped at all from word_to_strip
         logging.debug(f"_strip_prefixes_detailed: No prefix stripped from '{word_to_strip}' or no valid stem found after stripping. Returning as is.")
         return word_to_strip, accumulated_prefixes
-
-    def _apply_morphophonemic_segmentation_rules(self, word: str) -> str:
-        """
-        Helper method to apply morphophonemic segmentation rules (stub).
-        """
-        return "" # Stub implementation
 
 # Example usage (can be removed or commented out later)
 if __name__ == '__main__':

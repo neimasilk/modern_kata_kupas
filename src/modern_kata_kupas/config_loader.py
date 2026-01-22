@@ -34,7 +34,7 @@ DEFAULT_CONFIG = {
         {"base": "ganti", "variant": "genti"},
         {"base": "kali", "variant": "keli"},
         {"base": "sulam", "variant": "selam"},
-        {"base": "tukar", "variant": "tekER"},
+        {"base": "tukar", "variant": "teker"},
         {"base": "ubah", "variant": "embuh"},
         {"base": "hanyut", "variant": "hilir"},
         {"base": "jaja", "variant": "jiwi"},

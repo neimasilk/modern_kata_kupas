@@ -9,24 +9,23 @@ class ModernKataKupasError(Exception):
     """Kelas dasar untuk semua exception di ModernKataKupas."""
     pass
 
-class DictionaryOperationError(Exception): # Renamed from DictionaryError
-    """Base class for general dictionary operation related errors."""
-    pass
 
-class DictionaryFileNotFoundError(DictionaryOperationError, FileNotFoundError): # Inherits from renamed
-    """Raised when a dictionary or loanword file cannot be found at the specified path."""
-    pass
-
-class DictionaryLoadingError(DictionaryOperationError): # Inherits from renamed
-    """Raised for errors encountered during the loading or parsing of dictionary files."""
-    pass
-
-class DictionaryError(ModernKataKupasError): # This is the library-specific one
+class DictionaryError(ModernKataKupasError):
     """Exception raised for errors specific to dictionary operations within ModernKataKupas.
-    
+
     This could include issues like failing to load a required dictionary or
     problems accessing dictionary data.
     """
+    pass
+
+
+class DictionaryFileNotFoundError(DictionaryError, FileNotFoundError):
+    """Raised when a dictionary or loanword file cannot be found at the specified path."""
+    pass
+
+
+class DictionaryLoadingError(DictionaryError):
+    """Raised for errors encountered during the loading or parsing of dictionary files."""
     pass
 
 class RuleError(ModernKataKupasError):

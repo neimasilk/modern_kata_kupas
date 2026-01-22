@@ -1,5 +1,10 @@
 # **ModernKataKupas - Indonesian Morphological Separator (V1.0.1)**
 
+[![PyPI version](https://badge.fury.io/py/modern-kata-kupas.svg)](https://badge.fury.io/py/modern-kata-kupas)
+[![Python Version](https://img.shields.io/pypi/pyversions/modern-kata-kupas.svg)](https://pypi.org/project/modern-kata-kupas/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/badge/tests-93%20passed-brightgreen.svg)](https://github.com/neimasilk/modern_kata_kupas)
+
 ## **Overview**
 
 ModernKataKupas is a Python library for the morphological separation of Indonesian words. It breaks down words into their constituent morphemes: root word, prefixes, suffixes, and reduplication markers. This rule-based tool aims to enhance Natural Language Processing (NLP) tasks by providing linguistically informed sub-word units, particularly useful for applications working with Indonesian text.
@@ -39,19 +44,17 @@ Version 1.0.1 provides a foundational rule-based segmenter and reconstructor wit
 
 There are several ways to install ModernKataKupas:
 
-**1. From a Local Wheel File (Recommended for V1.0.1 evaluation):**
+**1. From PyPI (Recommended):**
+
+```bash
+pip install modern-kata-kupas
+```
+
+**2. From a Local Wheel File:**
 
 If you have a wheel file (e.g., `modern_kata_kupas-1.0.1-py3-none-any.whl`):
 ```bash
 pip install path/to/your/modern_kata_kupas-1.0.1-py3-none-any.whl
-```
-This is useful for installing a specific version built from source.
-
-**2. From PyPI (Once Published):**
-
-*(Note: As of V1.0.1, the package may not yet be on PyPI. This is the planned command for future releases.)*
-```bash
-pip install modern_kata_kupas
 ```
 
 **3. For Development (from cloned repository):**
