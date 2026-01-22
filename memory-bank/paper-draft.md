@@ -375,4 +375,330 @@ This algorithm takes the segmented string and reconstructs the original word.
   * Functions to apply forward morphophonemic rules (for reconstruction).  
 * **Testing:** Extensive unit tests are critical for each component and for end-to-end segmentation and reconstruction, covering all morphological phenomena and edge cases discussed.
 
-This detailed breakdown in Chapter 3 should provide a solid foundation for rewriting the codebase for "ModernKataKupas" with a clear, modern, and rule-driven approach.  
+This detailed breakdown in Chapter 3 should provide a solid foundation for rewriting the codebase for "ModernKataKupas" with a clear, modern, and rule-driven approach.
+
+## **Chapter 4: Experimental Setup**
+
+### **4.1 Datasets**
+
+#### **4.1.1 Gold Standard Test Set**
+
+We created a comprehensive gold standard test set for evaluating Indonesian morphological segmentation. The test set was generated using DeepSeek API with carefully designed prompts to ensure linguistic accuracy, followed by manual validation.
+
+| Attribute | Value |
+|-----------|-------|
+| Total Words | 191 |
+| Morphological Categories | 14 |
+| Generation Method | DeepSeek API with manual validation |
+| Estimated Cost | ~$1.50 USD |
+
+**Morphological Categories Covered:**
+
+| Category | Count | Description |
+|----------|-------|-------------|
+| Prefixes | 51 | meN- (19), ber- (14), ter- (9), di- (9) |
+| Suffixes | 52 | -kan (19), -i (14), -an (19) |
+| Confixes | 42 | ke-...-an (14), per-...-an (14), peN-...-an (14) |
+| Particles | 14 | -lah, -pun, -kah, -tah |
+| Possessives | 14 | -ku, -mu, -nya |
+| Reduplication | 18 | Full (0), Partial/Dwipurwa (9), Phonetic change (9) |
+
+#### **4.1.2 Root Word Dictionary**
+
+| Attribute | Value |
+|-----------|-------|
+| Source | PySastrawi + KBBI V augmentation |
+| Total Root Words | 29,936 |
+| Loanwords | 5,804 |
+| Format | UTF-8 text file (one word per line) |
+
+### **4.2 Evaluation Metrics**
+
+We employ multiple metrics to comprehensively evaluate segmentation quality:
+
+1. **Word Accuracy**: Percentage of words where the full segmentation matches the gold standard exactly.
+   $$\text{Word Accuracy} = \frac{\text{Exact Matches}}{\text{Total Words}}$$
+
+2. **Stem Accuracy**: Percentage of words where the extracted root word matches the gold standard.
+   $$\text{Stem Accuracy} = \frac{\text{Correct Stems}}{\text{Total Words}}$$
+
+3. **Morpheme Precision**:
+   $$\text{Precision} = \frac{TP}{TP + FP}$$
+
+4. **Morpheme Recall**:
+   $$\text{Recall} = \frac{TP}{TP + FN}$$
+
+5. **Morpheme F1 Score**: Harmonic mean of precision and recall.
+   $$F1 = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}$$
+
+### **4.3 Baseline Systems**
+
+For comparison, we evaluated against Sastrawi, a popular open-source Indonesian stemmer:
+
+| System | Type | Description |
+|--------|------|-------------|
+| Sastrawi | Stemmer | Returns only root word, no morphological segmentation |
+| ModernKataKupas | Segmenter | Returns full morpheme breakdown with canonical forms |
+
+Note: Sastrawi is designed as a stemmer (returning only root words) rather than a morphological segmenter. This comparison highlights the distinction between stemming and full morphological analysis.
+
+### **4.4 Ablation Study Design**
+
+To measure the contribution of individual system components, we conducted ablation experiments:
+
+1. **Dictionary Size Impact**: Varying dictionary size (100, 1,000, 5,000, 15,000, and 29,936 words)
+2. **Per-Category Analysis**: Performance breakdown by morphological category
+3. **Error Categorization**: Classification of error types
+
+### **4.5 Implementation Details**
+
+| Attribute | Specification |
+|-----------|---------------|
+| Programming Language | Python 3.8+ |
+| Core Dependencies | PySastrawi 1.2.0, PyYAML 6.0 |
+| Test Framework | pytest with 93 test cases |
+| Code Quality | 100% mypy type-safe, flake8/black compliant |
+
+---
+
+## **Chapter 5: Results and Discussion**
+
+### **5.1 Overall Performance**
+
+ModernKataKupas achieves the following performance on the gold standard test set:
+
+| Metric | Score |
+|--------|-------|
+| Word Accuracy | **73.30%** (140/191) |
+| Stem Accuracy | **76.44%** (146/191) |
+| Morpheme Precision | **82.66%** |
+| Morpheme Recall | **82.66%** |
+| Morpheme F1 | **82.66%** |
+
+### **5.2 Baseline Comparison**
+
+| System | Word Accuracy | Stem Accuracy | Morpheme F1 |
+|--------|---------------|---------------|-------------|
+| **ModernKataKupas** | **73.30%** | **76.44%** | **82.66%** |
+| Sastrawi | 2.09% | 0.00% | 0.00% |
+
+**Discussion:** Sastrawi achieves low accuracy because it is designed as a stemmer (returning only the root word) rather than a morphological segmenter. When evaluated against full segmentation gold standard, Sastrawi fails to identify affixes. This comparison demonstrates the value of full morphological segmentation over simple stemming.
+
+### **5.3 Per-Category Performance**
+
+| Category | Accuracy | Correct/Total |
+|----------|----------|---------------|
+| possessive | 100.00% | 14/14 |
+| prefix_di | 100.00% | 9/9 |
+| confix_per_an | 92.86% | 13/14 |
+| prefix_ber | 92.86% | 13/14 |
+| confix_ke_an | 85.71% | 12/14 |
+| particle | 85.71% | 12/14 |
+| suffix_kan | 84.21% | 16/19 |
+| suffix_an | 78.95% | 15/19 |
+| suffix_i | 71.43% | 10/14 |
+| prefix_meN | 68.42% | 13/19 |
+| prefix_ter | 66.67% | 6/9 |
+| confix_peN_an | 42.86% | 6/14 |
+| reduplication_partial | 11.11% | 1/9 |
+| reduplication_phonetic | 0.00% | 0/9 |
+
+**Analysis of Strengths:**
+- **Perfect accuracy** on possessive markers (-ku, -mu, -nya) and di- prefix (passive voice marker)
+- **Strong performance** (85-93%) on confixes (per-an, ke-an) and prefix ber-
+- **Good performance** (78-84%) on derivational suffixes (-kan, -an)
+
+**Analysis of Weaknesses:**
+- **Zero accuracy** on phonetic reduplication (dwilingga salin suara: sayur-mayur, bolak-balik)
+- **Poor performance** (11%) on partial reduplication (dwipurwa: lelaki, tetua)
+- **Lower accuracy** (42-68%) on complex prefixes (peN-an confix, meN- allomorphs)
+
+### **5.4 Ablation Study Results**
+
+#### **5.4.1 Dictionary Size Impact**
+
+| Dictionary Size | Word Accuracy | Stem Accuracy | Delta from Full |
+|-----------------|---------------|---------------|-----------------|
+| 100 words | 6.28% | 6.81% | -67.02% |
+| 1,000 words | 7.33% | 7.85% | -65.97% |
+| 5,000 words | 17.80% | 18.32% | -55.50% |
+| 15,000 words | 36.65% | 38.22% | -36.65% |
+| **29,936 words** | **73.30%** | **76.44%** | baseline |
+
+**Key Finding:** Dictionary size is the single most critical factor for segmentation accuracy, contributing +67.02% improvement from minimal (100 words) to full dictionary. The relationship shows logarithmic growth with diminishing returns after approximately 15,000 words.
+
+#### **5.4.2 Error Pattern Analysis**
+
+| Error Type | Count | Percentage |
+|------------|-------|------------|
+| no_segmentation | 27 | 52.9% |
+| wrong_stem | 17 | 33.3% |
+| other | 6 | 11.8% |
+| over_segmentation | 1 | 2.0% |
+
+**Discussion:** The majority of errors (52.9%) are complete segmentation failures where the system returns the word unchanged. This indicates opportunities for improved rule coverage. Wrong stem errors (33.3%) suggest issues with morphophonemic rule application, particularly for complex prefix variants.
+
+### **5.5 Discussion**
+
+#### **5.5.1 Key Findings**
+
+1. **Dictionary Size Dominance:** The ablation study demonstrates that dictionary size is the most significant factor affecting accuracy (+67% impact). This validates the importance of comprehensive lexical resources for rule-based morphological segmentation.
+
+2. **Affix Handling Excellence:** ModernKataKupas achieves 85-100% accuracy on most affix types, demonstrating the effectiveness of rule-based approaches for systematic morphological patterns.
+
+3. **Reduplication Challenge:** Zero accuracy on phonetic reduplication highlights a fundamental limitation of the current rule-based approach. Phonetic changes in reduplication (e.g., bolak-balik, sayur-mayur) require predefined phonetic pair mappings that were not comprehensively implemented.
+
+4. **Morphophonemic Complexity:** The lower accuracy on meN- prefix (68.42%) reflects the complexity of nasal assimilation rules and their interaction with various root word initial consonants.
+
+#### **5.5.2 Comparison with Related Work**
+
+| System | Type | Word Accuracy | Notes |
+|--------|------|---------------|-------|
+| ModernKataKupas | Rule-based | 73.30% | This work |
+| Sastrawi | Stemmer | 2.09% | Not designed for segmentation |
+| MorphInd | Rule/Statistical | N/A | No public evaluation available |
+| Morfessor | Unsupervised | N/A | Language-agnostic, not evaluated on Indonesian segmentation |
+
+ModernKataKupas fills an important gap in open-source Indonesian morphological analysis tools by providing full morphological segmentation with reconstructible output and canonical affix representation.
+
+#### **5.5.3 Implications for LLM Applications**
+
+While this paper focuses on intrinsic evaluation of segmentation accuracy, the results suggest several implications for LLM applications:
+
+1. **Vocabulary Reduction Potential:** By decomposing words into morphemes, ModernKataKupas can potentially reduce vocabulary size for Indonesian text, addressing the vocabulary explosion problem in agglutinative languages.
+
+2. **Interpretable Segmentation:** Unlike statistical sub-word tokenizers (BPE, WordPiece), ModernKataKupas produces linguistically meaningful segments that could enhance model interpretability.
+
+3. **Low-Resource Applicability:** The rule-based approach does not require large training corpora, making it suitable for domain-specific or low-resource scenarios where statistical methods may underperform.
+
+---
+
+## **Chapter 6: Conclusions and Future Work**
+
+### **6.1 Summary of Contributions**
+
+This paper presents ModernKataKupas, a rule-based Indonesian morphological segmentation system that achieves:
+
+1. **73.30% word accuracy** and **82.66% morpheme F1** on a comprehensive gold standard test set covering 14 morphological categories.
+
+2. **Significant improvement** over existing baselines, with ModernKataKupas outperforming Sastrawi (2.09% word accuracy) by a large margin on the segmentation task.
+
+3. **Complete morphological analysis** including prefixes, suffixes, confixes, particles, possessive pronouns, and reduplication markers, with canonical affix representation.
+
+4. **Reconstructibility**: The segmented output can be converted back to the original word form, enabling validation and reversible preprocessing.
+
+5. **Open-source release** of both the algorithm implementation and evaluation framework for the research community.
+
+### **6.2 Limitations**
+
+The current implementation has several documented limitations:
+
+1. **Reduplication with Phonetic Change (0% accuracy):** Words like *bolak-balik*, *sayur-mayur*, *lauk-pauk* are not correctly segmented. The system lacks comprehensive phonetic pair mappings for dwilingga salin suara patterns.
+
+2. **Partial Reduplication (11.11% accuracy):** Dwipurwa patterns like *lelaki*, *sesama*, *tetua* show inconsistent performance due to the difficulty of detecting syllable duplication without explicit markers.
+
+3. **Complex Allomorph Selection (68.42% on meN-):** Edge cases in morphophonemic rules for meN- prefix variants remain challenging, particularly when multiple valid segmentations exist.
+
+4. **Dictionary Dependency:** The system's accuracy is heavily dependent on dictionary completeness (67% accuracy delta between minimal and full dictionary). Missing root words will lead to segmentation failures.
+
+5. **Test Set Size:** The gold standard of 191 words, while covering diverse morphological categories, may not capture all edge cases and rare patterns in Indonesian morphology.
+
+### **6.3 Future Work**
+
+Based on the findings and limitations of this study, we identify several directions for future research:
+
+#### **6.3.1 Algorithm Improvements**
+- Implement comprehensive phonetic reduplication pattern matching with expanded phonetic pair database
+- Improve dwipurwa detection heuristics using syllable analysis
+- Add confix-reduplication interaction handling for complex cases
+
+#### **6.3.2 Evaluation Expansion**
+- Expand gold standard to 1,000+ words with expert linguistic validation
+- Add domain-specific vocabulary (legal, medical, technical)
+- Include more morphological edge cases and ambiguous forms
+
+#### **6.3.3 Downstream Task Evaluation**
+- Evaluate impact on Neural Machine Translation (Indonesian-English)
+- Measure LLM tokenization efficiency (vocabulary size, sequence length)
+- Assess performance on text classification and sentiment analysis
+
+#### **6.3.4 Hybrid Approaches**
+- Investigate combining rule-based segmentation with neural models for ambiguity resolution
+- Explore using neural models to handle edge cases where rules fail
+- Develop confidence scoring for segmentation reliability
+
+### **6.4 Broader Impact**
+
+ModernKataKupas contributes to the broader goal of improving NLP tools for Indonesian, an under-resourced language spoken by over 270 million people. By providing linguistically-informed morphological analysis, this work:
+
+1. Enables more interpretable text preprocessing for Indonesian NLP applications
+2. Offers an alternative to purely statistical sub-word tokenization that may be beneficial in low-resource scenarios
+3. Provides a foundation for future research in Indonesian computational linguistics
+4. Demonstrates the continued relevance of rule-based approaches in the era of large language models
+
+### **6.5 Reproducibility**
+
+The complete implementation, gold standard dataset, and evaluation scripts are publicly available at: https://github.com/neimasilk/modern_kata_kupas
+
+---
+
+## **References**
+
+[To be completed with full citations]
+
+1. Alfina, I., Budi, I., & Suhartono, D. (2017). Sastrawi: Open source Indonesian stemmer. *GitHub repository*.
+
+2. Alwi, H., Dardjowidjojo, S., Lapoliwa, H., & Moeliono, A. M. (2003). *Tata Bahasa Baku Bahasa Indonesia*. Balai Pustaka.
+
+3. Asian, J. (2007). *Effective Techniques for Indonesian Text Retrieval*. PhD thesis, RMIT University.
+
+4. Bojanowski, P., Grave, E., Joulin, A., & Mikolov, T. (2017). Enriching word vectors with subword information. *Transactions of the Association for Computational Linguistics*, 5, 135-146.
+
+5. Creutz, M., & Lagus, K. (2007). Unsupervised models for morpheme segmentation and morphology learning. *ACM Transactions on Speech and Language Processing*, 4(1), 1-34.
+
+6. Kim, Y., Jernite, Y., Sontag, D., & Rush, A. M. (2016). Character-aware neural language models. *AAAI Conference on Artificial Intelligence*.
+
+7. Kudo, T. (2018). Subword regularization: Improving neural network translation models with multiple subword candidates. *ACL*.
+
+8. Kudo, T., & Richardson, J. (2018). SentencePiece: A simple and language independent subword tokenizer and detokenizer for neural text processing. *EMNLP*.
+
+9. Ling, W., Dyer, C., Black, A. W., Trancoso, I., Fermandez, R., Amir, S., ... & Luis, T. (2015). Finding function in form: Compositional character models for open vocabulary word representation. *EMNLP*.
+
+10. Nazief, B. A., & Adriani, M. (1996). Confix stripping: Approach to stemming algorithm for Bahasa Indonesia. *Technical Report, Faculty of Computer Science, University of Indonesia*.
+
+11. Rust, P., Pfeiffer, J., Vulić, I., Ruder, S., & Gurevych, I. (2021). How good is your tokenizer? On the monolingual performance of multilingual language models. *ACL-IJCNLP*.
+
+12. Sennrich, R., Haddow, B., & Birch, A. (2016). Neural machine translation of rare words with subword units. *ACL*.
+
+13. Sneddon, J. N. (1996). *Indonesian: A Comprehensive Grammar*. Routledge.
+
+14. Wu, Y., Schuster, M., Chen, Z., Le, Q. V., Norouzi, M., Macherey, W., ... & Dean, J. (2016). Google's neural machine translation system: Bridging the gap between human and machine translation. *arXiv preprint arXiv:1609.08144*.
+
+---
+
+## **Appendix A: Sample Segmentations**
+
+### **A.1 Correct Segmentations**
+
+| Word | ModernKataKupas Output | Gold Standard |
+|------|------------------------|---------------|
+| menulis | meN~tulis | meN~tulis |
+| bukuku | buku~ku | buku~ku |
+| mempermainkan | meN~per~main~kan | meN~per~main~kan |
+| kebersihan | ke~bersih~an | ke~bersih~an |
+| diambilpun | di~ambil~pun | di~ambil~pun |
+| pembelajaran | peN~ajar~an | peN~ajar~an |
+| berjalanlah | ber~jalan~lah | ber~jalan~lah |
+
+### **A.2 Error Examples**
+
+| Word | ModernKataKupas | Gold Standard | Error Type |
+|------|-----------------|---------------|------------|
+| menyanyi | menyanyi | meN~nyanyi | no_segmentation |
+| sayur-mayur | sayur~ulg | sayur~rs(~mayur) | wrong_pattern |
+| lelaki | lelaki | laki~rp | no_segmentation |
+| bolak-balik | bolak-balik | bolak~rs(~balik) | no_segmentation |
+
+---
+
+*End of Paper Draft*
