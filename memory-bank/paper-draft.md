@@ -8,7 +8,7 @@ Indonesian, as an agglutinative language, presents significant challenges for Na
 
 We evaluate ModernKataKupas on a gold standard of 360 words covering 21 morphological categories. The system achieves **70.00% word accuracy** (95% CI: [65.00%, 74.44%]) with **Cohen's Kappa of 0.70** (substantial agreement). McNemar's test confirms statistically significant improvement over baseline (p < 0.001). On vocabulary reduction, ModernKataKupas achieves 10.6% reduction while producing interpretable morpheme tokens, compared to BPE (SentencePiece) which achieves 23.6% reduction but with only 42% morpheme boundary alignment.
 
-We compare ModernKataKupas with Morfessor, an unsupervised morphological segmentation baseline. ModernKataKupas significantly outperforms Morfessor (70.00% vs 13.33% accuracy), demonstrating the advantage of linguistically-informed rules over purely statistical approaches for Indonesian morphology. On real-world evaluation using Wikipedia Indonesia corpus (2,631 unique words), the system achieves 100% coverage with 35.12% segmentation rate and 47.47% OOV rate.
+We compare ModernKataKupas with Morfessor, an unsupervised morphological segmentation baseline. ModernKataKupas significantly outperforms Morfessor (70.00% vs 14.17% accuracy), demonstrating the advantage of linguistically-informed rules over purely statistical approaches for Indonesian morphology. On real-world evaluation using Wikipedia Indonesia corpus (2,631 unique words), the system achieves 100% coverage with 35.12% segmentation rate and 47.47% OOV rate.
 
 The system demonstrates strong performance (85-100% accuracy) on regular affixation patterns (possessives, di- prefix, ber-, per-an, ke-an confixes) and phonetic reduplication (77.78%). Complex prefix combinations (33-43%) and partial reduplication (55.56%) remain challenging areas. Our analysis shows dictionary size is the dominant factor affecting accuracy (+60.66% improvement from minimal to full dictionary).
 
@@ -560,19 +560,19 @@ To provide additional baseline comparison, we evaluated ModernKataKupas against 
 
 | Method | Accuracy | Avg Tokens/Word | Speed (words/sec) |
 |--------|----------|-----------------|-------------------|
-| **ModernKataKupas** | **70.00%** | 2.36 | 52 |
-| Morfessor | 13.33% | 3.10 | 2,819 |
+| **ModernKataKupas** | **70.00%** | 2.36 | 32 |
+| Morfessor | 14.17% | 3.11 | 2,503 |
 
 **Agreement Analysis:**
 | Category | Count |
 |----------|-------|
-| Both correct | 43 |
-| MKK only correct | 209 |
+| Both correct | 46 |
+| MKK only correct | 206 |
 | Morfessor only correct | 5 |
 | Both wrong | 103 |
 
 **Key Findings:**
-1. ModernKataKupas significantly outperforms Morfessor (+56.67% accuracy difference)
+1. ModernKataKupas significantly outperforms Morfessor (+55.83% accuracy difference)
 2. Morfessor tends to over-segment words (3.1 vs 2.36 tokens/word)
 3. Morfessor is faster but produces linguistically incorrect segmentations
 4. Only 5 words were correctly segmented by Morfessor but not by MKK
@@ -604,7 +604,7 @@ To evaluate ModernKataKupas on real-world Indonesian text, we processed a sample
 | Successfully segmented | 924 (35.12%) |
 | Unchanged (root words) | 1,707 (64.88%) |
 | Coverage | 100% |
-| Processing speed | 39 words/second |
+| Processing speed | 24.4 words/second |
 
 **OOV Analysis:**
 | Metric | Value |
@@ -724,14 +724,14 @@ Categories **not significantly above random**:
 | System | Type | Word Accuracy | Notes |
 |--------|------|---------------|-------|
 | **ModernKataKupas** | Rule-based | **70.00%** | This work (95% CI: [65.00%, 74.44%]) |
-| Morfessor | Unsupervised | 13.33% | Trained on Indonesian corpus (30K words) |
+| Morfessor | Unsupervised | 14.17% | Trained on Indonesian corpus (30K words) |
 | BPE (SentencePiece) | Statistical | N/A | 41.7% morpheme boundary alignment |
 | Sastrawi | Stemmer | N/A | Returns only root word, not segmentation |
 | MorphInd | Rule/Statistical | N/A | No public evaluation available |
 
 **Key Comparison Insights:**
 
-1. **vs Morfessor:** ModernKataKupas achieves 5.3x higher accuracy (70% vs 13.33%) than Morfessor, demonstrating that rule-based approaches significantly outperform unsupervised statistical methods for Indonesian morphological segmentation.
+1. **vs Morfessor:** ModernKataKupas achieves 4.9x higher accuracy (70% vs 14.17%) than Morfessor, demonstrating that rule-based approaches significantly outperform unsupervised statistical methods for Indonesian morphological segmentation.
 
 2. **vs BPE:** While BPE achieves higher vocabulary compression, only 41.7% of its token boundaries align with morpheme boundaries. ModernKataKupas produces 100% linguistically valid morpheme boundaries.
 

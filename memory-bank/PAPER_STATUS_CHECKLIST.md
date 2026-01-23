@@ -26,13 +26,13 @@ Overall Progress: ██████████████████░░ 9
 ### ACL Workshop Readiness
 
 ```
-Current Readiness:   ██████████░░░░░░░░░░ 50%
+Current Readiness:   ██████████████░░░░░░ 70%
 
 [████████████████████] Foundation (core algorithm)      - COMPLETE
 [████████████████████] Statistical validation           - COMPLETE
 [████████████████████] BPE comparison (real)            - COMPLETE
-[░░░░░░░░░░░░░░░░░░░░] Wikipedia corpus eval            - TODO
-[░░░░░░░░░░░░░░░░░░░░] Morfessor baseline               - TODO
+[████████████████████] Wikipedia corpus eval            - COMPLETE ✓
+[████████████████████] Morfessor baseline               - COMPLETE ✓
 [░░░░░░░░░░░░░░░░░░░░] Downstream task (classification) - TODO
 [████████░░░░░░░░░░░░] Gold standard expansion          - 360/500
 ```
@@ -51,6 +51,8 @@ Current Readiness:   ██████████░░░░░░░░░�
 | Partial Reduplication | 11.11% | **55.56%** | +44% |
 | BPE Comparison | Simulated | **Real SentencePiece** | Valid |
 | BPE Alignment | 33% | **41.7%** | Updated |
+| Wikipedia Eval | TODO | **COMPLETE** | 100% coverage |
+| Morfessor Baseline | TODO | **COMPLETE** | +55.83% vs MKK |
 
 ### Code Changes
 - [x] Fixed reduplication marker: `rs(~variant)` → `ulg~variant`
@@ -64,6 +66,8 @@ Current Readiness:   ██████████░░░░░░░░░�
 - [x] Chapter 5 updated with real BPE results
 - [x] Research Questions reframed to match deliverables
 - [x] Vocabulary reduction updated (10.6%)
+- [x] Wikipedia evaluation section added (2,631 words, 100% coverage)
+- [x] Morfessor comparison section added (70% vs 14.17%)
 
 ---
 
@@ -150,8 +154,8 @@ Current Readiness:   ██████████░░░░░░░░░�
 |-------------|--------|-------|
 | Core contribution | DONE | Rule-based morphological segmenter |
 | Statistical validation | DONE | Bootstrap CI, McNemar, Kappa |
-| Baseline comparison | PARTIAL | BPE done, need Morfessor |
-| Real corpus evaluation | TODO | Wikipedia Indonesia |
+| Baseline comparison | **DONE** | BPE done + Morfessor (14.17% vs 70%) |
+| Real corpus evaluation | **DONE** | Wikipedia Indonesia (2,631 words, 100% coverage) |
 | Downstream task | TODO | Text classification |
 | Gold standard size | 360/500 | Need +140 words |
 
@@ -220,8 +224,8 @@ Current Readiness:   ██████████░░░░░░░░░�
 ## Next Steps (ACL Workshop Path)
 
 ### Phase 2: Corpus & Baseline (Weeks 1-4)
-1. [ ] Wikipedia Indonesia corpus evaluation
-2. [ ] Morfessor baseline comparison
+1. [x] Wikipedia Indonesia corpus evaluation - **COMPLETE** (2026-01-23)
+2. [x] Morfessor baseline comparison - **COMPLETE** (2026-01-23)
 3. [ ] Gold standard expansion (360 → 500+)
 
 ### Phase 3: Downstream Task (Weeks 5-8)
@@ -246,6 +250,8 @@ Current Readiness:   ██████████░░░░░░░░░�
 | Next Steps | `memory-bank/NEXT_STEPS.md` | **New Today** |
 | Statistical Results | `experiments/results/statistical_results_v2.json` | **New Today** |
 | BPE Comparison | `experiments/results/tokenization_comparison_real_bpe.json` | **New Today** |
+| Wikipedia Eval | `experiments/results/wikipedia_eval.json` | **NEW Today** |
+| Morfessor Comparison | `experiments/results/morfessor_comparison.json` | **NEW Today** |
 | Gold Standard | `data/gold_standard_v3.csv` | Existing |
 
 ---

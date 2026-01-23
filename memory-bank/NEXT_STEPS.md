@@ -257,11 +257,11 @@ Metrics:
 ## Implementation Checklist
 
 ### Week 1-2: Corpus & Baseline
-- [ ] Download Wikipedia Indonesia sample (10K sentences)
-- [ ] Implement `experiments/wikipedia_evaluation.py`
-- [ ] Run Wikipedia evaluation and save results
-- [ ] Install Morfessor and implement comparison
-- [ ] Run Morfessor baseline comparison
+- [x] Download Wikipedia Indonesia sample (10K sentences) - **DONE**
+- [x] Implement `experiments/wikipedia_evaluation.py` - **DONE**
+- [x] Run Wikipedia evaluation and save results - **DONE** (2026-01-23)
+- [x] Install Morfessor and implement comparison - **DONE**
+- [x] Run Morfessor baseline comparison - **DONE** (2026-01-23)
 
 ### Week 3-4: Gold Standard
 - [ ] Identify category gaps
