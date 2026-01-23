@@ -11,7 +11,12 @@
       "Bash(python:*)",
       "Bash(copy:*)",
       "Bash(git add:*)",
-      "Bash(pytest:*)"
+      "Bash(pytest:*)",
+      "Bash(wc:*)",
+      "Bash(set PYTHONPATH=src:*)",
+      "Bash(pip show:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nImprove accuracy to 70% and add ACL workshop roadmap\n\nCode improvements:\n- Fix reduplication handling: phonetic 0%→77.78%, partial 11%→55.56%\n- Change reduplication format from rs\\(~variant\\) to ulg~variant\n- Add frozen compound handling \\(ramah-tamah, gotong-royong\\)\n- Fix dwipurwa detection for lelaki, leluhur, tetua\n- Update reconstructor for new format\n\nPaper updates:\n- Update accuracy from 66.94% to 70.00%\n- Update BPE alignment to 41.7% \\(real SentencePiece\\)\n- Reframe Research Questions to realistic scope\n- Update contributions and abstract\n\nDocumentation:\n- Create NEXT_STEPS.md with detailed implementation guide\n- Update PAPER_WRITING_ROADMAP.md for ACL workshop target\n- Update PAPER_STATUS_CHECKLIST.md with ACL readiness tracker\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)"
     ]
   }
 }
