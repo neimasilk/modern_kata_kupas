@@ -159,6 +159,15 @@ class Reconstructor:
             if part == "ulg":
                 result["redup_marker"] = "ulg"
                 current_part_is_redup_marker = True
+                # Check if next part is a phonetic variant (not a suffix)
+                # Format: base~ulg~variant (e.g., sayur~ulg~mayur)
+                if part_idx + 1 < len(parts):
+                    next_part = parts[part_idx + 1]
+                    # If next part is not a known suffix and not empty
+                    if next_part and not self.rules.is_suffix(next_part) and not self.rules.is_prefix(next_part):
+                        # It could be a phonetic variant - mark it to be processed specially
+                        # We'll set a flag to handle it in the next iteration
+                        pass  # Variant detection handled below
                 logging.debug(f"parse_segmented_string:   Part '{part}' identified as redup_marker='ulg'")
             elif part == "rp":
                 result["redup_marker"] = "rp"
@@ -211,27 +220,47 @@ class Reconstructor:
                 previous_part_was_redup_marker = False # Reset
                 continue
             
-            # 4. If not a known marker or affix, it's a root candidate
+            # 4. If not a known marker or affix, check if it's a phonetic variant
+            # This happens when format is base~ulg~variant (e.g., sayur~ulg~mayur)
+            if previous_part_was_redup_marker and result["redup_marker"] == "ulg" and root_candidates:
+                # This is likely a phonetic variant, not another root
+                result["redup_variant"] = part
+                logging.debug(f"parse_segmented_string:   Part '{part}' identified as phonetic variant after ulg")
+                previous_part_was_redup_marker = False
+                continue
+
+            # Otherwise, it's a root candidate
             root_candidates.append(part)
             previous_part_was_redup_marker = False # Reset
 
         # Root Identification:
         if root_candidates:
-            found_dict_root = False
             logging.debug(f"parse_segmented_string: Root candidates: {root_candidates}")
-            # Prioritize candidates that are known dictionary words
-            for r_cand in root_candidates:
-                is_kd = self.dictionary.is_kata_dasar(r_cand)
-                logging.debug(f"parse_segmented_string:   Checking root candidate '{r_cand}'. Is KD? {is_kd}")
-                if is_kd:
-                    result["root"] = r_cand
-                    found_dict_root = True
-                    logging.debug(f"parse_segmented_string:     Root identified as '{r_cand}' (is KD)")
-                    break
-            if not found_dict_root:
-                result["root"] = root_candidates[0] 
-                logging.debug(f"parse_segmented_string:   No KD root found in candidates. Fallback: root set to first candidate '{result['root']}'")
-        
+
+            # Special case: frozen compound (base~variant without marker)
+            # e.g., ramah~tamah -> ramah-tamah
+            if len(root_candidates) == 2 and not result["redup_marker"]:
+                # This is likely a frozen compound
+                result["root"] = root_candidates[0]
+                result["redup_variant"] = root_candidates[1]
+                # Use special marker to indicate compound in reconstruction
+                result["redup_marker"] = "_compound"
+                logging.debug(f"parse_segmented_string: Frozen compound detected: {root_candidates[0]}~{root_candidates[1]}")
+            else:
+                found_dict_root = False
+                # Prioritize candidates that are known dictionary words
+                for r_cand in root_candidates:
+                    is_kd = self.dictionary.is_kata_dasar(r_cand)
+                    logging.debug(f"parse_segmented_string:   Checking root candidate '{r_cand}'. Is KD? {is_kd}")
+                    if is_kd:
+                        result["root"] = r_cand
+                        found_dict_root = True
+                        logging.debug(f"parse_segmented_string:     Root identified as '{r_cand}' (is KD)")
+                        break
+                if not found_dict_root:
+                    result["root"] = root_candidates[0]
+                    logging.debug(f"parse_segmented_string:   No KD root found in candidates. Fallback: root set to first candidate '{result['root']}'")
+
         logging.debug(f"parse_segmented_string: Returning parsed result: {result}")
         return result
 
@@ -244,7 +273,11 @@ class Reconstructor:
         if marker == "ulg":
             suffix_to_apply_post_redup = "".join(sfx for sfx in (suffixes_after_reduplication or []) if sfx)
 
-            if suffix_to_apply_post_redup: # Derivational like mobil~ulg~an
+            # Check if there's a phonetic variant (e.g., sayur~ulg~mayur -> sayur-mayur)
+            if variant:
+                base_reduplicated_form = f"{stem}-{variant}"
+                return base_reduplicated_form + suffix_to_apply_post_redup
+            elif suffix_to_apply_post_redup: # Derivational like mobil~ulg~an
                 root_of_stem = self.stemmer.get_root_word(stem)
                 second_part = root_of_stem + suffix_to_apply_post_redup
                 base_reduplicated_form = f"{stem}-{second_part}"
@@ -279,6 +312,12 @@ class Reconstructor:
             # Suffixes from suffixes_after_reduplication are appended after forming "sayur-mayur"
             return base_reduplicated_form + suffix_to_apply_post_redup
         
+        elif marker == "_compound":
+            # Frozen compound (e.g., ramah~tamah -> ramah-tamah)
+            if variant:
+                return f"{stem}-{variant}"
+            return stem
+
         else: # Unknown marker, or if somehow marker was None but suffixes_after_reduplication existed
             # Return stem with any suffixes_after_reduplication appended
             suffix_to_apply_post_redup = "".join(sfx for sfx in (suffixes_after_reduplication or []) if sfx)

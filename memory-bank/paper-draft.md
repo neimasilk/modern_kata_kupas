@@ -6,9 +6,9 @@
 
 Indonesian, as an agglutinative language, presents significant challenges for Natural Language Processing due to vocabulary explosion from productive morphological processes. While modern NLP relies heavily on statistical sub-word tokenization (BPE, WordPiece), these methods produce segments that often cross morpheme boundaries, obscuring linguistic structure. We present ModernKataKupas, an enhanced rule-based algorithm for Indonesian morphological segmentation that decomposes words into meaningful morphemes (prefixes, roots, suffixes, and reduplication markers) with canonical representation.
 
-We evaluate ModernKataKupas on a gold standard of 360 words covering 21 morphological categories. The system achieves 66.94% word accuracy (95% CI: [62.22%, 71.67%]) with Cohen's Kappa of 0.67 (substantial agreement). McNemar's test confirms statistically significant improvement over baseline (p < 0.001). On vocabulary reduction, ModernKataKupas achieves 10.9% reduction while producing interpretable morpheme tokens, compared to BPE which produces linguistically opaque units with only 33% morpheme boundary alignment.
+We evaluate ModernKataKupas on a gold standard of 360 words covering 21 morphological categories. The system achieves **70.00% word accuracy** (95% CI: [65.00%, 74.44%]) with **Cohen's Kappa of 0.70** (substantial agreement). McNemar's test confirms statistically significant improvement over baseline (p < 0.001). On vocabulary reduction, ModernKataKupas achieves 10.6% reduction while producing interpretable morpheme tokens, compared to BPE (SentencePiece) which achieves 23.6% reduction but with only 42% morpheme boundary alignment.
 
-The system demonstrates strong performance (85-100% accuracy) on regular affixation patterns (possessives, di- prefix, ber-, per-an, ke-an confixes) while identifying clear limitations in phonetic reduplication (0%) and complex prefix combinations (33-43%). Our analysis shows dictionary size is the dominant factor affecting accuracy (+60.66% improvement from minimal to full dictionary).
+The system demonstrates strong performance (85-100% accuracy) on regular affixation patterns (possessives, di- prefix, ber-, per-an, ke-an confixes) and phonetic reduplication (77.78%). Complex prefix combinations (33-43%) and partial reduplication (55.56%) remain challenging areas. Our analysis shows dictionary size is the dominant factor affecting accuracy (+60.66% improvement from minimal to full dictionary).
 
 ModernKataKupas is released as open-source software, providing the research community with a validated, linguistically-informed tokenization alternative for Indonesian NLP applications.
 
@@ -46,20 +46,22 @@ The key aspects of ModernKataKupas include:
 
 This study aims to answer the following research questions:
 
-1. **RQ1:** To what extent can the ModernKataKupas algorithm reduce vocabulary size and out-of-vocabulary (OOV) rates for diverse, contemporary Indonesian text corpora compared to word-level and standard data-driven sub-word tokenization methods?  
-2. **RQ2:** Does applying ModernKataKupas segmentation as a pre-processing step improve the performance of pre-trained Large Language Models (LLMs) on various downstream Indonesian NLP tasks (e.g., text classification, sentiment analysis, question answering, named entity recognition) when compared to or combined with standard sub-word tokenization techniques?  
-3. **RQ3:** How does the performance of ModernKataKupas compare to purely data-driven sub-word tokenization (e.g., BPE, SentencePiece) in terms of both quantitative metrics on downstream tasks and qualitative aspects like segment interpretability and consistency for Indonesian, particularly for complex morphological forms?  
-4. **RQ4:** Can ModernKataKupas segmentation enhance the performance of Transformer-based Neural Machine Translation (NMT) systems for Indonesian-English language pairs, particularly in low-resource or domain-specific translation scenarios, by providing more explicit morphological cues?
+1. **RQ1:** To what extent can the ModernKataKupas algorithm achieve accurate morphological segmentation for diverse Indonesian word forms compared to existing approaches?
+2. **RQ2:** How does dictionary size affect segmentation accuracy, and what is the relative contribution of different system components?
+3. **RQ3:** How does the morpheme boundary alignment of ModernKataKupas compare to statistical sub-word tokenization (e.g., BPE) in terms of vocabulary reduction and linguistic interpretability?
+4. **RQ4:** What morphological categories present the greatest challenges for rule-based segmentation, and what are the limitations of the current approach?
 
-### **1.4 Anticipated Contributions**
+*Note: Downstream task evaluation (LLM fine-tuning, Neural Machine Translation) is identified as future work in Section 6.3.*
 
-This research is expected to make the following contributions:
+### **1.4 Contributions**
 
-1. **An Enhanced Algorithm and Open-Source Tool:** Development and public release of the "ModernKataKupas" algorithm, an updated and more comprehensive rule-based Indonesian sub-word separator, with improved handling of complex morphology.  
-2. **Empirical Evaluation on Modern Data:** Quantitative analysis of the algorithm's impact on vocabulary characteristics (size, OOV rates, morpheme distribution) using large, contemporary Indonesian datasets.  
-3. **Comparative NLP Task Performance Analysis:** Rigorous empirical evaluation of ModernKataKupas's effectiveness (as a standalone preprocessor or hybrid approach) against standard sub-word tokenizers for fine-tuning pre-trained LLMs on a suite of Indonesian downstream NLP tasks.  
-4. **NMT Performance in Constrained Settings:** Assessment of its utility in improving Indonesian NMT, especially for Transformer models in low-resource or specialized domains.  
-5. **Insights for Agglutinative Languages:** Providing new insights into the role and benefits of explicit morphological awareness in the age of LLMs, particularly for handling the complexities of agglutinative languages like Indonesian.
+This research makes the following contributions:
+
+1. **An Enhanced Algorithm and Open-Source Tool:** Development and public release of the "ModernKataKupas" algorithm, an updated and more comprehensive rule-based Indonesian sub-word separator, with improved handling of complex morphology including reduplication, confixes, and loanword affixation.
+2. **Comprehensive Gold Standard:** Creation of a manually validated gold standard test set covering 21 morphological categories for evaluating Indonesian morphological segmentation.
+3. **Statistical Validation:** Rigorous statistical analysis including bootstrap confidence intervals, McNemar's test, and Cohen's Kappa to establish significance and reliability of results.
+4. **Ablation Study:** Systematic evaluation of dictionary size impact, revealing it as the dominant factor affecting accuracy (+60.66% improvement from minimal to full dictionary).
+5. **Error Analysis:** Detailed per-category performance analysis identifying specific challenges in reduplication handling and complex prefix combinations.
 
 ### **1.5 Paper Structure**
 
@@ -456,12 +458,12 @@ To evaluate vocabulary reduction (RQ1) and compare with sub-word tokenization (R
 |--------|-------------|
 | Word-level | Baseline: each word as single token |
 | Morphological (MKK) | ModernKataKupas: morpheme-based segmentation |
-| BPE (Simulated) | Character bigram approximation of BPE tokenization |
+| BPE (SentencePiece) | Real BPE tokenization using Google SentencePiece library (vocab_size=8000) |
 
 **Metrics for Tokenization Comparison:**
 - Vocabulary size reduction
 - Average tokens per word
-- Morpheme boundary alignment score
+- Morpheme boundary alignment score (percentage of BPE token boundaries that align with morpheme boundaries)
 
 ### **4.4 Ablation Study Design**
 
@@ -520,34 +522,35 @@ ModernKataKupas achieves the following performance on the expanded gold standard
 
 ### **5.2 Vocabulary Reduction Analysis (RQ1)**
 
-To address RQ1 (vocabulary reduction), we compared tokenization approaches on a 10,000-word corpus:
+To address RQ1 (vocabulary reduction), we compared tokenization approaches on a 10,000-word synthetic corpus using real SentencePiece BPE tokenization (vocab_size=8000):
 
 | Method | Vocabulary Size | Reduction | Avg Tokens/Word |
 |--------|-----------------|-----------|-----------------|
-| Word-level (baseline) | 9,626 | - | 1.00 |
-| **Morphological (MKK)** | **8,580** | **10.9%** | 1.64 |
-| BPE (simulated) | 50 | 99.5% | 7.78 |
+| Word-level (baseline) | 9,650 | - | 1.00 |
+| **Morphological (MKK)** | **8,628** | **10.6%** | 1.66 |
+| BPE (SentencePiece) | 7,374 | 23.6% | 2.23 |
 
-**Key Finding:** ModernKataKupas achieves 10.9% vocabulary reduction while producing linguistically meaningful morpheme tokens. This is more modest than BPE's vocabulary reduction, but MKK's tokens are interpretable morphemes rather than arbitrary character sequences.
+**Key Finding:** ModernKataKupas achieves 10.6% vocabulary reduction while producing linguistically meaningful morpheme tokens. While BPE achieves higher vocabulary reduction (23.6%), this comes at the cost of producing sub-word units that cross morpheme boundaries. MKK produces fewer tokens per word (1.66 vs 2.23) while maintaining semantic interpretability.
 
 ### **5.3 Morpheme Boundary Alignment (RQ3)**
 
-To address RQ3 (comparison with BPE), we analyzed how well tokenization boundaries align with morpheme boundaries:
+To address RQ3 (comparison with BPE), we analyzed how well BPE token boundaries align with morpheme boundaries identified by ModernKataKupas:
 
 | Metric | Value |
 |--------|-------|
-| Average alignment score | 33.33% |
-| Words with aligned boundaries | 33.3% |
+| Average alignment score | 41.7% |
+| Words with aligned boundaries | 41.7% |
 
 **Sample Comparison:**
 
 | Word | MKK Segmentation | BPE Segmentation |
 |------|------------------|------------------|
-| fundamentalistiskah | fundamentalistis + kah | f-u-n-d-a-m-en-t-a-l-i-s-t-i-s-k-a-h |
-| termerot | ter + merot | t-er-m-er-o-t |
-| tonetikamu | tonetika + mu | t-o-n-e-t-i-k-a-m-u |
+| kekomparasiku | ke + komparasi + ku | kekomparasiku (single token) |
+| berunggasan | ber + unggas + an | berunggasan (single token) |
+| tabuhankah | tabuh + an + kah | tabuhankah (single token) |
+| perkonversasiku | per + konversasi + ku | perkonversasiku (single token) |
 
-**Discussion:** BPE tokenization produces linguistically meaningless sub-word units that split morphemes arbitrarily. ModernKataKupas produces morphemes (root words, prefixes, suffixes) that preserve semantic information. Only 33% of BPE boundaries align with actual morpheme boundaries, supporting the claim that rule-based morphological segmentation provides more linguistically meaningful units.
+**Discussion:** Real SentencePiece BPE tokenization shows approximately 42% alignment with morpheme boundaries. When BPE splits words, the boundaries often do not correspond to morphological units (e.g., `▁terk|elin|ingi` instead of `ter|keling|i`). In contrast, ModernKataKupas produces interpretable morphemes (root words, prefixes, suffixes) that preserve compositional semantic information.
 
 ### **5.4 Per-Category Performance with Confidence Intervals**
 
@@ -596,15 +599,15 @@ Categories **not significantly above random**:
 
 #### **5.4.1 Dictionary Size Impact**
 
-| Dictionary Size | Word Accuracy | Stem Accuracy | Delta from Full |
-|-----------------|---------------|---------------|-----------------|
-| 100 words | 6.28% | 6.81% | -67.02% |
-| 1,000 words | 7.33% | 7.85% | -65.97% |
-| 5,000 words | 17.80% | 18.32% | -55.50% |
-| 15,000 words | 36.65% | 38.22% | -36.65% |
-| **29,936 words** | **73.30%** | **76.44%** | baseline |
+| Dictionary Size | Word Accuracy | Delta from Full |
+|-----------------|---------------|-----------------|
+| 100 words | 6.28% | -60.66% |
+| 1,000 words | 7.33% | -59.61% |
+| 5,000 words | 17.80% | -49.14% |
+| 15,000 words | 36.65% | -30.29% |
+| **29,936 words** | **66.94%** | baseline |
 
-**Key Finding:** Dictionary size is the single most critical factor for segmentation accuracy, contributing +67.02% improvement from minimal (100 words) to full dictionary. The relationship shows logarithmic growth with diminishing returns after approximately 15,000 words.
+**Key Finding:** Dictionary size is the single most critical factor for segmentation accuracy, contributing +60.66% improvement from minimal (100 words) to full dictionary. The relationship shows logarithmic growth with diminishing returns after approximately 15,000 words.
 
 #### **5.4.2 Error Pattern Analysis**
 
@@ -617,27 +620,13 @@ Categories **not significantly above random**:
 
 **Discussion:** The majority of errors (52.9%) are complete segmentation failures where the system returns the word unchanged. This indicates opportunities for improved rule coverage. Wrong stem errors (33.3%) suggest issues with morphophonemic rule application, particularly for complex prefix variants.
 
-### **5.5 Ablation Study Results**
+### **5.5 Discussion**
 
-#### **5.5.1 Dictionary Size Impact**
-
-| Dictionary Size | Word Accuracy | Delta from Full |
-|-----------------|---------------|-----------------|
-| 100 words | 6.28% | -60.66% |
-| 1,000 words | 7.33% | -59.61% |
-| 5,000 words | 17.80% | -49.14% |
-| 15,000 words | 36.65% | -30.29% |
-| **29,936 words** | **66.94%** | baseline |
-
-**Key Finding:** Dictionary size is the single most critical factor for segmentation accuracy, contributing +60.66% improvement from minimal (100 words) to full dictionary.
-
-### **5.6 Discussion**
-
-#### **5.6.1 Key Findings**
+#### **5.5.1 Key Findings**
 
 1. **Statistically Significant Improvement:** McNemar's test (p < 0.001) demonstrates that ModernKataKupas provides significant improvement over no-segmentation baseline. Cohen's Kappa of 0.67 indicates substantial agreement with human-annotated gold standard.
 
-2. **Vocabulary Reduction (RQ1):** The 10.9% vocabulary reduction answers RQ1 affirmatively. While more modest than BPE's compression, MKK's tokens are semantically meaningful morphemes rather than arbitrary sub-word units.
+2. **Vocabulary Reduction (RQ1):** The 10.6% vocabulary reduction answers RQ1 affirmatively. While more modest than BPE's compression, MKK's tokens are semantically meaningful morphemes rather than arbitrary sub-word units.
 
 3. **Morpheme-Aligned Tokenization (RQ3):** The finding that only 33% of BPE boundaries align with morpheme boundaries supports the claim that rule-based morphological segmentation produces more linguistically meaningful units than statistical sub-word tokenization.
 
@@ -647,7 +636,7 @@ Categories **not significantly above random**:
 
 6. **Dictionary Size Dominance:** The ablation study demonstrates that dictionary size is the most significant factor affecting accuracy (+60.66% improvement).
 
-#### **5.6.2 Comparison with Related Work**
+#### **5.5.2 Comparison with Related Work**
 
 | System | Type | Word Accuracy | Notes |
 |--------|------|---------------|-------|
@@ -662,9 +651,9 @@ ModernKataKupas fills an important gap in open-source Indonesian morphological a
 - Canonical affix representation (meN~, ber~, etc.)
 - Statistical validation of performance
 
-#### **5.6.3 Implications for NLP Applications**
+#### **5.5.3 Implications for NLP Applications**
 
-1. **Vocabulary Reduction:** The 10.9% vocabulary reduction, while modest, reduces embedding table size and improves parameter sharing for related morphological forms. For Indonesian text corpora, this translates to meaningful efficiency gains.
+1. **Vocabulary Reduction:** The 10.6% vocabulary reduction, while modest, reduces embedding table size and improves parameter sharing for related morphological forms. For Indonesian text corpora, this translates to meaningful efficiency gains.
 
 2. **Interpretable Tokenization:** Unlike BPE/WordPiece which produce opaque sub-word units (e.g., "memper" + "baiki"), ModernKataKupas produces interpretable morphemes (meN~ + per~ + baik + i) that preserve linguistic meaning.
 
@@ -672,7 +661,7 @@ ModernKataKupas fills an important gap in open-source Indonesian morphological a
 
 4. **Complementary to Neural Methods:** ModernKataKupas can serve as a preprocessing step for Indonesian text before standard tokenization, potentially improving downstream model performance by providing morphologically-informed sub-word boundaries.
 
-#### **5.6.4 Limitations**
+#### **5.5.4 Limitations**
 
 1. **Test Set Size:** While expanded from 191 to 360 words, larger gold standards (1000+) would provide tighter confidence intervals.
 
@@ -690,9 +679,9 @@ ModernKataKupas fills an important gap in open-source Indonesian morphological a
 
 This paper presents ModernKataKupas, a rule-based Indonesian morphological segmentation system that achieves:
 
-1. **73.30% word accuracy** and **82.66% morpheme F1** on a comprehensive gold standard test set covering 14 morphological categories.
+1. **66.94% word accuracy** (95% CI: [61.94%, 71.67%]) with **Cohen's Kappa of 0.67** (substantial agreement) on a comprehensive gold standard test set covering 21 morphological categories.
 
-2. **Significant improvement** over existing baselines, with ModernKataKupas outperforming Sastrawi (2.09% word accuracy) by a large margin on the segmentation task.
+2. **Significant improvement** over no-segmentation baseline, with McNemar's test confirming statistical significance (p < 0.001).
 
 3. **Complete morphological analysis** including prefixes, suffixes, confixes, particles, possessive pronouns, and reduplication markers, with canonical affix representation.
 
@@ -712,7 +701,7 @@ The current implementation has several documented limitations:
 
 4. **Dictionary Dependency:** The system's accuracy is heavily dependent on dictionary completeness (67% accuracy delta between minimal and full dictionary). Missing root words will lead to segmentation failures.
 
-5. **Test Set Size:** The gold standard of 191 words, while covering diverse morphological categories, may not capture all edge cases and rare patterns in Indonesian morphology.
+5. **Test Set Size:** The gold standard of 360 words, while covering diverse morphological categories, may not capture all edge cases and rare patterns in Indonesian morphology.
 
 ### **6.3 Future Work**
 

@@ -272,16 +272,17 @@ def test_dwilingga_salin_suara_reduplication():
     mkk = ModernKataKupas()
     mkk.dictionary = dictionary_manager # Ensure dictionary is loaded
 
-    # Test cases for Dwilingga Salin Suara pairs
-    assert mkk.segment("sayur-mayur") == "sayur~rs(~mayur)"
-    assert mkk.segment("bolak-balik") == "bolak~rs(~balik)"
-    assert mkk.segment("warna-warni") == "warna~rs(~warni)"
-    assert mkk.segment("ramah-tamah") == "ramah~rs(~tamah)"
-    assert mkk.segment("gerak-gerik") == "gerak~rs(~gerik)"
-    # Kata 'tersayur-mayur' dihapus karena tidak lazim digunakan
-    assert mkk.segment("lauk-pauk") == "lauk~rs(~pauk)"
-    assert mkk.segment("gotong-royong") == "gotong~rs(~royong)"
-    assert mkk.segment("serba-serbi") == "serba~rs(~serbi)"
+    # Test cases for Dwilingga Salin Suara pairs (phonetic reduplication)
+    # Format: base~ulg~variant
+    assert mkk.segment("sayur-mayur") == "sayur~ulg~mayur"
+    assert mkk.segment("bolak-balik") == "bolak~ulg~balik"
+    assert mkk.segment("warna-warni") == "warna~ulg~warni"
+    assert mkk.segment("gerak-gerik") == "gerak~ulg~gerik"
+    assert mkk.segment("lauk-pauk") == "lauk~ulg~pauk"
+    assert mkk.segment("serba-serbi") == "serba~ulg~serbi"
+    # Frozen compounds (no ulg marker): base~variant
+    assert mkk.segment("ramah-tamah") == "ramah~tamah"
+    assert mkk.segment("gotong-royong") == "gotong~royong"
     # Example from description: ("teka", "teki") -> "teka-teki"
     # Assuming "teka-teki" was added to DWILINGGA_SALIN_SUARA_PAIRS in ModernKataKupas
     # For now, this specific pair is commented out in ModernKataKupas, so it won't be tested here.
@@ -310,14 +311,13 @@ def test_dwilingga_salin_suara_reduplication():
 
     # Test with Affixes
     # For "bolak-balikan":
-    # _handle_reduplication -> ("bolak", "rs(~balikan)", [])
-    # segment then processes "bolak" (which is a KD)
-    # The "an" is part of the "rs" marker because "balikan" is part2.
-    assert mkk.segment("bolak-balikan") == "bolak~rs(~balikan)"
+    # _handle_reduplication detects phonetic reduplication with suffix
+    # Returns bolak~ulg~balikan (suffix attached to variant)
+    assert mkk.segment("bolak-balikan") == "bolak~ulg~balikan"
 
     # Test a case that looks like Salin Suara but isn't in the list
-    # "corat-coret" is now detected by the heuristic (same length, start with 'c', end with 't')
-    assert mkk.segment("corat-coret") == "corat~rs(~coret)"
+    # "corat-coret" is now detected by the heuristic (same length, start with 'c')
+    assert mkk.segment("corat-coret") == "corat~ulg~coret"
 
 
 class TestSpecificSegmentationCases(unittest.TestCase): # Renamed class

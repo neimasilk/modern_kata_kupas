@@ -2,176 +2,340 @@
 
 **Target Paper**: "Revisiting Rule-Based Indonesian Sub-word Separation for Enhanced LLM Performance and Low-Resource NLP"
 
-**Last Updated**: 2026-01-23
+**Target Venue**: ACL 2026 Workshop (e.g., RepL4NLP, MRL, or similar)
+
+**Last Updated**: 2026-01-23 (Major Update)
 
 ---
 
-## 1. Status Overview
+## 1. Executive Summary
 
-### Current State (Updated 2026-01-23)
+### Current State (2026-01-23)
 
-| Component | Status | Completeness |
-|-----------|--------|--------------|
-| Chapter 1: Introduction | DONE | 100% |
-| Chapter 2: Literature Review | DONE | 100% |
-| Chapter 3: Methodology | DONE | 100% |
-| Chapter 4: Experimental Setup | **DONE (Updated)** | 100% |
-| Chapter 5: Results & Discussion | **DONE (Updated)** | 100% |
-| Chapter 6: Conclusions | DRAFT | 80% |
-| Abstract | **DONE (New)** | 100% |
-| References/Bibliography | PARTIAL | 60% |
+| Metric | Value | Status |
+|--------|-------|--------|
+| Word Accuracy | **70.00%** | +3.06% from baseline |
+| Cohen's Kappa | **0.70** | Substantial Agreement |
+| Phonetic Reduplication | **77.78%** | Fixed (was 0%) |
+| Partial Reduplication | **55.56%** | Improved (was 11%) |
+| BPE Alignment | **41.7%** | Real SentencePiece |
+| Gold Standard | 360 words | Need 500+ |
 
-### Implementation Status (LOCKED)
-- ModernKataKupas v1.0.1: **COMPLETE**
-- Word Accuracy: **66.94%** (95% CI: [62.22%, 71.67%])
-- Cohen's Kappa: **0.6688** (Substantial Agreement)
-- Vocabulary Reduction: **10.9%**
-- Test Coverage: 93 tests passing
+### Target: ACL Workshop Level
 
----
-
-## 2. Key Accomplishments (2026-01-23 Session)
-
-### New Experiments Conducted
-1. **Statistical Significance Tests**
-   - Bootstrap confidence intervals (1000 samples)
-   - McNemar's test vs baseline (p < 0.001)
-   - Cohen's Kappa agreement measure
-
-2. **Tokenization Comparison**
-   - Word-level vs MKK vs BPE comparison
-   - Vocabulary reduction measurement (10.9%)
-   - Morpheme boundary alignment analysis (33%)
-
-3. **Per-Category Analysis**
-   - 21 morphological categories evaluated
-   - Confidence intervals for each category
-   - Identified 11 categories significantly above random
-
-### Paper Updates
-1. Abstract written (~250 words)
-2. Chapter 4 completely revised with new experimental design
-3. Chapter 5 updated with all new results and statistical analysis
-4. Created comprehensive experimental results documentation
+To reach ACL workshop level, we need:
+1. **Downstream Task Evaluation** - Show practical utility
+2. **Real Corpus Evaluation** - Wikipedia/news corpus
+3. **Expanded Gold Standard** - 500-1000 words
+4. **Additional Baselines** - Morfessor, neural approaches
 
 ---
 
-## 3. Venue Selection Strategy
+## 2. Roadmap Phases
 
-### Recommended Targets
+### Phase 1: Foundation (COMPLETED)
 
-#### Tier 1: High Probability (Ready Now)
-| Venue | Type | Deadline | Notes |
-|-------|------|----------|-------|
-| **IALP 2026** | Conference | ~June 2026 | International Conference on Asian Language Processing - ideal fit |
-| **PACLIC 2026** | Conference | ~July 2026 | Pacific Asia Conference on Language, Information and Computation |
-| **Jurnal ILKOM** (Indonesia) | Journal | Rolling | National accredited journal |
+| Task | Status | Notes |
+|------|--------|-------|
+| Core algorithm implementation | DONE | ModernKataKupas v1.0.1 |
+| Gold standard creation (360 words) | DONE | 21 categories |
+| Statistical validation | DONE | Bootstrap CI, McNemar |
+| Real SentencePiece comparison | DONE | 41.7% alignment |
+| Reduplication handling | DONE | +77.78% phonetic |
+| Paper draft | DONE | 80% complete |
 
-#### Tier 2: Medium Probability (Needs Minor Additions)
-| Venue | Type | Requirements |
-|-------|------|--------------|
-| **LREC-COLING 2026** | Conference | Focus on resource contribution aspect |
-| **ACL Workshop** | Workshop | Add 1-2 downstream experiments |
+### Phase 2: Corpus & Baseline Expansion (NEXT)
 
-### Recommendation
-**Submit to IALP 2026 or PACLIC 2026** - The paper is now ready for submission to regional conferences. Current results (66.94% accuracy with statistical validation, vocabulary reduction analysis) are sufficient for these venues.
+**Timeline**: 2-3 weeks
 
----
+| Task | Priority | Effort | Description |
+|------|----------|--------|-------------|
+| Wikipedia ID corpus eval | HIGH | Medium | Evaluate on 10K real sentences |
+| Expand gold standard | HIGH | High | 360 → 500+ words |
+| Add Morfessor baseline | MEDIUM | Low | Unsupervised morphology |
+| News corpus evaluation | MEDIUM | Medium | Domain diversity |
 
-## 4. Remaining Tasks
+### Phase 3: Downstream Tasks (KEY FOR ACL)
 
-### High Priority (Before Submission)
-- [ ] Complete References section (add 10-15 more citations)
-- [ ] Final proofreading and consistency check
-- [ ] Select target venue and download template
-- [ ] Format paper to venue requirements
+**Timeline**: 3-4 weeks
 
-### Medium Priority (Can Be Post-Submission)
-- [ ] Add more recent LLM tokenization references (2024-2026)
-- [ ] Consider adding 1-2 qualitative analysis figures
-- [ ] Expand error analysis examples
+| Task | Priority | Effort | Description |
+|------|----------|--------|-------------|
+| Text Classification | HIGH | High | Sentiment/topic with MKK preprocessing |
+| Named Entity Recognition | MEDIUM | High | NER with morphological features |
+| Machine Translation | LOW | Very High | ID-EN MT evaluation (future work) |
 
-### Low Priority (For Revision/Follow-up)
-- [ ] Install SentencePiece for true BPE comparison
-- [ ] Downstream task evaluation (text classification)
-- [ ] Expand gold standard to 1000+ words
+### Phase 4: Paper Finalization
 
----
+**Timeline**: 1-2 weeks
 
-## 5. Research Questions Status
-
-| RQ | Question | Evidence | Status |
-|----|----------|----------|--------|
-| RQ1 | Vocabulary reduction | 10.9% reduction demonstrated | **ANSWERED** |
-| RQ2 | LLM performance | Indirect (via vocabulary reduction) | PARTIAL |
-| RQ3 | vs BPE/SentencePiece | 33% morpheme alignment comparison | **ANSWERED** |
-| RQ4 | NMT enhancement | Not directly tested | FUTURE WORK |
-
-**Recommendation**: Adjust paper claims to focus on RQ1 and RQ3 (fully answered). Acknowledge RQ2 and RQ4 as implications/future work.
+| Task | Priority | Description |
+|------|----------|-------------|
+| Update all results | HIGH | Incorporate new experiments |
+| Add figures/visualizations | MEDIUM | Architecture, results plots |
+| Complete references | HIGH | 30+ citations |
+| Format for venue | HIGH | ACL template |
 
 ---
 
-## 6. File Structure
+## 3. Detailed Task Specifications
 
-### Paper Files
-```
-memory-bank/
-├── paper-draft.md              # Main paper content (UPDATED)
-├── PAPER_STATUS_CHECKLIST.md   # Detailed progress tracking (UPDATED)
-├── PAPER_WRITING_ROADMAP.md    # This file (UPDATED)
-└── ...
+### 3.1 Wikipedia Corpus Evaluation
 
-experiments/
-├── results/
-│   ├── statistical_analysis.json        # NEW: Statistical test results
-│   ├── tokenization_comparison.json     # NEW: Vocab comparison
-│   └── EXPERIMENTAL_RESULTS_FOR_PAPER.md # NEW: Results summary
-├── statistical_tests.py                  # NEW: Statistical analysis script
-├── tokenization_comparison.py            # NEW: Tokenization comparison script
-├── evaluate.py                           # Existing evaluation script
-└── ...
+**Objective**: Evaluate segmentation accuracy on real-world Indonesian text
+
+**Implementation**:
+```python
+# experiments/wikipedia_evaluation.py
+# 1. Download Wikipedia Indonesia dump (subset)
+# 2. Extract sentences and tokenize to words
+# 3. Run ModernKataKupas segmentation
+# 4. Measure: OOV rate, coverage, processing speed
 ```
 
+**Expected Output**:
+- OOV rate on real corpus
+- Processing speed (words/second)
+- Coverage analysis (% words successfully segmented)
+- Sample segmentations for qualitative analysis
+
+**Script Location**: `experiments/wikipedia_evaluation.py`
+
+### 3.2 Gold Standard Expansion
+
+**Objective**: Expand from 360 to 500+ words
+
+**Categories Needing Expansion**:
+| Category | Current | Target | Gap |
+|----------|---------|--------|-----|
+| prefix_di | 9 | 20 | +11 |
+| prefix_ter | 9 | 20 | +11 |
+| reduplication_partial | 9 | 25 | +16 |
+| reduplication_phonetic | 9 | 25 | +16 |
+| confix_ke_an | 14 | 25 | +11 |
+| confix_per_an | 14 | 25 | +11 |
+| confix_peN_an | 14 | 25 | +11 |
+
+**Method**:
+1. Use `experiments/expand_gold_standard.py` with DeepSeek API
+2. Manual validation by native speakers
+3. Cross-reference with KBBI
+
+**Script Location**: `experiments/expand_gold_standard.py`
+
+### 3.3 Text Classification Experiment
+
+**Objective**: Demonstrate downstream task improvement with MKK preprocessing
+
+**Dataset Options**:
+1. **IndoNLU Sentiment** - Sentiment analysis
+2. **Indonesian News** - Topic classification
+3. **Hate Speech Detection** - Binary classification
+
+**Experimental Design**:
+```
+Condition A: Raw text → Tokenizer → Classifier
+Condition B: Raw text → MKK → Tokenizer → Classifier
+Condition C: Raw text → BPE → Classifier
+
+Metrics: Accuracy, F1, Training convergence
+```
+
+**Implementation**:
+```python
+# experiments/text_classification_eval.py
+# 1. Load dataset (train/val/test split)
+# 2. Preprocess with MKK vs baseline
+# 3. Train simple classifier (e.g., fastText, LSTM)
+# 4. Compare performance metrics
+```
+
+**Script Location**: `experiments/text_classification_eval.py`
+
+### 3.4 Morfessor Baseline
+
+**Objective**: Compare with unsupervised morphological segmentation
+
+**Implementation**:
+```bash
+pip install morfessor
+```
+
+```python
+# experiments/morfessor_comparison.py
+# 1. Train Morfessor on Indonesian corpus
+# 2. Evaluate on same gold standard
+# 3. Compare: accuracy, interpretability, speed
+```
+
+**Script Location**: `experiments/morfessor_comparison.py`
+
 ---
 
-## 7. Timeline to Submission
+## 4. Research Questions (Updated)
 
-### Week 1 (Current)
-- [x] Run statistical experiments
-- [x] Update Chapter 4 and 5
-- [x] Write Abstract
-- [ ] Complete References
-
-### Week 2
-- [ ] Final proofreading
-- [ ] Select venue
-- [ ] Format to template
-
-### Week 3
-- [ ] Internal review
-- [ ] Submit to venue
+| RQ | Question | Current Status | Target |
+|----|----------|----------------|--------|
+| RQ1 | Segmentation accuracy | **70.00%** | Maintain |
+| RQ2 | Dictionary impact | **+60.66%** | Maintain |
+| RQ3 | vs BPE comparison | **41.7% align** | Add Morfessor |
+| RQ4 | Category challenges | **Identified** | Detailed analysis |
+| **RQ5 (NEW)** | Downstream task benefit | NOT STARTED | Text classification |
+| **RQ6 (NEW)** | Real corpus performance | NOT STARTED | Wikipedia eval |
 
 ---
 
-## 8. Summary of Key Results for Paper
+## 5. File Structure
 
-### Main Findings (For Abstract/Conclusions)
-1. **Accuracy**: 66.94% word accuracy (95% CI: [62.22%, 71.67%])
-2. **Agreement**: Cohen's Kappa = 0.67 (substantial agreement)
-3. **Significance**: McNemar's test p < 0.001 (significant vs baseline)
-4. **Vocabulary**: 10.9% vocabulary reduction
-5. **Alignment**: Only 33% of BPE boundaries align with morphemes
-6. **Categories**: 11/21 categories significantly above random
-7. **Strengths**: 100% on possessives and di- prefix
-8. **Limitations**: 0% on phonetic reduplication
-
-### Contribution Claims
-1. Open-source Indonesian morphological segmenter
-2. Statistical validation with confidence intervals
-3. Vocabulary reduction analysis for Indonesian
-4. Comparison with sub-word tokenization (BPE)
-5. Comprehensive per-category performance analysis
+```
+modern_kata_kupas/
+├── memory-bank/
+│   ├── paper-draft.md                    # Main paper (UPDATED)
+│   ├── PAPER_STATUS_CHECKLIST.md         # Progress tracking
+│   ├── PAPER_WRITING_ROADMAP.md          # This file
+│   └── NEXT_STEPS.md                     # Detailed next steps
+│
+├── experiments/
+│   ├── results/
+│   │   ├── statistical_results.json      # Current results
+│   │   ├── tokenization_comparison_real_bpe.json  # BPE comparison
+│   │   └── ...
+│   │
+│   ├── statistical_tests.py              # Statistical analysis
+│   ├── tokenization_comparison.py        # BPE comparison
+│   ├── expand_gold_standard.py           # Gold standard expansion
+│   │
+│   ├── wikipedia_evaluation.py           # TODO: Real corpus eval
+│   ├── text_classification_eval.py       # TODO: Downstream task
+│   └── morfessor_comparison.py           # TODO: Baseline comparison
+│
+├── data/
+│   ├── gold_standard_v3.csv              # Current gold standard (360)
+│   ├── kata_dasar.txt                    # Dictionary (29,936)
+│   └── ...
+│
+└── src/modern_kata_kupas/                # Core implementation
+```
 
 ---
 
-*Paper is now **85% complete** and ready for final polishing before submission.*
+## 6. Timeline to ACL Workshop Submission
+
+### Month 1: Corpus & Baseline
+
+| Week | Tasks | Deliverables |
+|------|-------|--------------|
+| 1 | Wikipedia corpus download & preprocessing | `data/wikipedia_id_sample.txt` |
+| 2 | Wikipedia evaluation script | `experiments/wikipedia_evaluation.py` |
+| 3 | Morfessor baseline implementation | `experiments/morfessor_comparison.py` |
+| 4 | Gold standard expansion (100+ words) | `data/gold_standard_v4.csv` |
+
+### Month 2: Downstream Tasks
+
+| Week | Tasks | Deliverables |
+|------|-------|--------------|
+| 1-2 | Text classification dataset setup | Dataset prepared |
+| 3 | Classification experiments | Results JSON |
+| 4 | Analysis & paper update | Updated Chapter 5 |
+
+### Month 3: Paper Finalization
+
+| Week | Tasks | Deliverables |
+|------|-------|--------------|
+| 1 | Complete all experiments | Final results |
+| 2 | Update paper with new results | Complete draft |
+| 3 | Format for ACL template | Formatted paper |
+| 4 | Internal review & polish | Submission-ready |
+
+---
+
+## 7. Success Metrics
+
+### For ACL Workshop Acceptance
+
+| Criterion | Current | Target | Gap |
+|-----------|---------|--------|-----|
+| Gold standard size | 360 | 500+ | +140 |
+| Baselines compared | 1 (BPE) | 3+ | +2 |
+| Real corpus eval | No | Yes | Required |
+| Downstream task | No | 1+ | Required |
+| Novelty claim | Moderate | Clear | Strengthen |
+
+### Paper Quality Indicators
+
+- [ ] Clear contribution statement
+- [ ] Reproducible experiments
+- [ ] Statistical significance for all claims
+- [ ] Comprehensive related work
+- [ ] Honest limitations discussion
+- [ ] Future work clearly scoped
+
+---
+
+## 8. Risk Mitigation
+
+| Risk | Probability | Impact | Mitigation |
+|------|-------------|--------|------------|
+| Downstream task shows no improvement | Medium | High | Frame as "comparable with interpretability benefit" |
+| Wikipedia OOV rate too high | Medium | Medium | Discuss domain adaptation needs |
+| Gold standard expansion slow | Low | Medium | Prioritize critical categories |
+| ACL deadline missed | Low | High | Fall back to EMNLP or regional venue |
+
+---
+
+## 9. Contribution Claims (ACL Level)
+
+### Primary Contributions
+1. **Comprehensive Rule-Based Indonesian Morphological Segmenter**
+   - 70% accuracy on gold standard
+   - Handles all major morphological phenomena
+   - Open-source implementation
+
+2. **Empirical Comparison with Statistical Tokenization**
+   - Real SentencePiece BPE comparison
+   - 42% morpheme boundary alignment analysis
+   - Morfessor baseline (TODO)
+
+3. **Downstream Task Evaluation** (TODO)
+   - Text classification with morphological preprocessing
+   - Quantified benefit of morphological awareness
+
+4. **Linguistic Resource**
+   - 500+ word gold standard for Indonesian morphology
+   - Comprehensive category coverage
+
+### Secondary Contributions
+- Ablation study on dictionary size impact
+- Per-category error analysis
+- Real corpus coverage analysis
+
+---
+
+## 10. Quick Start for New Contributors
+
+### Setup
+```bash
+git clone https://github.com/neimasilk/modern_kata_kupas.git
+cd modern_kata_kupas
+pip install -e ".[dev]"
+pytest tests/  # Should pass 101 tests
+```
+
+### Run Current Experiments
+```bash
+# Statistical tests
+python experiments/statistical_tests.py -g data/gold_standard_v3.csv
+
+# Tokenization comparison
+python experiments/tokenization_comparison.py --generate-corpus --size 10000
+```
+
+### Next Experiments to Implement
+1. `experiments/wikipedia_evaluation.py` - Real corpus evaluation
+2. `experiments/text_classification_eval.py` - Downstream task
+3. `experiments/morfessor_comparison.py` - Additional baseline
+
+---
+
+*Roadmap version 2.0 - Updated 2026-01-23*
+*Target: ACL 2026 Workshop submission*
