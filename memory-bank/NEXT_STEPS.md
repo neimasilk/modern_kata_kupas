@@ -118,9 +118,11 @@ Compare ModernKataKupas with unsupervised morphological segmentation (Morfessor)
 ### Step 2.3: Gold Standard Expansion
 
 **Priority**: HIGH | **Effort**: High | **ETA**: 1-2 weeks
+**Status**: Partial (362/500 words)
 
 #### Objective
-Expand gold standard from 360 to 500+ words with balanced category coverage.
+Expand gold standard from 360 to 500+ words. Current progress: 362 words.
+Remaining target: +138 words (focusing on underrepresented categories).
 
 #### Implementation Plan
 
@@ -271,11 +273,11 @@ Metrics:
 - [ ] Re-run statistical tests on expanded set
 
 ### Week 5-6: Downstream Task
-- [ ] Download IndoNLU Sentiment dataset
-- [ ] Implement preprocessing pipelines
-- [ ] Train baseline classifier
-- [ ] Train MKK classifier
-- [ ] Compare and analyze results
+- [x] Download IndoNLU Sentiment dataset - **DONE** (2026-01-26)
+- [x] Implement preprocessing pipelines - **DONE**
+- [x] Train baseline classifier - **DONE**
+- [x] Train MKK classifier - **DONE**
+- [x] Compare and analyze results - **DONE** (MKK +0.60% acc, +2.20% F1)
 
 ### Week 7-8: Paper Update
 - [ ] Add Wikipedia evaluation results to Chapter 5
@@ -293,10 +295,10 @@ Metrics:
 python experiments/statistical_tests.py -g data/gold_standard_v3.csv
 python experiments/tokenization_comparison.py --generate-corpus --size 10000 -o experiments/results/tokenization.json
 
-# TODO experiments
+# Completed experiments
 python experiments/wikipedia_evaluation.py -o experiments/results/wikipedia_eval.json
 python experiments/morfessor_comparison.py -o experiments/results/morfessor_comparison.json
-python experiments/text_classification_eval.py -o experiments/results/classification_eval.json
+python experiments/text_classification_eval.py -o experiments/results/text_classification_eval.json
 ```
 
 ---
@@ -309,4 +311,4 @@ python experiments/text_classification_eval.py -o experiments/results/classifica
 
 ---
 
-*Document version 1.0 - Created 2026-01-23*
+*Document version 1.1 - Updated 2026-01-26 (Text Classification completed)*

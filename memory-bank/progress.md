@@ -2,6 +2,19 @@
 
 ## Recent Updates
 
+### 2026-01-26: Text Classification Experiment Completed
+- **Downstream Task**: Implemented text classification evaluation on IndoNLU SmSA dataset
+- **Results**: MKK preprocessing shows **+0.60% accuracy** and **+2.20% F1 Macro** improvement over baseline
+- **Script**: Created `experiments/text_classification_eval.py`
+- **Dataset**: 10,999 train / 499 test samples, 3-class sentiment
+- **Documentation**: Updated `NEXT_STEPS.md`, `PAPER_STATUS_CHECKLIST.md`
+
+### 2026-01-26: Gold Standard Expansion (Partial)
+- **Status**: Reached 362 words (Target: 500)
+- **Script**: Updated `expand_gold_standard.py` with 4 new underrepresented categories (prefix_di, prefix_ter, reduplication variants)
+- **Bottleneck**: API limits/stability hindering full expansion
+- **Next**: Resume expansion for `prefix_di` (+11), `prefix_ter` (+11), `reduplication` (+32)
+
 ### 2026-01-22: v1.0.1 Released
 - **GitHub Release**: Created release v1.0.1 with distribution files
 - **PyPI Publication**: Package prepared for PyPI publication (via `pip install modern-kata-kupas`)

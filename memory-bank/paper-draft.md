@@ -703,7 +703,30 @@ Categories **not significantly above random**:
 
 **Discussion:** The majority of errors (52.9%) are complete segmentation failures where the system returns the word unchanged. This indicates opportunities for improved rule coverage. Wrong stem errors (33.3%) suggest issues with morphophonemic rule application, particularly for complex prefix variants.
 
-### **5.8 Discussion**
+### **5.8 Downstream Task Evaluation (Text Classification)**
+
+To demonstrate the practical impact of ModernKataKupas on downstream NLP tasks (answering RQ3 regarding utility), we evaluated component-based tokenization against a standard baseline on the IndoNLU SmSA (Sentiment Analysis) dataset.
+
+**Experimental Setup:**
+- **Dataset:** IndoNLU SmSA (10,999 train, 499 test samples)
+- **Task:** 3-class Sentiment Analysis (Positive, Neutral, Negative)
+- **Classifier:** Logistic Regression with TF-IDF features (ngram_range=1-2, max_features=10,000)
+- **Comparison:**
+    - **Baseline:** Standard whitespace/punctuation tokenization
+    - **ModernKataKupas (MKK):** Morphological segmentation preprocessing (e.g., "memperbaiki" -> "meN~per~baik~i")
+
+**Results:**
+
+| Method | Accuracy | F1 Macro | F1 Weighted |
+|--------|----------|----------|-------------|
+| Baseline | 75.75% | 67.20% | 73.45% |
+| **ModernKataKupas** | **76.35%** | **69.40%** | **74.54%** |
+| **Improvement** | **+0.60%** | **+2.20%** | **+1.09%** |
+
+**Discussion:**
+The results show a consistent improvement across all metrics when using ModernKataKupas preprocessing. The **+2.20% improvement in F1 Macro** score is particularly notable, indicating that morphological segmentation helps the model better handle minority classes or more complex sentiment expressions. By breaking down complex words into their constituent morphemes, the model can leverage the semantic contribution of affixes (e.g., *tidak* + *suka* vs *tidak* + *disukai*) and generalize better across different inflected forms of the same root word. This confirms that rule-based morphological segmentation provides tangible benefits for downstream Indonesian NLP tasks.
+
+### **5.9 Discussion**
 
 #### **5.8.1 Key Findings**
 

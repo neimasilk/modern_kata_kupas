@@ -2,16 +2,16 @@
 
 **Paper Title**: Revisiting Rule-Based Indonesian Sub-word Separation for Enhanced LLM Performance and Low-Resource NLP
 
-**Version**: Draft 3.0 (ACL Workshop Target)
-**Date**: 2026-01-23
-**Last Updated By**: Claude Code Assistant
+**Version**: Draft 3.1 (ACL Workshop Target)
+**Date**: 2026-01-26
+**Last Updated By**: Gemini Code Assistant
 
 ---
 
 ## Quick Status
 
 ```
-Overall Progress: ██████████████████░░ 90%
+Overall Progress: ██████████████████░░ 95%
 
 [████████████████████] Chapter 1: Introduction     - COMPLETE
 [████████████████████] Chapter 2: Literature       - COMPLETE
@@ -26,14 +26,14 @@ Overall Progress: ██████████████████░░ 9
 ### ACL Workshop Readiness
 
 ```
-Current Readiness:   ██████████████░░░░░░ 70%
+Current Readiness:   ██████████████████░░ 85%
 
 [████████████████████] Foundation (core algorithm)      - COMPLETE
 [████████████████████] Statistical validation           - COMPLETE
 [████████████████████] BPE comparison (real)            - COMPLETE
 [████████████████████] Wikipedia corpus eval            - COMPLETE ✓
 [████████████████████] Morfessor baseline               - COMPLETE ✓
-[░░░░░░░░░░░░░░░░░░░░] Downstream task (classification) - TODO
+[████████████████████] Downstream task (classification) - COMPLETE ✓ (2026-01-26)
 [████████░░░░░░░░░░░░] Gold standard expansion          - 360/500
 ```
 
@@ -53,6 +53,7 @@ Current Readiness:   ██████████████░░░░░�
 | BPE Alignment | 33% | **41.7%** | Updated |
 | Wikipedia Eval | TODO | **COMPLETE** | 100% coverage |
 | Morfessor Baseline | TODO | **COMPLETE** | +55.83% vs MKK |
+| Text Classification | TODO | **COMPLETE** | MKK +2.20% F1 ✓ |
 
 ### Code Changes
 - [x] Fixed reduplication marker: `rs(~variant)` → `ulg~variant`
@@ -156,7 +157,7 @@ Current Readiness:   ██████████████░░░░░�
 | Statistical validation | DONE | Bootstrap CI, McNemar, Kappa |
 | Baseline comparison | **DONE** | BPE done + Morfessor (14.17% vs 70%) |
 | Real corpus evaluation | **DONE** | Wikipedia Indonesia (2,631 words, 100% coverage) |
-| Downstream task | TODO | Text classification |
+| Downstream task | **DONE** | Text classification (MKK +2.20% F1) |
 | Gold standard size | 360/500 | Need +140 words |
 
 ### Stretch Goals

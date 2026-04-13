@@ -150,6 +150,45 @@ Include:
 - -tah with uncertainty
 
 Return as JSON: {{"words": [{"word": "ambillah", "segmentation": "ambil~lah", "notes": "imperative"}]}}""",
+            "prefix_di": """Generate 20 Indonesian words with di- prefix (passive).
+Examples: dimakan, dibeli, dipukul, dikirim, diambil.
+
+Include:
+- di- + basic root
+- di- + compound root
+- di- + transitive verbs
+
+Return as JSON: {{"words": [{"word": "dimakan", "segmentation": "di~makan", "notes": "passive"}]}}""",
+
+            "prefix_ter": """Generate 20 Indonesian words with ter- prefix.
+Examples: terbawa, teringat, tertidur, terjatuh, termakan.
+
+Include:
+- ter- (accidental/spontaneous)
+- ter- (stative)
+- ter- (superlative if applicable, but mostly verb aspect)
+
+Return as JSON: {{"words": [{"word": "terbawa", "segmentation": "ter~bawa", "notes": "accidental"}]}}""",
+
+            "reduplication_partial": """Generate 20 Indonesian words with partial reduplication (dwipurwa).
+Examples: lelaki, tetangga, leluhur, tetua, dedaunan, bebatuan.
+
+Include:
+- Common dwipurwa words
+- Nouns formed by partial reduplication
+- Partial reduplication of first syllable with 'e' vowel (tanam -> tetanam is rare, but tangga -> tetangga)
+
+Return as JSON: {{"words": [{"word": "lelaki", "segmentation": "laki~rp", "notes": "partial reduplication of laki"}]}}""",
+
+            "reduplication_phonetic": """Generate 20 Indonesian words with phonetic reduplication (dwilingga salin suara).
+Examples: sayur-mayur, gerak-gerik, lauk-pauk, ramah-tamah, bolak-balik.
+
+Include:
+- Vowel changes (sayur-mayur)
+- Consonant changes (lauk-pauk)
+- Common idioms using this pattern
+
+Return as JSON: {{"words": [{"word": "sayur-mayur", "segmentation": "sayur~ulg~sayur", "notes": "vowel change"}]}}""",
         }
 
         print(f"\n=== Generating {count} words for category: {category} ===")
@@ -306,16 +345,20 @@ If both are wrong, provide the correct one."""
 
         all_new_words = []
         categories = [
-            ("complex_meN", 30),
-            ("complex_peN_an", 30),
-            ("compound_reduplication", 20),
-            ("suffix_combinations", 30),
-            ("derivational_suffixes", 30),
-            ("prefix_combinations", 30),
-            ("loanword_affixation", 30),
-            ("formal_academic", 30),
-            ("colloquial_informal", 20),
-            ("particle_variations", 30),
+            ("prefix_di", 20),
+            ("prefix_ter", 20),
+            ("reduplication_partial", 20),
+            ("reduplication_phonetic", 20),
+            ("complex_meN", 10),
+            ("complex_peN_an", 10),
+            ("compound_reduplication", 10),
+            ("suffix_combinations", 10),
+            ("derivational_suffixes", 10),
+            ("prefix_combinations", 10),
+            ("loanword_affixation", 10),
+            ("formal_academic", 10),
+            ("colloquial_informal", 10),
+            ("particle_variations", 10),
         ]
 
         # Generate words for each category
