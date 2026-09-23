@@ -116,7 +116,26 @@ Kalimat pembanding "no segmentation" boleh dipertahankan dengan framing jujur:
 
 ## 6. §5.8 Downstream (SmSA)
 
-Lihat bagian **Downstream** di akhir dokumen ini (diisi dari `downstream_significance.json`).
+Ganti setup: tambahkan bahwa baseline dan MKK memakai pembersihan tanda baca yang sama, TF-IDF `token_pattern=\S+`
+(agar morfem satu huruf seperti *-i* tidak terbuang), dan baseline tambahan Sastrawi stemming. Sitasi IndoNLU (Wilie et al., 2020).
+
+| Method (official test, N = 500) | Accuracy | Macro-F1 |
+|---|---|---|
+| Whitespace baseline | 75.4 | 66.9 |
+| Sastrawi stemming | 76.4 | 68.8 |
+| ModernKataKupas | 77.0 | 70.3 |
+
+> On the official split, ModernKataKupas preprocessing improves macro-F1 by 3.4 points over the baseline
+> (paired bootstrap 95% CI +0.8 to +6.3), whereas the accuracy gain (+1.6) is not significant
+> (exact McNemar p = 0.20). Against Sastrawi stemming, the differences are not significant (Δ macro-F1 +1.5,
+> CI −0.2 to +3.6). In 5-fold cross-validation repeated twice on the pooled data, the macro-F1 gain is small
+> (+0.6 ± 0.6 over the baseline, positive in 8 of 10 folds; +0.7 ± 0.7 over Sastrawi, positive in 10 of 10 folds).
+> Morphological segmentation thus gives a small, consistent benefit for this bag-of-n-grams classifier, and its
+> advantage over plain stemming is marginal.
+
+Hapus kalimat "This confirms that ... tangible benefits" dan contoh *tidak + suka / disukai* (tidak dianalisis).
+Abstrak (bila memuat downstream): "a small but consistent macro-F1 gain on SmSA sentiment classification
+(+3.4 on the official split; +0.6 in repeated cross-validation)".
 
 ## 7. §5.5 Wikipedia (ganti tabel + poin diskusi 1 & 3)
 

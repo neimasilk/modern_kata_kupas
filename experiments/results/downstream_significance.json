@@ -1,0 +1,150 @@
+{
+  "generated": "2026-09-23 14:22",
+  "command": "python experiments/downstream_significance.py",
+  "dataset": "IndoNLU SmSA (cached train_preprocess.tsv / test_preprocess.tsv)",
+  "n_train": 11000,
+  "n_test": 500,
+  "classifier": "TF-IDF (1-2 gram, max 10k, token_pattern \\S+) + LogisticRegression",
+  "official_split": {
+    "baseline_raw": {
+      "accuracy": 0.754,
+      "f1_macro": 0.6579260896170421,
+      "f1_weighted": 0.7261644831440994,
+      "tfidf_features": 10000
+    },
+    "baseline_clean": {
+      "accuracy": 0.754,
+      "f1_macro": 0.669489247311828,
+      "f1_weighted": 0.7306277088502895,
+      "tfidf_features": 10000
+    },
+    "mkk": {
+      "accuracy": 0.77,
+      "f1_macro": 0.7031115531472208,
+      "f1_weighted": 0.7529901803964608,
+      "tfidf_features": 10000
+    },
+    "sastrawi_stem": {
+      "accuracy": 0.764,
+      "f1_macro": 0.6879418537858554,
+      "f1_weighted": 0.7441046694328896,
+      "tfidf_features": 10000
+    }
+  },
+  "official_comparisons": {
+    "mkk_vs_baseline_clean": {
+      "accuracy_diff": 0.016000000000000014,
+      "f1_macro_diff": 0.03362230583539283,
+      "mcnemar_exact": {
+        "b": 19,
+        "c": 11,
+        "p_value": 0.20048842206597334
+      },
+      "accuracy_diff_ci95": [
+        -0.006000000000000005,
+        0.038000000000000034
+      ],
+      "f1_macro_diff_ci95": [
+        0.007530795873321961,
+        0.06322196091948368
+      ],
+      "n_boot": 5000
+    },
+    "mkk_vs_baseline_raw": {
+      "accuracy_diff": 0.016000000000000014,
+      "f1_macro_diff": 0.045185463530178716,
+      "mcnemar_exact": {
+        "b": 20,
+        "c": 12,
+        "p_value": 0.21532714972272515
+      },
+      "accuracy_diff_ci95": [
+        -0.006000000000000005,
+        0.038000000000000034
+      ],
+      "f1_macro_diff_ci95": [
+        0.014892877861155047,
+        0.0799975698416042
+      ],
+      "n_boot": 5000
+    },
+    "mkk_vs_sastrawi_stem": {
+      "accuracy_diff": 0.006000000000000005,
+      "f1_macro_diff": 0.015169699361365474,
+      "mcnemar_exact": {
+        "b": 8,
+        "c": 5,
+        "p_value": 0.5810546875
+      },
+      "accuracy_diff_ci95": [
+        -0.008000000000000007,
+        0.020000000000000018
+      ],
+      "f1_macro_diff_ci95": [
+        -0.002110065636091632,
+        0.03603445559507098
+      ],
+      "n_boot": 5000
+    }
+  },
+  "repeated_cv_5x2": {
+    "baseline_raw": {
+      "accuracy": {
+        "mean": 0.8760434782608696,
+        "sd": 0.009437998961995986
+      },
+      "f1_macro": {
+        "mean": 0.8360778338695131,
+        "sd": 0.011799913924960284
+      }
+    },
+    "baseline_clean": {
+      "accuracy": {
+        "mean": 0.8756956521739131,
+        "sd": 0.010314218961774587
+      },
+      "f1_macro": {
+        "mean": 0.8357322474447921,
+        "sd": 0.01235426660495582
+      }
+    },
+    "mkk": {
+      "accuracy": {
+        "mean": 0.8786521739130435,
+        "sd": 0.008742506618251681
+      },
+      "f1_macro": {
+        "mean": 0.8416790242077882,
+        "sd": 0.010897614626787362
+      }
+    },
+    "sastrawi_stem": {
+      "accuracy": {
+        "mean": 0.8760869565217391,
+        "sd": 0.008789350260902199
+      },
+      "f1_macro": {
+        "mean": 0.8344100970210862,
+        "sd": 0.009780007248668737
+      }
+    },
+    "mkk_minus_baseline_clean_f1_macro": {
+      "mean": 0.005946776762996098,
+      "sd": 0.005550416559287066,
+      "folds_mkk_better": 8,
+      "n_folds": 10
+    },
+    "mkk_minus_baseline_raw_f1_macro": {
+      "mean": 0.0056011903382750085,
+      "sd": 0.008195603375385102,
+      "folds_mkk_better": 7,
+      "n_folds": 10
+    },
+    "mkk_minus_sastrawi_stem_f1_macro": {
+      "mean": 0.007268927186701912,
+      "sd": 0.007205319548503103,
+      "folds_mkk_better": 10,
+      "n_folds": 10
+    }
+  }
+}

@@ -68,4 +68,28 @@ jadi masih sementara (lihat `data/annotation/README.md`).
 
 ## C. Downstream (SmSA)
 
-Diisi dari `experiments/results/downstream_significance.json` setelah eksperimen selesai (lihat bagian bawah berkas ini).
+Sumber: `python experiments/downstream_significance.py` → `downstream_significance.json`.
+Naskah lama: baseline 75,75 / F1 67,20 vs MKK 76,35 / 69,40 (satu run, tanpa uji; baseline dan MKK memakai
+pembersihan tanda baca yang berbeda; pola token default scikit-learn membuang morfem 1 huruf seperti *-i*).
+
+**Split resmi (train 10.999 / test 500):**
+
+| Kondisi | Accuracy | Macro-F1 |
+|---|---|---|
+| Baseline lama (raw) | 75,40 | 65,79 |
+| Baseline (pembersihan sama) | 75,40 | 66,95 |
+| Sastrawi stemming | 76,40 | 68,79 |
+| **MKK** | **77,00** | **70,31** |
+
+| MKK vs … | Δ acc [CI 95%] | McNemar exact | Δ macro-F1 [CI 95%] |
+|---|---|---|---|
+| baseline (sama) | +1,60 [−0,60; +3,80] | b=19, c=11, **p=0,20** | **+3,36 [+0,75; +6,32]** |
+| Sastrawi | +0,60 [−0,80; +2,00] | b=8, c=5, p=0,58 | +1,52 [−0,21; +3,60] |
+
+**Validasi silang berulang 5-fold × 2 (train+test digabung, N=11.499):** macro-F1 MKK 84,17 ± 1,09;
+baseline 83,57 ± 1,24; Sastrawi 83,44 ± 0,98. Δ MKK−baseline = +0,59 ± 0,56 (MKK lebih baik di 8/10 fold);
+Δ MKK−Sastrawi = +0,73 ± 0,72 (10/10 fold).
+
+**Kesimpulan jujur:** efeknya kecil tapi konsisten positif pada macro-F1. Perbedaan akurasi **tidak signifikan**.
+Terhadap Sastrawi (stemming biasa), keunggulannya tidak signifikan di split resmi. Kalimat "This confirms that
+rule-based morphological segmentation provides tangible benefits" dan penjelasan *tidak suka/disukai* harus dihapus.
