@@ -1,3 +1,9 @@
+> **⚠️ STATUS 23 Sep 2026: angka dan beberapa klaim di draf ini SUDAH TIDAK BERLAKU.**
+> Jangan dikutip atau dikirim apa adanya. Angka yang benar: `experiments/results/NUMBERS_AUDIT.md`;
+> teks pengganti siap tempel: `memory-bank/REVISI_NASKAH.md`; referensi: `memory-bank/REFERENCES_AUDIT.md`.
+> Klaim "manual validation" pada gold standard **tidak benar** (0 validasi manusia).
+> Draf ini adalah satu-satunya sumber naskah; `experiments/paper_draft.md` sudah usang.
+
 # **Revisiting Rule-Based Indonesian Sub-word Separation for Enhanced LLM Performance and Low-Resource NLP**
 
 ---

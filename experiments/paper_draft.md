@@ -1,3 +1,6 @@
+> **⚠️ USANG (23 Sep 2026).** Draf lama. Satu-satunya sumber naskah: `memory-bank/paper-draft.md`
+> (lihat juga `memory-bank/REVISI_NASKAH.md`). Jangan disunting atau dikutip.
+
 # ModernKataKupas: A Rule-Based Morphological Segmenter for Indonesian
 ## Paper Draft
 

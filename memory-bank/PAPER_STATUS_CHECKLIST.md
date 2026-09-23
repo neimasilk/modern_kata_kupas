@@ -1,3 +1,7 @@
+> **⚠️ 23 Sep 2026:** status "95%" di bawah tidak berlaku. Gold standard belum divalidasi manusia,
+> angka utama berubah (70,00% → 64,41% pada gold saat ini), perbandingan Morfessor diganti, referensi perlu koreksi.
+> Lihat `REVIEW_2026-09-23.md` (bagian Status) dan `memory-bank/REVISI_NASKAH.md`.
+
 # Paper Writing Status Checklist
 
 **Paper Title**: Revisiting Rule-Based Indonesian Sub-word Separation for Enhanced LLM Performance and Low-Resource NLP
