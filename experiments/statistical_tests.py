@@ -1,4 +1,9 @@
 """
+NOTE (Sep 2026): the Cohen's kappa computed here treats every segmentation string as a
+category, so chance agreement is ~0 and kappa ~= accuracy; it is NOT inter-annotator
+agreement and must not be reported. The McNemar baseline is "never segment". Use
+experiments/paper_numbers.py for the paper.
+
 Statistical Significance Tests for ModernKataKupas Paper
 
 This module provides statistical tests to validate the significance

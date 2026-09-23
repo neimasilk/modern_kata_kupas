@@ -1,5 +1,6 @@
 """
-Test DeepSeek API Connection
+Manual DeepSeek API smoke check (not a pytest test; renamed from test_deepseek.py in Sep 2026
+so pytest no longer calls the paid external API)
 
 Simple script to verify that the DeepSeek API is working correctly.
 """

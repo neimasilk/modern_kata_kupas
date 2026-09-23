@@ -140,12 +140,14 @@ class MorphologicalEvaluator:
         Returns:
             List of morphemes
         """
-        if not seg or seg == seg.strip('~'):
+        if not seg:
             return [seg]
 
-        # Split by ~ and filter empty strings
+        # Split by ~ and filter empty strings. (Fix 2026-09: the old guard
+        # `seg == seg.strip('~')` was true for normal input, so segmentations
+        # were never split and all morpheme-level metrics compared whole strings.)
         morphemes = [m for m in seg.split('~') if m]
-        return morphemes
+        return morphemes or [seg]
 
     def extract_stem(self, morphemes: List[str]) -> Optional[str]:
         """
@@ -339,17 +341,15 @@ class MorphologicalEvaluator:
                 if r.correct:
                     category_correct[r.category] += 1
 
-            # Skip if prediction equals word (no segmentation)
-            if r.prediction == r.word:
-                continue
-
-            # Morpheme-level comparison (using set for exact match)
-            pred_set = set(r.morphemes_pred)
-            gold_set = set(r.morphemes_gold)
-
-            tp += len(pred_set & gold_set)
-            fp += len(pred_set - gold_set)
-            fn += len(gold_set - pred_set)
+            # Every word counts, including unsegmented predictions (fix 2026-09:
+            # skipping them inflated P/R and made prefix/suffix accuracy 1.0).
+            # Multiset comparison so repeated morphemes (jalan~ulg~jalan) count.
+            pred_counts = Counter(r.morphemes_pred)
+            gold_counts = Counter(r.morphemes_gold)
+            common = sum((pred_counts & gold_counts).values())
+            tp += common
+            fp += sum(pred_counts.values()) - common
+            fn += sum(gold_counts.values()) - common
 
             # Stem comparison
             pred_stem = self.extract_stem(r.morphemes_pred)
@@ -358,21 +358,20 @@ class MorphologicalEvaluator:
             if pred_stem and pred_stem == gold_stem:
                 correct_stems += 1
 
-            # Prefix comparison
-            pred_prefs, _ = self.extract_affixes(r.morphemes_pred)
-            gold_prefs, _ = self.extract_affixes(r.morphemes_gold)
+            # Affix comparison: only over words where gold or prediction has that
+            # affix type; ordered lists must match exactly.
+            pred_prefs, pred_suffs = self.extract_affixes(r.morphemes_pred)
+            gold_prefs, gold_suffs = self.extract_affixes(r.morphemes_gold)
 
-            if set(pred_prefs) == set(gold_prefs):
-                correct_prefixes += 1
-            total_prefixes += 1 if gold_prefs else 1
+            if pred_prefs or gold_prefs:
+                total_prefixes += 1
+                if pred_prefs == gold_prefs:
+                    correct_prefixes += 1
 
-            # Suffix comparison
-            _, pred_suffs = self.extract_affixes(r.morphemes_pred)
-            _, gold_suffs = self.extract_affixes(r.morphemes_gold)
-
-            if set(pred_suffs) == set(gold_suffs):
-                correct_suffixes += 1
-            total_suffixes += 1 if gold_suffs else 1
+            if pred_suffs or gold_suffs:
+                total_suffixes += 1
+                if pred_suffs == gold_suffs:
+                    correct_suffixes += 1
 
             # Error classification
             if not r.correct:
