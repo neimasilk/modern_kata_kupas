@@ -1,4 +1,9 @@
 """
+SUPERSEDED (Sep 2026): do not quote numbers from this script. It trains Morfessor on the
+root list plus the test words (leakage) and scores surface segments by exact match against
+canonical forms (meN~...), which a surface segmenter cannot produce. Use
+experiments/paper_numbers.py (boundary P/R/F1, Morfessor trained on running text).
+
 Morfessor Baseline Comparison for ModernKataKupas
 
 This module compares ModernKataKupas with Morfessor, an unsupervised

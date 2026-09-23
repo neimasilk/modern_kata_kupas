@@ -1,0 +1,412 @@
+{
+  "generated": "2026-09-23 13:47",
+  "command": "python experiments/paper_numbers.py",
+  "gold": {
+    "file": "data\\gold_standard_v3.csv",
+    "rows": 362,
+    "unique_words": 354,
+    "duplicate_rows": 8,
+    "generated_by": {
+      "deepseek": 171,
+      "existing": 191
+    },
+    "validated_flag": {
+      "True": 171,
+      "False": 191
+    },
+    "human_validated": 0,
+    "categories": 21,
+    "note": "validated=True comes from DeepSeek adjudication that was shown the system prediction (experiments/expand_gold_standard.py); no human validation."
+  },
+  "intrinsic": {
+    "n": 354,
+    "correct": 228,
+    "word_accuracy": {
+      "mean": 0.6440677966101694,
+      "ci_lower": 0.5932203389830508,
+      "ci_upper": 0.6949152542372882,
+      "n_boot": 10000
+    },
+    "morpheme_prf_multiset": {
+      "precision": 0.8460575719649562,
+      "recall": 0.6821392532795156,
+      "f1": 0.7553072625698325,
+      "tp": 676,
+      "fp": 123,
+      "fn": 315
+    },
+    "stem_accuracy": 0.711864406779661,
+    "prefix_accuracy": 0.6983471074380165,
+    "suffix_accuracy": 0.6603053435114504,
+    "unsegmented_predictions": 76,
+    "words_per_second": 68.45093862679576,
+    "no_split_baseline_accuracy": 0.014124293785310734,
+    "mcnemar_vs_no_split": {
+      "b": 224,
+      "c": 1,
+      "p_value": 8.382805900553572e-66
+    },
+    "per_category": {
+      "complex_meN": {
+        "n": 30,
+        "correct": 23,
+        "accuracy": 0.7666666666666667,
+        "ci_lower": 0.6,
+        "ci_upper": 0.9
+      },
+      "complex_peN_an": {
+        "n": 20,
+        "correct": 6,
+        "accuracy": 0.3,
+        "ci_lower": 0.1,
+        "ci_upper": 0.5
+      },
+      "compound_reduplication": {
+        "n": 20,
+        "correct": 0,
+        "accuracy": 0.0,
+        "ci_lower": 0.0,
+        "ci_upper": 0.0
+      },
+      "confix_ke_an": {
+        "n": 14,
+        "correct": 12,
+        "accuracy": 0.8571428571428571,
+        "ci_lower": 0.6428571428571429,
+        "ci_upper": 1.0
+      },
+      "confix_peN_an": {
+        "n": 14,
+        "correct": 6,
+        "accuracy": 0.42857142857142855,
+        "ci_lower": 0.21428571428571427,
+        "ci_upper": 0.7142857142857143
+      },
+      "confix_per_an": {
+        "n": 14,
+        "correct": 13,
+        "accuracy": 0.9285714285714286,
+        "ci_lower": 0.7857142857142857,
+        "ci_upper": 1.0
+      },
+      "derivational_suffixes": {
+        "n": 25,
+        "correct": 11,
+        "accuracy": 0.44,
+        "ci_lower": 0.24,
+        "ci_upper": 0.64
+      },
+      "loanword_affixation": {
+        "n": 28,
+        "correct": 14,
+        "accuracy": 0.5,
+        "ci_lower": 0.32142857142857145,
+        "ci_upper": 0.6785714285714286
+      },
+      "particle": {
+        "n": 14,
+        "correct": 12,
+        "accuracy": 0.8571428571428571,
+        "ci_lower": 0.6428571428571429,
+        "ci_upper": 1.0
+      },
+      "possessive": {
+        "n": 14,
+        "correct": 14,
+        "accuracy": 1.0,
+        "ci_lower": 1.0,
+        "ci_upper": 1.0
+      },
+      "prefix_ber": {
+        "n": 14,
+        "correct": 13,
+        "accuracy": 0.9285714285714286,
+        "ci_lower": 0.7857142857142857,
+        "ci_upper": 1.0
+      },
+      "prefix_combinations": {
+        "n": 18,
+        "correct": 7,
+        "accuracy": 0.3888888888888889,
+        "ci_lower": 0.16666666666666666,
+        "ci_upper": 0.6111111111111112
+      },
+      "prefix_di": {
+        "n": 9,
+        "correct": 9,
+        "accuracy": 1.0,
+        "ci_lower": 1.0,
+        "ci_upper": 1.0
+      },
+      "prefix_meN": {
+        "n": 19,
+        "correct": 15,
+        "accuracy": 0.7894736842105263,
+        "ci_lower": 0.5789473684210527,
+        "ci_upper": 0.9473684210526315
+      },
+      "prefix_ter": {
+        "n": 9,
+        "correct": 6,
+        "accuracy": 0.6666666666666666,
+        "ci_lower": 0.3333333333333333,
+        "ci_upper": 1.0
+      },
+      "reduplication_partial": {
+        "n": 9,
+        "correct": 5,
+        "accuracy": 0.5555555555555556,
+        "ci_lower": 0.2222222222222222,
+        "ci_upper": 0.8888888888888888
+      },
+      "reduplication_phonetic": {
+        "n": 9,
+        "correct": 7,
+        "accuracy": 0.7777777777777778,
+        "ci_lower": 0.4444444444444444,
+        "ci_upper": 1.0
+      },
+      "suffix_an": {
+        "n": 13,
+        "correct": 10,
+        "accuracy": 0.7692307692307693,
+        "ci_lower": 0.5384615384615384,
+        "ci_upper": 1.0
+      },
+      "suffix_combinations": {
+        "n": 30,
+        "correct": 21,
+        "accuracy": 0.7,
+        "ci_lower": 0.5333333333333333,
+        "ci_upper": 0.8666666666666667
+      },
+      "suffix_i": {
+        "n": 14,
+        "correct": 10,
+        "accuracy": 0.7142857142857143,
+        "ci_lower": 0.5,
+        "ci_upper": 0.9285714285714286
+      },
+      "suffix_kan": {
+        "n": 17,
+        "correct": 14,
+        "accuracy": 0.8235294117647058,
+        "ci_lower": 0.6470588235294118,
+        "ci_upper": 1.0
+      }
+    },
+    "note": "Cohen's kappa is NOT reported: computed over segmentation strings as categories, chance agreement is ~0 so kappa ~= accuracy and carries no extra information."
+  },
+  "boundary": {
+    "n_evaluated": 307,
+    "n_excluded_unmappable_gold": 47,
+    "mkk_predictions_unmappable_fallback_to_no_split": 17,
+    "convention": "meN-/peN- nasal belongs to prefix; elided k/p/t/s root keeps remainder (menulis -> men|ulis). Reduplication items excluded.",
+    "training_corpus": {
+      "sources": [
+        "data\\wikipedia_id_sample.txt",
+        "experiments\\data\\smsa_cache\\train_preprocess.tsv (text column)"
+      ],
+      "tokens": 329551,
+      "types": 17759,
+      "gold_words_occurring_in_corpus": 143,
+      "note": "Morfessor Baseline, default parameters, random.seed(0); test words NOT added to training."
+    },
+    "systems": {
+      "mkk": {
+        "precision": 0.9766839378238342,
+        "recall": 0.754,
+        "f1": 0.8510158013544018,
+        "tp": 377,
+        "fp": 9,
+        "fn": 123,
+        "f1_ci_lower": 0.8125683922558922,
+        "f1_ci_upper": 0.8850733147912354,
+        "boundary_exact_match": 0.739413680781759,
+        "avg_segments": 2.257328990228013
+      },
+      "no_split": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 500,
+        "f1_ci_lower": 0.0,
+        "f1_ci_upper": 0.0,
+        "boundary_exact_match": 0.016286644951140065,
+        "avg_segments": 1.0,
+        "mcnemar_exact_match_vs_mkk": {
+          "b": 223,
+          "c": 1,
+          "p_value": 1.6691427678093396e-65
+        }
+      },
+      "morfessor_tokens": {
+        "precision": 0.7445652173913043,
+        "recall": 0.548,
+        "f1": 0.6313364055299541,
+        "tp": 274,
+        "fp": 94,
+        "fn": 226,
+        "f1_ci_lower": 0.5938630539298397,
+        "f1_ci_upper": 0.670261004729936,
+        "boundary_exact_match": 0.3550488599348534,
+        "avg_segments": 2.198697068403909,
+        "mcnemar_exact_match_vs_mkk": {
+          "b": 137,
+          "c": 19,
+          "p_value": 3.1062763997368485e-23
+        }
+      },
+      "morfessor_types": {
+        "precision": 0.7188552188552189,
+        "recall": 0.854,
+        "f1": 0.7806215722120657,
+        "tp": 427,
+        "fp": 167,
+        "fn": 73,
+        "f1_ci_lower": 0.7519441057921975,
+        "f1_ci_upper": 0.8072883941479598,
+        "boundary_exact_match": 0.5146579804560261,
+        "avg_segments": 2.9348534201954397,
+        "mcnemar_exact_match_vs_mkk": {
+          "b": 102,
+          "c": 33,
+          "p_value": 2.1594630021214176e-09
+        }
+      },
+      "subset_without_nasal_prefix": {
+        "n": 188,
+        "mkk": {
+          "precision": 0.9823008849557522,
+          "recall": 0.8014440433212996,
+          "f1": 0.882703777335984,
+          "tp": 222,
+          "fp": 4,
+          "fn": 55
+        },
+        "morfessor_tokens": {
+          "precision": 0.8578947368421053,
+          "recall": 0.5884476534296029,
+          "f1": 0.6980728051391862,
+          "tp": 163,
+          "fp": 27,
+          "fn": 114
+        },
+        "morfessor_types": {
+          "precision": 0.7419354838709677,
+          "recall": 0.9133574007220217,
+          "f1": 0.8187702265372169,
+          "tp": 253,
+          "fp": 88,
+          "fn": 24
+        }
+      }
+    },
+    "samples": [
+      {
+        "word": "mempertimbangkan",
+        "gold_surface": "mem|per|timbang|kan",
+        "mkk": "mem|per|timbang|kan",
+        "morfessor_types": "mem|pertimb|angkan"
+      },
+      {
+        "word": "menginterpretasikan",
+        "gold_surface": "meng|interpretasi|kan",
+        "mkk": "meng|interpretasi|kan",
+        "morfessor_types": "meng|in|ter|pre|tasi|kan"
+      },
+      {
+        "word": "menyelenggarakan",
+        "gold_surface": "meny|elenggara|kan",
+        "mkk": "menyelenggarakan",
+        "morfessor_types": "menye|leng|gara|kan"
+      },
+      {
+        "word": "mengkompilasi",
+        "gold_surface": "meng|kompilasi",
+        "mkk": "meng|kompilasi",
+        "morfessor_types": "meng|komp|il|asi"
+      },
+      {
+        "word": "memperbaiki",
+        "gold_surface": "mem|per|baik|i",
+        "mkk": "mem|per|baik|i",
+        "morfessor_types": "mem|perbaiki"
+      },
+      {
+        "word": "mengupload",
+        "gold_surface": "meng|upload",
+        "mkk": "meng|upload",
+        "morfessor_types": "meng|up|load"
+      },
+      {
+        "word": "memperhatikan",
+        "gold_surface": "mem|per|hati|kan",
+        "mkk": "mem|per|hati|kan",
+        "morfessor_types": "mem|perhatikan"
+      },
+      {
+        "word": "mengoperasikan",
+        "gold_surface": "meng|operasi|kan",
+        "mkk": "meng|operasi|kan",
+        "morfessor_types": "meng|operasi|kan"
+      },
+      {
+        "word": "menyempurnakan",
+        "gold_surface": "meny|empurna|kan",
+        "mkk": "menyempurnakan",
+        "morfessor_types": "menye|mpurna|kan"
+      },
+      {
+        "word": "memperlakukan",
+        "gold_surface": "mem|per|laku|kan",
+        "mkk": "mem|per|laku|kan",
+        "morfessor_types": "memper|laku|kan"
+      },
+      {
+        "word": "mengedit",
+        "gold_surface": "meng|edit",
+        "mkk": "meng|edit",
+        "morfessor_types": "meng|e|dit"
+      },
+      {
+        "word": "memperkenalkan",
+        "gold_surface": "mem|per|kenal|kan",
+        "mkk": "memperkenalkan",
+        "morfessor_types": "memper|kenal|kan"
+      },
+      {
+        "word": "mengklasifikasikan",
+        "gold_surface": "meng|klasifikasi|kan",
+        "mkk": "meng|klasifikasi|kan",
+        "morfessor_types": "meng|klas|if|ikasi|kan"
+      },
+      {
+        "word": "menyelesaikan",
+        "gold_surface": "meny|elesai|kan",
+        "mkk": "menyelesaikan",
+        "morfessor_types": "menye|lesai|kan"
+      },
+      {
+        "word": "memperlihatkan",
+        "gold_surface": "mem|per|lihat|kan",
+        "mkk": "mem|per|lihat|kan",
+        "morfessor_types": "memper|lihat|kan"
+      }
+    ]
+  },
+  "wikipedia": {
+    "file": "data\\wikipedia_id_sample.txt",
+    "lines": 504,
+    "tokens": 11021,
+    "unique_words": 2631,
+    "segmented": 924,
+    "segmentation_rate": 0.35119726339794755,
+    "root_oov": 717,
+    "root_oov_rate": 0.2725199543899658,
+    "surface_not_in_root_list": 1649,
+    "note": "root_oov: the root left after MKK segmentation is neither in the root list nor the loanword list. Accuracy on real text is NOT measured here (needs human labels, see data/annotation/)."
+  }
+}

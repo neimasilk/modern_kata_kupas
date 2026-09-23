@@ -1,4 +1,7 @@
 """
+SUPERSEDED (Sep 2026): single run, no significance test, and baseline/MKK use different
+punctuation cleaning. Use experiments/downstream_significance.py.
+
 Text Classification Downstream Evaluation for ModernKataKupas
 
 This module evaluates the impact of MKK preprocessing on text classification tasks.
